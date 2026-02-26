@@ -23,6 +23,12 @@ public partial class MainWindow : Window
     private bool _viewObjThruTerrain;
     private Point _lastMousePos;
 
+    // Height editing state (matches Delphi globals)
+    private float _minimumHeight = -40f;
+    private float _maximumHeight = 1000f;
+    private float _currentHeight = -40f;
+    private bool _heightPanelUpdating;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -116,6 +122,51 @@ public partial class MainWindow : Window
                 _vm.BrushStrength = (float)SliderStrength.Value;
         };
 
+        // Height editor panel
+        SliderHeight.PropertyChanged += (_, e) =>
+        {
+            if (e.Property.Name == "Value" && !_heightPanelUpdating)
+            {
+                _heightPanelUpdating = true;
+                _currentHeight = _minimumHeight + (_maximumHeight - _minimumHeight) * (float)SliderHeight.Value / 1000f;
+                TxtCurrentHeight.Text = _currentHeight.ToString("F2");
+                _vm.Document.TargetHeight = _currentHeight;
+                _heightPanelUpdating = false;
+            }
+        };
+        TxtMinHeight.TextChanged += (_, _) =>
+        {
+            if (_heightPanelUpdating) return;
+            if (!float.TryParse(TxtMinHeight.Text, out float mh)) return;
+            _heightPanelUpdating = true;
+            if (mh >= _maximumHeight) { _maximumHeight = mh; TxtMaxHeight.Text = _maximumHeight.ToString("F2"); }
+            _minimumHeight = mh;
+            ClampAndSyncHeightSlider();
+            _heightPanelUpdating = false;
+        };
+        TxtMaxHeight.TextChanged += (_, _) =>
+        {
+            if (_heightPanelUpdating) return;
+            if (!float.TryParse(TxtMaxHeight.Text, out float mh)) return;
+            _heightPanelUpdating = true;
+            if (mh <= _minimumHeight) { _minimumHeight = mh; TxtMinHeight.Text = _minimumHeight.ToString("F2"); }
+            _maximumHeight = mh;
+            ClampAndSyncHeightSlider();
+            _heightPanelUpdating = false;
+        };
+        TxtCurrentHeight.TextChanged += (_, _) =>
+        {
+            if (_heightPanelUpdating) return;
+            if (!float.TryParse(TxtCurrentHeight.Text, out float ch)) return;
+            _heightPanelUpdating = true;
+            if (ch >= _maximumHeight) { _maximumHeight = ch; TxtMaxHeight.Text = _maximumHeight.ToString("F2"); }
+            if (ch <= _minimumHeight) { _minimumHeight = ch; TxtMinHeight.Text = _minimumHeight.ToString("F2"); }
+            _currentHeight = ch;
+            _vm.Document.TargetHeight = _currentHeight;
+            SyncHeightSlider();
+            _heightPanelUpdating = false;
+        };
+
         // Property panel
         BtnApplyProps.Click += (_, _) => ApplyObjectProperties();
         BtnDeleteObj.Click += (_, _) =>
@@ -175,7 +226,22 @@ public partial class MainWindow : Window
             modeButtons[j].IsChecked = j == buttonIndex;
         _vm.Document.CurrentMode = mode;
         _vm.CurrentMode = mode;
+        HeightPanel.IsVisible = mode == EditMode.HeightEdit;
         StatusText.Text = $"Mode: {mode}";
+    }
+
+    private void ClampAndSyncHeightSlider()
+    {
+        if (_currentHeight < _minimumHeight) { _currentHeight = _minimumHeight; TxtCurrentHeight.Text = _currentHeight.ToString("F2"); }
+        if (_currentHeight > _maximumHeight) { _currentHeight = _maximumHeight; TxtCurrentHeight.Text = _currentHeight.ToString("F2"); }
+        _vm.Document.TargetHeight = _currentHeight;
+        SyncHeightSlider();
+    }
+
+    private void SyncHeightSlider()
+    {
+        if (_maximumHeight > _minimumHeight)
+            SliderHeight.Value = (_currentHeight - _minimumHeight) / (_maximumHeight - _minimumHeight) * 1000;
     }
 
     #endregion
@@ -261,17 +327,22 @@ public partial class MainWindow : Window
             case EditMode.HeightEdit:
                 if (rightButton)
                 {
-                    // Right-click picks height
+                    // Right-click picks height (matches Delphi: sets currentheight + Edit3)
                     float picked = TerrainEditor.PickHeight(terrain, hit.GridX, hit.GridY,
                         _vm.Document.BrushRadius / terrain.Header.Stretch);
+                    _currentHeight = picked;
                     _vm.Document.TargetHeight = picked;
+                    _heightPanelUpdating = true;
+                    TxtCurrentHeight.Text = picked.ToString("F2");
+                    SyncHeightSlider();
+                    _heightPanelUpdating = false;
                     StatusText.Text = $"Height: {picked:F2}";
                 }
                 else if (leftButton)
                 {
                     // Left-click paints height
                     TerrainEditor.ApplyHeightBrush(terrain, hit.GridX, hit.GridY,
-                        _vm.Document.TargetHeight,
+                        _currentHeight,
                         _vm.Document.BrushRadius / terrain.Header.Stretch,
                         _vm.Document.BrushStrength);
                     _vm.Document.NotifyTerrainChanged();
