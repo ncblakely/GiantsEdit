@@ -35,6 +35,7 @@ public class WorldDocument
     public EditMode CurrentMode { get; set; } = EditMode.Camera;
     public float BrushRadius { get; set; } = 50f;
     public float BrushStrength { get; set; } = 0.5f;
+    public float TargetHeight { get; set; } = 0f;
     public TreeNode? SelectedObject { get; set; }
     public bool IsModified { get; private set; }
     public string? FilePath { get; private set; }

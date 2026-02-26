@@ -186,6 +186,15 @@ public partial class MainWindow : Window
     {
         _lastMousePos = e.GetPosition(ViewportPanel);
         ViewportPanel.Focus();
+
+        // In editing modes, start editing on press (matches Delphi Panel1MouseDown → Panel1MouseMove)
+        if (_vm.Document.CurrentMode != EditMode.Camera)
+        {
+            var props = e.GetCurrentPoint(ViewportPanel).Properties;
+            if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
+                HandleEditModeInput((int)_lastMousePos.X, (int)_lastMousePos.Y, props.IsLeftButtonPressed, props.IsRightButtonPressed, e.KeyModifiers);
+        }
+
         e.Handled = true;
     }
 
@@ -200,21 +209,31 @@ public partial class MainWindow : Window
         bool left = props.IsLeftButtonPressed;
         bool right = props.IsRightButtonPressed;
 
-        if (left && right)
+        // In Camera mode, or Ctrl held in any mode → camera controls
+        bool ctrlHeld = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        if (_vm.Document.CurrentMode == EditMode.Camera || ctrlHeld)
         {
-            Viewport.Camera.Zoom(dy);
-            InvalidateViewport();
+            if (left && right)
+            {
+                Viewport.Camera.Zoom(dy);
+                InvalidateViewport();
+            }
+            else if (left)
+            {
+                Viewport.Camera.Rotate(dx, dy);
+                InvalidateViewport();
+            }
+            else if (right)
+            {
+                Viewport.Camera.Pan(dx, dy);
+                InvalidateViewport();
+            }
+            return;
         }
-        else if (left)
-        {
-            Viewport.Camera.Rotate(dx, dy);
-            InvalidateViewport();
-        }
-        else if (right)
-        {
-            Viewport.Camera.Pan(dx, dy);
-            InvalidateViewport();
-        }
+
+        // In editing modes, dispatch to edit handler
+        if (left || right)
+            HandleEditModeInput((int)pos.X, (int)pos.Y, left, right, e.KeyModifiers);
     }
 
     private void OnViewportPointerWheel(object? sender, PointerWheelEventArgs e)
@@ -222,6 +241,57 @@ public partial class MainWindow : Window
         Viewport.Camera.ZoomWheel((float)e.Delta.Y);
         InvalidateViewport();
         e.Handled = true;
+    }
+
+    private void HandleEditModeInput(int screenX, int screenY, bool leftButton, bool rightButton, KeyModifiers modifiers)
+    {
+        var terrain = _vm.Document.Terrain;
+        if (terrain == null) return;
+
+        var bounds = Viewport.Bounds;
+        int vpW = (int)bounds.Width;
+        int vpH = (int)bounds.Height;
+        if (vpW <= 0 || vpH <= 0) return;
+
+        var hit = TerrainEditor.ScreenToTerrain(screenX, screenY, vpW, vpH, Viewport.Camera, terrain);
+        if (!hit.Hit) return;
+
+        switch (_vm.Document.CurrentMode)
+        {
+            case EditMode.HeightEdit:
+                if (rightButton)
+                {
+                    // Right-click picks height
+                    float picked = TerrainEditor.PickHeight(terrain, hit.GridX, hit.GridY,
+                        _vm.Document.BrushRadius / terrain.Header.Stretch);
+                    _vm.Document.TargetHeight = picked;
+                    StatusText.Text = $"Height: {picked:F2}";
+                }
+                else if (leftButton)
+                {
+                    // Left-click paints height
+                    TerrainEditor.ApplyHeightBrush(terrain, hit.GridX, hit.GridY,
+                        _vm.Document.TargetHeight,
+                        _vm.Document.BrushRadius / terrain.Header.Stretch,
+                        _vm.Document.BrushStrength);
+                    _vm.Document.NotifyTerrainChanged();
+                }
+                break;
+
+            case EditMode.LightPaint:
+                StatusText.Text = $"Light paint at ({hit.GridX:F1}, {hit.GridY:F1}) — not yet implemented";
+                break;
+
+            case EditMode.TriangleEdit:
+                StatusText.Text = $"Triangle edit at ({hit.GridX:F1}, {hit.GridY:F1}) — not yet implemented";
+                break;
+
+            case EditMode.ObjectEdit:
+                StatusText.Text = $"Object edit at ({hit.GridX:F1}, {hit.GridY:F1}) — not yet implemented";
+                break;
+        }
+
+        InvalidateViewport();
     }
 
     #endregion
