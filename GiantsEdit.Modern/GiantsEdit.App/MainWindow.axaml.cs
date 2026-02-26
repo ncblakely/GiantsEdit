@@ -180,6 +180,12 @@ public partial class MainWindow : Window
         TxtColorB.TextChanged += (_, _) => OnLightTextChanged();
         ColorSwatch.PointerPressed += (_, _) => UpdateLightColor(_paintR, _paintG, _paintB);
 
+        // Triangle editor panel
+        RbTriSet.IsCheckedChanged += (_, _) => { if (RbTriSet.IsChecked == true) _vm.Document.TriangleMode = TriangleSubMode.SetCorner; };
+        RbTriDiag.IsCheckedChanged += (_, _) => { if (RbTriDiag.IsChecked == true) _vm.Document.TriangleMode = TriangleSubMode.DiagDirection; };
+        RbTriDiagOpt.IsCheckedChanged += (_, _) => { if (RbTriDiagOpt.IsChecked == true) _vm.Document.TriangleMode = TriangleSubMode.DiagOptimize; };
+        RbTriCornerOpt.IsCheckedChanged += (_, _) => { if (RbTriCornerOpt.IsChecked == true) _vm.Document.TriangleMode = TriangleSubMode.OptCorner; };
+
         // Property panel
         BtnApplyProps.Click += (_, _) => ApplyObjectProperties();
         BtnDeleteObj.Click += (_, _) =>
@@ -241,6 +247,7 @@ public partial class MainWindow : Window
         _vm.CurrentMode = mode;
         HeightPanel.IsVisible = mode == EditMode.HeightEdit;
         LightPanel.IsVisible = mode == EditMode.LightPaint;
+        TrianglePanel.IsVisible = mode == EditMode.TriangleEdit;
         StatusText.Text = $"Mode: {mode}";
     }
 
@@ -433,7 +440,23 @@ public partial class MainWindow : Window
                 break;
 
             case EditMode.TriangleEdit:
-                StatusText.Text = $"Triangle edit at ({hit.GridX:F1}, {hit.GridY:F1}) — not yet implemented";
+                float triRadius = _vm.Document.BrushRadius / terrain.Header.Stretch;
+                switch (_vm.Document.TriangleMode)
+                {
+                    case TriangleSubMode.SetCorner:
+                        TerrainEditor.PaintTriangleSet(terrain, hit.GridX, hit.GridY, triRadius, rightButton);
+                        break;
+                    case TriangleSubMode.DiagDirection:
+                        TerrainEditor.PaintTriangleDiagDirection(terrain, hit.GridX, hit.GridY, triRadius, rightButton);
+                        break;
+                    case TriangleSubMode.DiagOptimize:
+                        TerrainEditor.PaintTriangleDiagOptimize(terrain, hit.GridX, hit.GridY, triRadius, rightButton);
+                        break;
+                    case TriangleSubMode.OptCorner:
+                        TerrainEditor.PaintTriangleOptCorner(terrain, hit.GridX, hit.GridY, triRadius, rightButton);
+                        break;
+                }
+                _vm.Document.NotifyTerrainChanged();
                 break;
 
             case EditMode.ObjectEdit:

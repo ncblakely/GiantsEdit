@@ -17,6 +17,14 @@ public enum EditMode
     ObjectEdit
 }
 
+public enum TriangleSubMode
+{
+    SetCorner,       // SpeedButton4: Paint/erase triangles by quadrant
+    DiagDirection,   // SpeedButton5: Toggle diagonal direction (type 5↔6)
+    DiagOptimize,    // SpeedButton6: Auto-pick diagonal from height
+    OptCorner        // SpeedButton9: Auto-determine type from valid corners
+}
+
 /// <summary>
 /// Manages the current world state: terrain, objects, tree data, and editing state.
 /// This is the central service that connects file I/O, tree model, and rendering.
@@ -33,6 +41,7 @@ public class WorldDocument
 
     // Editing state
     public EditMode CurrentMode { get; set; } = EditMode.Camera;
+    public TriangleSubMode TriangleMode { get; set; } = TriangleSubMode.SetCorner;
     public float BrushRadius { get; set; } = 50f;
     public float BrushStrength { get; set; } = 0.5f;
     public float TargetHeight { get; set; } = 0f;

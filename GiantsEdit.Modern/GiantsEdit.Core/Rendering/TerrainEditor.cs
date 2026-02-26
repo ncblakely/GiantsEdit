@@ -425,4 +425,267 @@ public static class TerrainEditor
         lightMap[i + 1] = (byte)Math.Clamp((int)MathF.Round(lightMap[i + 1] * (1 - a) + g * a), 0, 255);
         lightMap[i + 2] = (byte)Math.Clamp((int)MathF.Round(lightMap[i + 2] * (1 - a) + b * a), 0, 255);
     }
+
+    #region Triangle editing
+
+    /// <summary>
+    /// Transition table for triangle painting. triamask[paintmode, quadrant, currentType] → newType.
+    /// Ported directly from Delphi PaintTriangles const triamask.
+    /// </summary>
+    private static readonly byte[,,] TriaMask = new byte[2, 8, 8]
+    {
+        // paintmode 0 (right-click / remove)
+        {
+            { 0, 1, 2, 3, 4, 5, 6, 7 },
+            { 0, 0, 2, 0, 0, 2, 2, 0 },
+            { 0, 1, 0, 0, 0, 1, 1, 0 },
+            { 0, 0, 0, 0, 4, 7, 7, 7 },
+            { 0, 0, 0, 3, 0, 3, 3, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 3, 0, 3, 3, 0 },
+        },
+        // paintmode 1 (left-click / add)
+        {
+            { 0, 1, 2, 3, 4, 5, 6, 7 },
+            { 1, 1, 5, 5, 5, 5, 6, 5 },
+            { 2, 5, 2, 5, 5, 5, 6, 5 },
+            { 3, 5, 5, 3, 5, 5, 6, 5 },
+            { 4, 5, 5, 5, 4, 5, 6, 7 },
+            { 5, 5, 5, 5, 5, 5, 6, 5 },
+            { 6, 5, 5, 5, 5, 5, 6, 5 },
+            { 7, 5, 5, 5, 7, 5, 6, 7 },
+        },
+    };
+
+    /// <summary>
+    /// Paint/erase triangles by quadrant (SpeedButton4 in Delphi).
+    /// Left-click adds, right-click removes.
+    /// </summary>
+    public static void PaintTriangleSet(
+        TerrainData terrain, float gridX, float gridY, float brushRadius, bool rightButton)
+    {
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+        int paintmode = rightButton ? 0 : 1;
+
+        if (brushRadius <= 0)
+        {
+            int ix = (int)gridX;
+            int iy = (int)gridY;
+            if (ix < 0 || ix >= xl - 1 || iy < 0 || iy >= yl - 1) return;
+
+            float s = gridX - ix;
+            float t = gridY - iy;
+            // Determine which quadrant of the cell was clicked
+            int quadrant;
+            if (s > 0.5f)
+                quadrant = t > 0.5f ? 2 : 3;  // TR or BR
+            else
+                quadrant = t > 0.5f ? 7 : 1;  // BL or TL
+
+            int ci = iy * xl + ix;
+            int cur = terrain.Triangles[ci] & 7;
+            terrain.Triangles[ci] = (byte)((terrain.Triangles[ci] & 0xF8) | TriaMask[paintmode, quadrant, cur]);
+        }
+        else if (brushRadius <= 1)
+        {
+            int rx = (int)MathF.Round(gridX);
+            int ry = (int)MathF.Round(gridY);
+            ChangeVertex(terrain, rx, ry, paintmode, xl, yl);
+        }
+        else
+        {
+            int rx = (int)MathF.Round(gridX);
+            int ry = (int)MathF.Round(gridY);
+            int range = (int)MathF.Round(brushRadius);
+            for (int dy = -range; dy <= range; dy++)
+                for (int dx = -range; dx <= range; dx++)
+                    if (dx * dx + dy * dy < brushRadius * brushRadius)
+                        ChangeVertex(terrain, rx + dx, ry + dy, paintmode, xl, yl);
+        }
+    }
+
+    /// <summary>
+    /// Toggle diagonal direction on full-quad cells (SpeedButton5 in Delphi).
+    /// Left-click: type 5 (normal tiling), Right-click: type 6 (alternate tiling).
+    /// </summary>
+    public static void PaintTriangleDiagDirection(
+        TerrainData terrain, float gridX, float gridY, float brushRadius, bool rightButton)
+    {
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+        int paintmode = rightButton ? 0 : 1;
+
+        int range = (int)MathF.Round(brushRadius);
+        int cx = (int)gridX;
+        int cy = (int)gridY;
+
+        for (int dy = -range; dy <= range; dy++)
+            for (int dx = -range; dx <= range; dx++)
+            {
+                if (brushRadius > 0 && dx * dx + dy * dy >= brushRadius * brushRadius) continue;
+                int x3 = cx + dx;
+                int y3 = cy + dy;
+                if (x3 < 0 || y3 < 0 || x3 >= xl - 1 || y3 >= yl - 1) continue;
+                int ci = y3 * xl + x3;
+                int curType = terrain.Triangles[ci] & 7;
+                if (curType == 5 || curType == 6)
+                    terrain.Triangles[ci] = (byte)((terrain.Triangles[ci] & 0xF8) | (5 + paintmode));
+            }
+    }
+
+    /// <summary>
+    /// Auto-optimize diagonal direction based on height differences (SpeedButton6 in Delphi).
+    /// Left-click: smooth (pick flattest diagonal), Right-click: coarse (pick steepest).
+    /// </summary>
+    public static void PaintTriangleDiagOptimize(
+        TerrainData terrain, float gridX, float gridY, float brushRadius, bool rightButton)
+    {
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+        int paintmode = rightButton ? 0 : 1;
+
+        int range = (int)MathF.Round(brushRadius);
+        int cx = (int)gridX;
+        int cy = (int)gridY;
+
+        for (int dy = -range; dy <= range; dy++)
+            for (int dx = -range; dx <= range; dx++)
+            {
+                if (brushRadius > 0 && dx * dx + dy * dy >= brushRadius * brushRadius) continue;
+                int x3 = cx + dx;
+                int y3 = cy + dy;
+                if (x3 < 0 || y3 < 0 || x3 >= xl - 1 || y3 >= yl - 1) continue;
+                int ci = y3 * xl + x3;
+                int curType = terrain.Triangles[ci] & 7;
+                if (curType == 5 || curType == 6)
+                {
+                    // Compare the two possible diagonals
+                    float diagA = MathF.Abs(terrain.Heights[y3 * xl + (x3 + 1)] - terrain.Heights[(y3 + 1) * xl + x3]);
+                    float diagB = MathF.Abs(terrain.Heights[(y3 + 1) * xl + (x3 + 1)] - terrain.Heights[y3 * xl + x3]);
+                    int heightChoice = (diagA > diagB) ? 1 : 0;
+                    // XOR with paintmode: left-click=smooth (flattest), right-click=coarse (steepest)
+                    terrain.Triangles[ci] = (byte)((terrain.Triangles[ci] & 0xF8) | (5 + (heightChoice ^ paintmode)));
+                }
+            }
+    }
+
+    /// <summary>
+    /// Auto-determine triangle type from valid neighboring corners (SpeedButton9 in Delphi).
+    /// </summary>
+    public static void PaintTriangleOptCorner(
+        TerrainData terrain, float gridX, float gridY, float brushRadius, bool rightButton)
+    {
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+        int paintmode = rightButton ? 0 : 1;
+
+        int range = (int)MathF.Round(brushRadius);
+        int cx = (int)gridX;
+        int cy = (int)gridY;
+
+        for (int dy = -range; dy <= range; dy++)
+            for (int dx = -range; dx <= range; dx++)
+            {
+                if (brushRadius > 0 && dx * dx + dy * dy >= brushRadius * brushRadius) continue;
+                int x3 = cx + dx;
+                int y3 = cy + dy;
+                if (x3 < 0 || y3 < 0 || x3 >= xl - 1 || y3 >= yl - 1) continue;
+
+                // Determine which corners are "valid" (have adjacent filled triangles)
+                int cornerBits =
+                    (CornerValid(terrain, x3, y3) ? 1 : 0)
+                  | (CornerValid(terrain, x3 + 1, y3) ? 2 : 0)
+                  | (CornerValid(terrain, x3, y3 + 1) ? 4 : 0)
+                  | (CornerValid(terrain, x3 + 1, y3 + 1) ? 8 : 0);
+
+                int ci = y3 * xl + x3;
+                int newType = cornerBits switch
+                {
+                    7 => 1 * paintmode,   // BL-TL-TR
+                    11 => 3 * paintmode,  // TR-TL-BR
+                    13 => 7 * paintmode,  // BL-TL-BR
+                    14 => 2 * paintmode,  // TR-BL-BR
+                    15 => ComputeOptimalDiag(terrain, x3, y3, xl, paintmode), // Full quad
+                    _ => -1, // Stays empty
+                };
+
+                if (newType >= 0)
+                    terrain.Triangles[ci] = (byte)((terrain.Triangles[ci] & 0xF8) | newType);
+            }
+    }
+
+    private static int ComputeOptimalDiag(TerrainData terrain, int x, int y, int xl, int paintmode)
+    {
+        float diagA = MathF.Abs(terrain.Heights[y * xl + (x + 1)] - terrain.Heights[(y + 1) * xl + x]);
+        float diagB = MathF.Abs(terrain.Heights[(y + 1) * xl + (x + 1)] - terrain.Heights[y * xl + x]);
+        int heightChoice = (diagA > diagB) ? 1 : 0;
+        return 5 + (heightChoice ^ paintmode);
+    }
+
+    /// <summary>
+    /// Checks if a corner vertex has at least one adjacent non-empty triangle.
+    /// Port of Delphi cornervalid function.
+    /// </summary>
+    private static bool CornerValid(TerrainData terrain, int x, int y)
+    {
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+        if (x < 0 || y < 0 || x >= xl || y >= yl) return false;
+
+        // Check the four cells that share this corner
+        byte[] validTR = [2, 3, 4, 5, 6, 7]; // cell at (x-1, y-1): corner is at TR
+        byte[] validTL = [1, 2, 4, 5, 6, 7]; // cell at (x, y-1): corner is at TL
+        byte[] validBR = [1, 2, 3, 5, 6];    // cell at (x-1, y): corner is at BR
+        byte[] validBL = [1, 3, 4, 5, 6, 7]; // cell at (x, y): corner is at BL
+
+        if (x > 0 && y > 0)
+        {
+            int t = terrain.Triangles[(y - 1) * xl + (x - 1)] & 7;
+            if (Array.IndexOf(validTR, (byte)t) >= 0) return true;
+        }
+        if (x < xl - 1 && y > 0)
+        {
+            int t = terrain.Triangles[(y - 1) * xl + x] & 7;
+            if (Array.IndexOf(validTL, (byte)t) >= 0) return true;
+        }
+        if (x > 0 && y < yl - 1)
+        {
+            int t = terrain.Triangles[y * xl + (x - 1)] & 7;
+            if (Array.IndexOf(validBR, (byte)t) >= 0) return true;
+        }
+        if (x < xl - 1 && y < yl - 1)
+        {
+            int t = terrain.Triangles[y * xl + x] & 7;
+            if (Array.IndexOf(validBL, (byte)t) >= 0) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Changes the four cells surrounding a vertex (used for brush radius >= 1).
+    /// Port of Delphi ChangeVertex.
+    /// </summary>
+    private static void ChangeVertex(TerrainData terrain, int x, int y, int paintmode, int xl, int yl)
+    {
+        void Apply(int cx, int cy, int quadrant)
+        {
+            if (cx < 0 || cy < 0 || cx >= xl - 1 || cy >= yl - 1) return;
+            int ci = cy * xl + cx;
+            int cur = terrain.Triangles[ci] & 7;
+            terrain.Triangles[ci] = (byte)((terrain.Triangles[ci] & 0xF8) | TriaMask[paintmode, quadrant, cur]);
+        }
+
+        // Cell (x, y): vertex is at TL → quadrant 1
+        Apply(x, y, 1);
+        // Cell (x-1, y-1): vertex is at BR → quadrant 2
+        Apply(x - 1, y - 1, 2);
+        // Cell (x-1, y): vertex is at TR → quadrant 3
+        Apply(x - 1, y, 3);
+        // Cell (x, y-1): vertex is at BL → quadrant 7
+        Apply(x, y - 1, 7);
+    }
+
+    #endregion
 }
