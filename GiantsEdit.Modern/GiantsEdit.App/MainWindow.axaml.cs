@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -22,6 +23,7 @@ public partial class MainWindow : Window
     private bool _viewTerrainMesh;
     private bool _viewObjThruTerrain;
     private Point _lastMousePos;
+    private bool _isClickDown; // true on pointer-down, false after first move
 
     // Height editing state (matches Delphi globals)
     private float _minimumHeight = -40f;
@@ -322,6 +324,7 @@ public partial class MainWindow : Window
     {
         _lastMousePos = e.GetPosition(ViewportPanel);
         ViewportPanel.Focus();
+        _isClickDown = true;
 
         // In editing modes, start editing on press (matches Delphi Panel1MouseDown → Panel1MouseMove)
         if (_vm.Document.CurrentMode != EditMode.Camera)
@@ -340,6 +343,7 @@ public partial class MainWindow : Window
         float dx = (float)(pos.X - _lastMousePos.X);
         float dy = (float)(pos.Y - _lastMousePos.Y);
         _lastMousePos = pos;
+        _isClickDown = false;
 
         var props = e.GetCurrentPoint(ViewportPanel).Properties;
         bool left = props.IsLeftButtonPressed;
@@ -388,6 +392,14 @@ public partial class MainWindow : Window
         int vpW = (int)bounds.Width;
         int vpH = (int)bounds.Height;
         if (vpW <= 0 || vpH <= 0) return;
+
+        // Object editing has its own hit detection (ray-sphere, not terrain-only)
+        if (_vm.Document.CurrentMode == EditMode.ObjectEdit)
+        {
+            HandleObjectEditInput(screenX, screenY, vpW, vpH, leftButton, rightButton, modifiers);
+            InvalidateViewport();
+            return;
+        }
 
         var hit = TerrainEditor.ScreenToTerrain(screenX, screenY, vpW, vpH, Viewport.Camera, terrain);
         if (!hit.Hit) return;
@@ -458,13 +470,242 @@ public partial class MainWindow : Window
                 }
                 _vm.Document.NotifyTerrainChanged();
                 break;
-
-            case EditMode.ObjectEdit:
-                StatusText.Text = $"Object edit at ({hit.GridX:F1}, {hit.GridY:F1}) — not yet implemented";
-                break;
         }
 
         InvalidateViewport();
+    }
+
+    private void HandleObjectEditInput(int screenX, int screenY, int vpW, int vpH,
+        bool leftButton, bool rightButton, KeyModifiers modifiers)
+    {
+        var terrain = _vm.Document.Terrain;
+        var objects = _vm.Document.GetObjectInstances();
+
+        if (_isClickDown && leftButton)
+        {
+            // Left-click: select object under cursor
+            var picked = TerrainEditor.PickObject(screenX, screenY, vpW, vpH,
+                Viewport.Camera, terrain, objects);
+
+            if (picked.HasValue && picked.Value.SourceNode != null)
+            {
+                SelectObject(picked.Value.SourceNode);
+                StatusText.Text = $"Selected object type {picked.Value.ModelId}";
+            }
+            else
+            {
+                DeselectObject();
+                StatusText.Text = "No object under cursor";
+            }
+        }
+        else if (_isClickDown && rightButton)
+        {
+            // Right-click: context menu (create/copy/delete)
+            var picked = TerrainEditor.PickObject(screenX, screenY, vpW, vpH,
+                Viewport.Camera, terrain, objects);
+
+            if (picked.HasValue && picked.Value.SourceNode != null)
+                SelectObject(picked.Value.SourceNode);
+
+            // Get world position for object placement
+            if (terrain != null)
+                _newObjPosition = TerrainEditor.GetWorldHitPosition(screenX, screenY, vpW, vpH,
+                    Viewport.Camera, terrain);
+
+            ShowObjectContextMenu();
+        }
+        else if (!_isClickDown && leftButton && _vm.Document.SelectedObject != null)
+        {
+            // Left-drag with selected object: move to terrain position
+            if (terrain == null) return;
+            bool shiftHeld = (modifiers & KeyModifiers.Shift) != 0;
+            if (shiftHeld)
+            {
+                // Shift+drag: adjust Z height along view ray
+                AdjustObjectHeight(screenX, screenY, vpW, vpH);
+            }
+            else
+            {
+                // Normal drag: move on terrain surface
+                var worldPos = TerrainEditor.GetWorldHitPosition(screenX, screenY, vpW, vpH,
+                    Viewport.Camera, terrain);
+                if (worldPos.HasValue)
+                {
+                    MoveSelectedObject(worldPos.Value.X, worldPos.Value.Y, worldPos.Value.Z);
+                    StatusText.Text = $"Object pos: ({worldPos.Value.X:F1}, {worldPos.Value.Y:F1}, {worldPos.Value.Z:F1})";
+                }
+            }
+        }
+    }
+
+    private Vector3? _newObjPosition;
+
+    private void SelectObject(TreeNode objNode)
+    {
+        _vm.Document.SelectedObject = objNode;
+        ObjPropsPanel.IsVisible = true;
+
+        PropObjType.Text = (objNode.FindChildLeaf("Type")?.Int32Value ?? 0).ToString();
+        PropObjX.Text = (objNode.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
+        PropObjY.Text = (objNode.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
+        PropObjZ.Text = (objNode.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
+        PropObjAngle.Text = (objNode.FindChildLeaf("Angle")?.SingleValue ??
+                             objNode.FindChildLeaf("Angle Z")?.SingleValue ?? 0).ToString("F2");
+        PropObjScale.Text = (objNode.FindChildLeaf("Scale")?.SingleValue ?? 1f).ToString("F2");
+        PropHeader.Text = $"Object (Type {PropObjType.Text})";
+    }
+
+    private void DeselectObject()
+    {
+        _vm.Document.SelectedObject = null;
+        ObjPropsPanel.IsVisible = false;
+        PropHeader.Text = "No selection";
+    }
+
+    private void MoveSelectedObject(float x, float y, float z)
+    {
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        obj.FindChildLeaf("X")?.SetSingle(x);
+        obj.FindChildLeaf("Y")?.SetSingle(y);
+        obj.FindChildLeaf("Z")?.SetSingle(z);
+
+        PropObjX.Text = x.ToString("F2");
+        PropObjY.Text = y.ToString("F2");
+        PropObjZ.Text = z.ToString("F2");
+
+        _vm.Document.NotifyWorldChanged();
+    }
+
+    private void AdjustObjectHeight(int screenX, int screenY, int vpW, int vpH)
+    {
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        // Compute new Z by projecting the ray onto the vertical axis through the object
+        float fovRad = Viewport.Camera.FieldOfView / 360f * 2f * MathF.PI;
+        float fovFactor = 2f * MathF.Tan(fovRad / 2f) / vpH;
+        float x2 = -(screenX - vpW / 2f) * fovFactor;
+        float y2 = -(screenY - vpH / 2f) * fovFactor;
+
+        var ray = Viewport.Camera.Forward + x2 * Viewport.Camera.Right + y2 * Viewport.Camera.Up;
+        var eye = Viewport.Camera.Position;
+
+        float objX = obj.FindChildLeaf("X")?.SingleValue ?? 0;
+        float objY = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
+        float objZ = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+
+        // Project ray to find where it's closest to the object's vertical line
+        float denom = ray.X * ray.X + ray.Y * ray.Y;
+        if (denom < 1e-9f) return;
+
+        float s = ((objX - eye.X) * (ray.Z * ray.X)
+                 + (objY - eye.Y) * (ray.Z * ray.Y)
+                 + (objZ - eye.Z) * (-denom))
+                 / denom;
+
+        float newZ = s + objZ;
+        obj.FindChildLeaf("Z")?.SetSingle(newZ);
+        PropObjZ.Text = newZ.ToString("F2");
+
+        _vm.Document.NotifyWorldChanged();
+    }
+
+    private void ShowObjectContextMenu()
+    {
+        var menu = new Avalonia.Controls.ContextMenu();
+        var hasSelection = _vm.Document.SelectedObject != null;
+
+        if (hasSelection)
+        {
+            var deleteItem = new Avalonia.Controls.MenuItem { Header = "Delete Object" };
+            deleteItem.Click += (_, _) =>
+            {
+                _vm.Document.RemoveSelectedObject();
+                DeselectObject();
+                RefreshViewport();
+            };
+            menu.Items.Add(deleteItem);
+
+            var copyItem = new Avalonia.Controls.MenuItem { Header = "Copy Object Here" };
+            copyItem.Click += (_, _) => CreateObjectCopy();
+            menu.Items.Add(copyItem);
+        }
+
+        if (_newObjPosition.HasValue)
+        {
+            var createItem = new Avalonia.Controls.MenuItem { Header = "Create New Object..." };
+            createItem.Click += async (_, _) => await CreateNewObjectAtPosition();
+            menu.Items.Add(createItem);
+        }
+
+        if (menu.Items.Count > 0)
+        {
+            menu.PlacementTarget = ViewportPanel;
+            menu.Open(ViewportPanel);
+        }
+    }
+
+    private void CreateObjectCopy()
+    {
+        var src = _vm.Document.SelectedObject;
+        if (src == null || !_newObjPosition.HasValue) return;
+
+        int typeId = src.FindChildLeaf("Type")?.Int32Value ?? 0;
+        float angle = src.FindChildLeaf("Angle")?.SingleValue ?? 0;
+        var pos = _newObjPosition.Value;
+
+        var newObj = _vm.Document.AddObject(typeId, pos.X, pos.Y, pos.Z, angle);
+        if (newObj != null)
+        {
+            // Copy scale if present
+            var scaleSrc = src.FindChildLeaf("Scale");
+            if (scaleSrc != null)
+                newObj.AddSingle("Scale", scaleSrc.SingleValue);
+
+            SelectObject(newObj);
+        }
+        RefreshViewport();
+    }
+
+    private async Task CreateNewObjectAtPosition()
+    {
+        if (!_newObjPosition.HasValue) return;
+
+        // Prompt for object type ID
+        var dialog = new Window
+        {
+            Title = "New Object",
+            Width = 300, Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(16), Spacing = 8 };
+        panel.Children.Add(new TextBlock { Text = "Object Type ID:" });
+        var txtType = new TextBox { Text = "679" };
+        panel.Children.Add(txtType);
+        var btnOk = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+        panel.Children.Add(btnOk);
+        dialog.Content = panel;
+
+        int? typeId = null;
+        btnOk.Click += (_, _) =>
+        {
+            if (int.TryParse(txtType.Text, out int id))
+                typeId = id;
+            dialog.Close();
+        };
+
+        await dialog.ShowDialog(this);
+        if (typeId.HasValue && typeId.Value > 0)
+        {
+            var pos = _newObjPosition.Value;
+            var newObj = _vm.Document.AddObject(typeId.Value, pos.X, pos.Y, pos.Z);
+            if (newObj != null)
+                SelectObject(newObj);
+            RefreshViewport();
+        }
     }
 
     #endregion

@@ -63,6 +63,12 @@ public class WorldDocument
     /// <summary>Raises TerrainChanged for external callers.</summary>
     public void NotifyTerrainChanged() => TerrainChanged?.Invoke();
 
+    public void NotifyWorldChanged()
+    {
+        IsModified = true;
+        WorldChanged?.Invoke();
+    }
+
     /// <summary>
     /// Loads a world .bin file and its associated terrain .gti.
     /// </summary>
@@ -260,7 +266,8 @@ public class WorldDocument
                 ModelId = typeLeaf.Int32Value,
                 Position = new Vector3(x, y, z),
                 Rotation = new Vector3(ax, ay, az),
-                Scale = scale
+                Scale = scale,
+                SourceNode = obj
             });
         }
 

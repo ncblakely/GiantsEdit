@@ -1,4 +1,5 @@
 using System.Numerics;
+using GiantsEdit.Core.DataModel;
 
 namespace GiantsEdit.Core.Rendering;
 
@@ -68,6 +69,7 @@ public struct ObjectInstance
     public Vector3 Position;
     public Vector3 Rotation; // Euler angles (radians)
     public float Scale;
+    public TreeNode? SourceNode;
 }
 
 /// <summary>

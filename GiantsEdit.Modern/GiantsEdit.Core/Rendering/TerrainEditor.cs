@@ -688,4 +688,104 @@ public static class TerrainEditor
     }
 
     #endregion
+
+    #region Object picking
+
+    /// <summary>
+    /// Picks the nearest object hit by a screen ray using ray-sphere intersection.
+    /// Matches the Delphi checkobjecthit logic.
+    /// </summary>
+    public static ObjectInstance? PickObject(
+        int screenX, int screenY,
+        int viewportWidth, int viewportHeight,
+        EditorCamera camera,
+        TerrainData? terrain,
+        IReadOnlyList<ObjectInstance> objects,
+        float hitRadius = 50f)
+    {
+        float fovRad = camera.FieldOfView / 360f * 2f * MathF.PI;
+        float fovFactor = 2f * MathF.Tan(fovRad / 2f) / viewportHeight;
+        float x2 = -(screenX - viewportWidth / 2f) * fovFactor;
+        float y2 = -(screenY - viewportHeight / 2f) * fovFactor;
+
+        Vector3 ray = camera.Forward + x2 * camera.Right + y2 * camera.Up;
+        Vector3 eye = camera.Position;
+
+        // Determine max hit distance from terrain (objects behind terrain are not selectable)
+        float maxDist = 1e20f;
+        if (terrain != null)
+        {
+            var terrainHit = Raytrace(eye, ray, terrain);
+            if (terrainHit.Hit)
+                maxDist = terrainHit.Distance;
+        }
+
+        float bestDist = maxDist;
+        ObjectInstance? bestObj = null;
+
+        foreach (var obj in objects)
+        {
+            // Ray-sphere intersection: sphere centered at obj.Position, radius = hitRadius
+            Vector3 oc = eye - obj.Position;
+            float a = Vector3.Dot(ray, ray);
+            float b = 2f * Vector3.Dot(oc, ray);
+            float c = Vector3.Dot(oc, oc) - hitRadius * hitRadius;
+            float discriminant = b * b - 4f * a * c;
+
+            if (discriminant < 0) continue;
+
+            float sqrtD = MathF.Sqrt(discriminant);
+            float t1 = (-b - sqrtD) / (2f * a);
+            float t2 = (-b + sqrtD) / (2f * a);
+
+            if (t2 < 0) continue; // Sphere is behind camera
+            float t = t1 < 0 ? t2 : t1; // Use nearest positive intersection
+
+            if (t < bestDist)
+            {
+                bestDist = t;
+                bestObj = obj;
+            }
+        }
+
+        return bestObj;
+    }
+
+    /// <summary>
+    /// Gets the world-space position where a screen ray intersects the terrain surface,
+    /// with height interpolated at the hit point. Used for placing objects.
+    /// </summary>
+    public static Vector3? GetWorldHitPosition(
+        int screenX, int screenY,
+        int viewportWidth, int viewportHeight,
+        EditorCamera camera,
+        TerrainData terrain)
+    {
+        var hit = ScreenToTerrain(screenX, screenY, viewportWidth, viewportHeight, camera, terrain);
+        if (!hit.Hit) return null;
+
+        // Convert grid coords to world coords
+        float worldX = hit.GridX * terrain.Header.Stretch + terrain.Header.XOffset;
+        float worldY = hit.GridY * terrain.Header.Stretch + terrain.Header.YOffset;
+
+        // Interpolate height
+        int ix = (int)hit.GridX;
+        int iy = (int)hit.GridY;
+        float s = hit.GridX - ix;
+        float t = hit.GridY - iy;
+        int xl = terrain.Width;
+        int x0 = Math.Clamp(ix, 0, xl - 1);
+        int x1 = Math.Clamp(ix + 1, 0, xl - 1);
+        int y0 = Math.Clamp(iy, 0, terrain.Height - 1);
+        int y1 = Math.Clamp(iy + 1, 0, terrain.Height - 1);
+
+        float worldZ = terrain.Heights[y0 * xl + x0] * (1 - s) * (1 - t)
+                     + terrain.Heights[y0 * xl + x1] * s * (1 - t)
+                     + terrain.Heights[y1 * xl + x0] * (1 - s) * t
+                     + terrain.Heights[y1 * xl + x1] * s * t;
+
+        return new Vector3(worldX, worldY, worldZ);
+    }
+
+    #endregion
 }
