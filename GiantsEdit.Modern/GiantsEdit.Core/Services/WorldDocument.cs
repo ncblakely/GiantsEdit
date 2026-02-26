@@ -289,8 +289,87 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Builds terrain render data for the current terrain.
+    /// Builds spline line segments from waypoint objects (types 1052 and 1162).
+    /// Matches the Delphi Draww spline logic: objects are grouped by (type base + AIMode),
+    /// ordered by TeamID, and consecutive valid points are connected with lines.
     /// </summary>
+    public List<SplineLine> GetSplineLines()
+    {
+        // splineids[0..511]: each slot is a list of points indexed by TeamID
+        var splinePoints = new Dictionary<int, SortedDictionary<int, Vector3>>();
+
+        void CollectFrom(TreeNode? root)
+        {
+            var objContainer = root?.FindChildNode("<Objects>");
+            if (objContainer == null) return;
+
+            foreach (var obj in objContainer.EnumerateNodes())
+            {
+                if (obj.Name != "Object") continue;
+                int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+                if (typeId != 1052 && typeId != 1162) continue;
+
+                int groupBase = typeId == 1052 ? 0 : 256;
+                int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+                int groupId = groupBase + aiMode;
+                int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
+
+                float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
+                float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
+                float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+
+                if (!splinePoints.TryGetValue(groupId, out var points))
+                {
+                    points = new SortedDictionary<int, Vector3>();
+                    splinePoints[groupId] = points;
+                }
+                points[teamId] = new Vector3(x, y, z);
+            }
+        }
+
+        CollectFrom(_worldRoot);
+
+        var result = new List<SplineLine>();
+
+        // Build line segments for each color group
+        BuildSplineGroup(splinePoints, 0, 255, new Vector3(1f, 1f, 1f), result);       // Type 1052: white
+        BuildSplineGroup(splinePoints, 256, 511, new Vector3(1f, 0.75f, 0.5f), result); // Type 1162: orange
+
+        return result;
+    }
+
+    private static void BuildSplineGroup(
+        Dictionary<int, SortedDictionary<int, Vector3>> splinePoints,
+        int startGroup, int endGroup, Vector3 color, List<SplineLine> result)
+    {
+        var verts = new List<float>();
+
+        for (int g = startGroup; g <= endGroup; g++)
+        {
+            if (!splinePoints.TryGetValue(g, out var points)) continue;
+
+            Vector3? prev = null;
+            foreach (var (_, pos) in points)
+            {
+                if (prev.HasValue)
+                {
+                    verts.Add(prev.Value.X); verts.Add(prev.Value.Y); verts.Add(prev.Value.Z);
+                    verts.Add(pos.X); verts.Add(pos.Y); verts.Add(pos.Z);
+                }
+                prev = pos;
+            }
+        }
+
+        if (verts.Count > 0)
+        {
+            result.Add(new SplineLine
+            {
+                Vertices = verts.ToArray(),
+                PointCount = verts.Count / 3,
+                Color = color
+            });
+        }
+    }
     public TerrainRenderData? BuildTerrainRenderData()
     {
         if (_terrain == null)

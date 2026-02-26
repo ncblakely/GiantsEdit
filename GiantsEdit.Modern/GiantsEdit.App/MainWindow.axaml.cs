@@ -730,7 +730,8 @@ public partial class MainWindow : Window
             ShowSea = _showSea,
             ShowObjects = _showObjects,
             ShowTerrainMesh = _viewTerrainMesh,
-            Objects = _vm.Document.GetObjectInstances()
+            Objects = _vm.Document.GetObjectInstances(),
+            SplineLines = _vm.Document.GetSplineLines()
         };
     }
 

@@ -53,6 +53,10 @@ public sealed class OpenGlRenderer : IRenderer
     private readonly Dictionary<int, int> _mapObjWrap = new();
     private bool _mapObjsLoaded;
 
+    // Spline lines (dynamic, rebuilt each frame)
+    private uint _lineVao;
+    private uint _lineVbo;
+
     /// <summary>
     /// Sets the GL context. Must be called before Init().
     /// </summary>
@@ -61,7 +65,7 @@ public sealed class OpenGlRenderer : IRenderer
         _gl = gl;
     }
 
-    public void Init(int viewportWidth, int viewportHeight)
+    public unsafe void Init(int viewportWidth, int viewportHeight)
     {
         _viewportWidth = viewportWidth;
         _viewportHeight = viewportHeight;
@@ -85,6 +89,15 @@ public sealed class OpenGlRenderer : IRenderer
 
         BuildDome(10240f);
         BuildSea(10240f);
+
+        // Create reusable line VAO/VBO for splines
+        _lineVao = _gl.GenVertexArray();
+        _lineVbo = _gl.GenBuffer();
+        _gl.BindVertexArray(_lineVao);
+        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _lineVbo);
+        _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
+        _gl.EnableVertexAttribArray(0);
+        _gl.BindVertexArray(0);
     }
 
     public void Resize(int width, int height)
@@ -181,6 +194,32 @@ public sealed class OpenGlRenderer : IRenderer
                     DrawElementsType.UnsignedInt, null);
             }
             _gl.Enable(EnableCap.CullFace);
+        }
+
+        // Draw spline lines
+        if (state.ShowObjects && state.SplineLines.Count > 0)
+        {
+            _gl.UseProgram(_solidShader);
+            SetUniformMatrix(_solidMvpLoc, vp);
+            _gl.Disable(EnableCap.DepthTest);
+            _gl.BindVertexArray(_lineVao);
+
+            foreach (var spline in state.SplineLines)
+            {
+                if (spline.PointCount < 2) continue;
+
+                // Upload line vertices dynamically
+                _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _lineVbo);
+                fixed (float* p = spline.Vertices)
+                    _gl.BufferData(BufferTargetARB.ArrayBuffer,
+                        (nuint)(spline.Vertices.Length * sizeof(float)),
+                        p, BufferUsageARB.DynamicDraw);
+
+                _gl.Uniform4(_solidColorLoc, spline.Color.X, spline.Color.Y, spline.Color.Z, 1.0f);
+                _gl.DrawArrays(PrimitiveType.Lines, 0, (uint)spline.PointCount);
+            }
+
+            _gl.Enable(EnableCap.DepthTest);
         }
 
         _gl.BindVertexArray(0);
@@ -376,6 +415,9 @@ public sealed class OpenGlRenderer : IRenderer
 
         if (_seaVao != 0) _gl.DeleteVertexArray(_seaVao);
         if (_seaVbo != 0) _gl.DeleteBuffer(_seaVbo);
+
+        if (_lineVao != 0) _gl.DeleteVertexArray(_lineVao);
+        if (_lineVbo != 0) _gl.DeleteBuffer(_lineVbo);
 
         foreach (var m in _models.Values)
         {

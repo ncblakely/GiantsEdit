@@ -62,6 +62,20 @@ public class RenderState
 
     // Dome
     public float DomeRadius { get; init; } = 10240f;
+
+    /// <summary>Spline line segments connecting waypoint objects.</summary>
+    public List<SplineLine> SplineLines { get; init; } = [];
+}
+
+/// <summary>
+/// A batch of line segments sharing the same color.
+/// Vertices are pairs of endpoints: [p0, p1, p2, p3, ...] drawn as GL_LINES.
+/// </summary>
+public class SplineLine
+{
+    public required float[] Vertices { get; init; } // 3 floats per point (x,y,z)
+    public int PointCount { get; init; }
+    public Vector3 Color { get; init; } = Vector3.One;
 }
 
 /// <summary>
