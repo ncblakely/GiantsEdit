@@ -29,6 +29,10 @@ public partial class MainWindow : Window
     private float _currentHeight = -40f;
     private bool _heightPanelUpdating;
 
+    // Light editing state
+    private byte _paintR = 255, _paintG = 255, _paintB = 255;
+    private bool _lightPanelUpdating;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -167,6 +171,15 @@ public partial class MainWindow : Window
             _heightPanelUpdating = false;
         };
 
+        // Light editor panel
+        SliderR.PropertyChanged += (_, e) => { if (e.Property.Name == "Value") OnLightSliderChanged(); };
+        SliderG.PropertyChanged += (_, e) => { if (e.Property.Name == "Value") OnLightSliderChanged(); };
+        SliderB.PropertyChanged += (_, e) => { if (e.Property.Name == "Value") OnLightSliderChanged(); };
+        TxtColorR.TextChanged += (_, _) => OnLightTextChanged();
+        TxtColorG.TextChanged += (_, _) => OnLightTextChanged();
+        TxtColorB.TextChanged += (_, _) => OnLightTextChanged();
+        ColorSwatch.PointerPressed += (_, _) => UpdateLightColor(_paintR, _paintG, _paintB);
+
         // Property panel
         BtnApplyProps.Click += (_, _) => ApplyObjectProperties();
         BtnDeleteObj.Click += (_, _) =>
@@ -227,6 +240,7 @@ public partial class MainWindow : Window
         _vm.Document.CurrentMode = mode;
         _vm.CurrentMode = mode;
         HeightPanel.IsVisible = mode == EditMode.HeightEdit;
+        LightPanel.IsVisible = mode == EditMode.LightPaint;
         StatusText.Text = $"Mode: {mode}";
     }
 
@@ -242,6 +256,55 @@ public partial class MainWindow : Window
     {
         if (_maximumHeight > _minimumHeight)
             SliderHeight.Value = (_currentHeight - _minimumHeight) / (_maximumHeight - _minimumHeight) * 1000;
+    }
+
+    #endregion
+
+    #region Light panel
+
+    private void OnLightSliderChanged()
+    {
+        if (_lightPanelUpdating) return;
+        _lightPanelUpdating = true;
+        _paintR = (byte)Math.Clamp((int)SliderR.Value, 0, 255);
+        _paintG = (byte)Math.Clamp((int)SliderG.Value, 0, 255);
+        _paintB = (byte)Math.Clamp((int)SliderB.Value, 0, 255);
+        TxtColorR.Text = _paintR.ToString();
+        TxtColorG.Text = _paintG.ToString();
+        TxtColorB.Text = _paintB.ToString();
+        UpdateColorSwatch();
+        _lightPanelUpdating = false;
+    }
+
+    private void OnLightTextChanged()
+    {
+        if (_lightPanelUpdating) return;
+        if (!byte.TryParse(TxtColorR.Text, out byte r)) return;
+        if (!byte.TryParse(TxtColorG.Text, out byte g)) return;
+        if (!byte.TryParse(TxtColorB.Text, out byte b)) return;
+        _lightPanelUpdating = true;
+        _paintR = r; _paintG = g; _paintB = b;
+        SliderR.Value = r; SliderG.Value = g; SliderB.Value = b;
+        UpdateColorSwatch();
+        _lightPanelUpdating = false;
+    }
+
+    private void UpdateLightColor(byte r, byte g, byte b)
+    {
+        _lightPanelUpdating = true;
+        _paintR = r; _paintG = g; _paintB = b;
+        SliderR.Value = r; SliderG.Value = g; SliderB.Value = b;
+        TxtColorR.Text = r.ToString();
+        TxtColorG.Text = g.ToString();
+        TxtColorB.Text = b.ToString();
+        UpdateColorSwatch();
+        _lightPanelUpdating = false;
+    }
+
+    private void UpdateColorSwatch()
+    {
+        ColorSwatch.Background = new Avalonia.Media.SolidColorBrush(
+            Avalonia.Media.Color.FromRgb(_paintR, _paintG, _paintB));
     }
 
     #endregion
@@ -350,7 +413,23 @@ public partial class MainWindow : Window
                 break;
 
             case EditMode.LightPaint:
-                StatusText.Text = $"Light paint at ({hit.GridX:F1}, {hit.GridY:F1}) — not yet implemented";
+                if (rightButton)
+                {
+                    // Right-click picks light color (matches Delphi: sets ColorPanel)
+                    var (pr, pg, pb) = TerrainEditor.PickLight(terrain, hit.GridX, hit.GridY,
+                        _vm.Document.BrushRadius / terrain.Header.Stretch);
+                    UpdateLightColor(pr, pg, pb);
+                    StatusText.Text = $"Picked color: R={pr} G={pg} B={pb}";
+                }
+                else if (leftButton)
+                {
+                    // Left-click paints light
+                    TerrainEditor.ApplyLightBrush(terrain, hit.GridX, hit.GridY,
+                        _paintR, _paintG, _paintB,
+                        _vm.Document.BrushRadius / terrain.Header.Stretch,
+                        _vm.Document.BrushStrength);
+                    _vm.Document.NotifyTerrainChanged();
+                }
                 break;
 
             case EditMode.TriangleEdit:

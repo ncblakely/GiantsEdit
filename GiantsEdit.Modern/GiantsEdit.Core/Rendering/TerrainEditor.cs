@@ -325,4 +325,104 @@ public static class TerrainEditor
         Blend(ix, iy + 1, (1 - s) * t * alpha);
         Blend(ix + 1, iy + 1, s * t * alpha);
     }
+
+    /// <summary>
+    /// Applies a light/color brush at the given grid position. Matches Delphi PaintTerrain.
+    /// </summary>
+    public static void ApplyLightBrush(
+        TerrainData terrain,
+        float gridX, float gridY,
+        byte colorR, byte colorG, byte colorB,
+        float brushRadius,
+        float brushAlpha)
+    {
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+        int ix = (int)gridX;
+        int iy = (int)gridY;
+        float s = gridX - ix;
+        float t = gridY - iy;
+
+        if (brushRadius <= 0)
+        {
+            int rx = Math.Clamp((int)MathF.Round(gridX), 0, xl - 1);
+            int ry = Math.Clamp((int)MathF.Round(gridY), 0, yl - 1);
+            int ci = ry * xl + rx;
+            BlendLight(terrain.LightMap, ci, colorR, colorG, colorB, brushAlpha);
+        }
+        else if (brushRadius <= 1)
+        {
+            void BlendAt(int cx, int cy, float a)
+            {
+                if (cx < 0 || cx >= xl || cy < 0 || cy >= yl) return;
+                BlendLight(terrain.LightMap, cy * xl + cx, colorR, colorG, colorB, a);
+            }
+            BlendAt(ix, iy, (1 - s) * (1 - t) * brushAlpha);
+            BlendAt(ix + 1, iy, s * (1 - t) * brushAlpha);
+            BlendAt(ix, iy + 1, (1 - s) * t * brushAlpha);
+            BlendAt(ix + 1, iy + 1, s * t * brushAlpha);
+        }
+        else
+        {
+            int range = (int)MathF.Round(brushRadius * 3);
+            float invSigmaSq = 1f / (brushRadius / 2f * (brushRadius / 2f));
+
+            for (int dy = -range; dy <= range; dy++)
+            {
+                int cy = iy + dy;
+                if (cy < 0 || cy >= yl) continue;
+                for (int dx = -range; dx <= range; dx++)
+                {
+                    int cx = ix + dx;
+                    if (cx < 0 || cx >= xl) continue;
+
+                    float distSq = (cx - gridX) * (cx - gridX) + (cy - gridY) * (cy - gridY);
+                    float a = MathF.Exp(-distSq * invSigmaSq) * brushAlpha;
+                    BlendLight(terrain.LightMap, cy * xl + cx, colorR, colorG, colorB, a);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Picks the light color at the given grid position (right-click in light mode).
+    /// Returns (R, G, B).
+    /// </summary>
+    public static (byte R, byte G, byte B) PickLight(TerrainData terrain, float gridX, float gridY, float brushRadius)
+    {
+        int xl = terrain.Width;
+        int ix = (int)gridX;
+        int iy = (int)gridY;
+
+        if (brushRadius <= 0)
+        {
+            int rx = Math.Clamp((int)MathF.Round(gridX), 0, xl - 1);
+            int ry = Math.Clamp((int)MathF.Round(gridY), 0, terrain.Height - 1);
+            int ci = ry * xl + rx;
+            return (terrain.LightMap[ci * 3], terrain.LightMap[ci * 3 + 1], terrain.LightMap[ci * 3 + 2]);
+        }
+
+        float s = gridX - ix;
+        float t = gridY - iy;
+        int x0 = Math.Clamp(ix, 0, xl - 1);
+        int x1 = Math.Clamp(ix + 1, 0, xl - 1);
+        int y0 = Math.Clamp(iy, 0, terrain.Height - 1);
+        int y1 = Math.Clamp(iy + 1, 0, terrain.Height - 1);
+
+        byte Interp(int ch) => (byte)Math.Clamp((int)MathF.Round(
+            terrain.LightMap[(y0 * xl + x0) * 3 + ch] * (1 - s) * (1 - t)
+          + terrain.LightMap[(y0 * xl + x1) * 3 + ch] * s * (1 - t)
+          + terrain.LightMap[(y1 * xl + x0) * 3 + ch] * (1 - s) * t
+          + terrain.LightMap[(y1 * xl + x1) * 3 + ch] * s * t), 0, 255);
+
+        return (Interp(0), Interp(1), Interp(2));
+    }
+
+    private static void BlendLight(byte[] lightMap, int cellIdx, byte r, byte g, byte b, float a)
+    {
+        int i = cellIdx * 3;
+        lightMap[i + 0] = (byte)Math.Clamp((int)MathF.Round(lightMap[i + 0] * (1 - a) + r * a), 0, 255);
+        lightMap[i + 1] = (byte)Math.Clamp((int)MathF.Round(lightMap[i + 1] * (1 - a) + g * a), 0, 255);
+        lightMap[i + 2] = (byte)Math.Clamp((int)MathF.Round(lightMap[i + 2] * (1 - a) + b * a), 0, 255);
+    }
 }

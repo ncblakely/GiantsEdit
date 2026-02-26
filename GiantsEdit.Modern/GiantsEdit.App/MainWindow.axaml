@@ -126,6 +126,26 @@
             <TextBox x:Name="TxtCurrentHeight" Width="70" Text="-40" VerticalAlignment="Center" />
         </StackPanel>
 
+        <!-- Light Editor Panel (visible in light painting mode) -->
+        <StackPanel x:Name="LightPanel" DockPanel.Dock="Top" Orientation="Horizontal"
+                    Background="#252525" Height="40" Spacing="4" IsVisible="False">
+            <Border x:Name="ColorSwatch" Width="32" Height="28" CornerRadius="3"
+                    Background="White" Margin="8,0,4,0" VerticalAlignment="Center"
+                    Cursor="Hand" />
+            <TextBlock Text="R:" VerticalAlignment="Center" Foreground="#F88" Margin="4,0,2,0"/>
+            <Slider x:Name="SliderR" Minimum="0" Maximum="255" Value="255" Width="100"
+                    VerticalAlignment="Center" />
+            <TextBox x:Name="TxtColorR" Width="40" Text="255" VerticalAlignment="Center" />
+            <TextBlock Text="G:" VerticalAlignment="Center" Foreground="#8F8" Margin="4,0,2,0"/>
+            <Slider x:Name="SliderG" Minimum="0" Maximum="255" Value="255" Width="100"
+                    VerticalAlignment="Center" />
+            <TextBox x:Name="TxtColorG" Width="40" Text="255" VerticalAlignment="Center" />
+            <TextBlock Text="B:" VerticalAlignment="Center" Foreground="#88F" Margin="4,0,2,0"/>
+            <Slider x:Name="SliderB" Minimum="0" Maximum="255" Value="255" Width="100"
+                    VerticalAlignment="Center" />
+            <TextBox x:Name="TxtColorB" Width="40" Text="255" VerticalAlignment="Center" />
+        </StackPanel>
+
         <!-- Status Bar -->
         <Panel DockPanel.Dock="Bottom" Height="24" Background="#1E1E1E">
             <TextBlock x:Name="StatusText" Foreground="#999"
