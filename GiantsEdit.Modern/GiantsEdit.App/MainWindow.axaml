@@ -1,0 +1,119 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ctrl="using:GiantsEdit.App.Controls"
+        xmlns:vm="using:GiantsEdit.App.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
+        x:Class="GiantsEdit.App.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="GiantsEdit" Width="1280" Height="720">
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New World" x:Name="MenuNewWorld" />
+                <MenuItem Header="_Open World..." x:Name="MenuOpenWorld" />
+                <MenuItem Header="_Save World" x:Name="MenuSaveWorld" />
+                <MenuItem Header="Save World _As..." x:Name="MenuSaveWorldAs" />
+                <Separator/>
+                <MenuItem Header="E_xit" x:Name="MenuExit" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Terrain" x:Name="MenuShowTerrain" />
+                <MenuItem Header="_Dome" x:Name="MenuShowDome" />
+                <MenuItem Header="_Sea" x:Name="MenuShowSea" />
+                <MenuItem Header="_Objects" x:Name="MenuShowObjects" />
+                <Separator/>
+                <MenuItem Header="Reset _Camera" x:Name="MenuResetCamera" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#2D2D2D" Height="36" Spacing="2">
+            <ToggleButton x:Name="BtnCamera" Content="📷 Camera" IsChecked="True"
+                          Width="90" Margin="4,4,0,4" />
+            <ToggleButton x:Name="BtnHeight" Content="⛰ Height"
+                          Width="90" Margin="2,4,0,4" />
+            <ToggleButton x:Name="BtnLight" Content="💡 Light"
+                          Width="90" Margin="2,4,0,4" />
+            <ToggleButton x:Name="BtnTriangle" Content="△ Triangle"
+                          Width="90" Margin="2,4,0,4" />
+            <ToggleButton x:Name="BtnObject" Content="📦 Object"
+                          Width="90" Margin="2,4,0,4" />
+            <Separator Width="1" Background="#555" Margin="8,4" />
+            <TextBlock Text="Radius:" VerticalAlignment="Center" Foreground="#AAA" Margin="4,0"/>
+            <Slider x:Name="SliderRadius" Minimum="5" Maximum="200" Value="50" Width="120"
+                    VerticalAlignment="Center" />
+            <TextBlock Text="Strength:" VerticalAlignment="Center" Foreground="#AAA" Margin="8,0,4,0"/>
+            <Slider x:Name="SliderStrength" Minimum="0.01" Maximum="1.0" Value="0.5" Width="120"
+                    VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Status Bar -->
+        <Panel DockPanel.Dock="Bottom" Height="24" Background="#1E1E1E">
+            <TextBlock x:Name="StatusText" Foreground="#999"
+                       VerticalAlignment="Center" Margin="8,0"
+                       Text="Ready" />
+        </Panel>
+
+        <!-- Main content: TreeView left, Viewport center, Properties right -->
+        <Grid ColumnDefinitions="250,Auto,*,Auto,220">
+            <!-- Tree panel -->
+            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="World Tree"
+                               Foreground="#CCC" Margin="8,4" FontWeight="Bold"/>
+                    <TreeView x:Name="WorldTree" Margin="4" />
+                </DockPanel>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="4" Background="#333" />
+
+            <!-- 3D Viewport (Panel provides hit-test surface for mouse input) -->
+            <Panel Grid.Column="2" x:Name="ViewportPanel" Background="Transparent">
+                <ctrl:OpenGlViewport x:Name="Viewport" />
+            </Panel>
+
+            <GridSplitter Grid.Column="3" Width="4" Background="#333" />
+
+            <!-- Property Panel -->
+            <Border Grid.Column="4" Background="#1E1E1E" BorderBrush="#333" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Properties"
+                               Foreground="#CCC" Margin="8,4" FontWeight="Bold"/>
+                    <ScrollViewer>
+                        <StackPanel x:Name="PropertyPanel" Margin="8" Spacing="6">
+                            <TextBlock x:Name="PropHeader" Foreground="#AAA" Text="No selection" />
+
+                            <StackPanel x:Name="ObjPropsPanel" IsVisible="False" Spacing="4">
+                                <TextBlock Foreground="#888" Text="Type:" />
+                                <TextBox x:Name="PropObjType" IsReadOnly="True" />
+
+                                <TextBlock Foreground="#888" Text="X:" />
+                                <TextBox x:Name="PropObjX" />
+
+                                <TextBlock Foreground="#888" Text="Y:" />
+                                <TextBox x:Name="PropObjY" />
+
+                                <TextBlock Foreground="#888" Text="Z:" />
+                                <TextBox x:Name="PropObjZ" />
+
+                                <TextBlock Foreground="#888" Text="Angle:" />
+                                <TextBox x:Name="PropObjAngle" />
+
+                                <TextBlock Foreground="#888" Text="Scale:" />
+                                <TextBox x:Name="PropObjScale" />
+
+                                <Button x:Name="BtnApplyProps" Content="Apply" HorizontalAlignment="Stretch" />
+                                <Button x:Name="BtnDeleteObj" Content="Delete Object"
+                                        HorizontalAlignment="Stretch" Foreground="OrangeRed" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

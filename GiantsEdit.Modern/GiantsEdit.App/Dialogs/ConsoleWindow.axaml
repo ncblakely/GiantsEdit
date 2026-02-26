@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.ConsoleWindow"
+        Title="Console" Width="600" Height="300"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="4" Spacing="4">
+            <Button x:Name="BtnClear" Content="Clear" Width="60" />
+        </StackPanel>
+        <TextBox x:Name="LogText" IsReadOnly="True" AcceptsReturn="True"
+                 FontFamily="Consolas,Courier New,monospace" FontSize="12"
+                 TextWrapping="Wrap" />
+    </DockPanel>
+</Window>

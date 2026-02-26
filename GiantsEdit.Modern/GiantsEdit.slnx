@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="GiantsEdit.App/GiantsEdit.App.csproj" />
+  <Project Path="GiantsEdit.Core.Tests/GiantsEdit.Core.Tests.csproj" />
+  <Project Path="GiantsEdit.Core/GiantsEdit.Core.csproj" />
+</Solution>

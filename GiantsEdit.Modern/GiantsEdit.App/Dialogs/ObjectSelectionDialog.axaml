@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.ObjectSelectionDialog"
+        Title="Select Object Type" Width="500" Height="500"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="8">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Filter:" VerticalAlignment="Center" />
+            <TextBox x:Name="TxtFilter" Width="200" Watermark="Search objects..." />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="8" Margin="0,8,0,0">
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" />
+            <Button x:Name="BtnOk" Content="Select" Width="80" />
+        </StackPanel>
+
+        <ListBox x:Name="ObjectList" />
+    </DockPanel>
+</Window>
