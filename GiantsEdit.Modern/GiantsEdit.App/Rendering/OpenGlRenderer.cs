@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Numerics;
 using GiantsEdit.Core.Rendering;
 using Silk.NET.OpenGL;
@@ -45,10 +44,8 @@ public sealed class OpenGlRenderer : IRenderer
     private int _modelMvpLoc;
     private int _modelModelLoc;
 
-    // Models
     private readonly Dictionary<int, ModelGpuData> _models = new();
     private int _nextModelId;
-    private bool _loggedFirstRender;
 
     /// <summary>
     /// Sets the GL context. Must be called before Init().
@@ -62,17 +59,6 @@ public sealed class OpenGlRenderer : IRenderer
     {
         _viewportWidth = viewportWidth;
         _viewportHeight = viewportHeight;
-
-        // Log GL context info for diagnostics
-        var version = _gl.GetStringS(StringName.Version);
-        var renderer = _gl.GetStringS(StringName.Renderer);
-        var vendor = _gl.GetStringS(StringName.Vendor);
-        var glsl = _gl.GetStringS(StringName.ShadingLanguageVersion);
-        Debug.WriteLine($"[GL] Version:  {version}");
-        Debug.WriteLine($"[GL] Renderer: {renderer}");
-        Debug.WriteLine($"[GL] Vendor:   {vendor}");
-        Debug.WriteLine($"[GL] GLSL:     {glsl}");
-        Debug.WriteLine($"[GL] Viewport: {viewportWidth}x{viewportHeight}");
 
         _gl.Enable(EnableCap.DepthTest);
         _gl.DepthFunc(DepthFunction.Lequal);
@@ -91,8 +77,6 @@ public sealed class OpenGlRenderer : IRenderer
         _modelMvpLoc = _gl.GetUniformLocation(_modelShader, "uMVP");
         _modelModelLoc = _gl.GetUniformLocation(_modelShader, "uModel");
 
-        Debug.WriteLine($"[GL] Uniform locs: terrainMVP={_terrainMvpLoc} solidMVP={_solidMvpLoc} solidColor={_solidColorLoc} modelMVP={_modelMvpLoc} modelModel={_modelModelLoc}");
-
         BuildDome(10240f);
         BuildSea(10240f);
     }
@@ -108,25 +92,7 @@ public sealed class OpenGlRenderer : IRenderer
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        // System.Numerics uses row-major, row-vector convention: v * View * Projection
         var vp = state.ViewMatrix * state.ProjectionMatrix;
-
-        bool diag = !_loggedFirstRender;
-        if (diag)
-        {
-            _loggedFirstRender = true;
-            Debug.WriteLine($"[Render] ShowDome={state.ShowDome} ShowSea={state.ShowSea} ShowTerrain={state.ShowTerrain} ShowObjects={state.ShowObjects}");
-            Debug.WriteLine($"[Render] DomeIdx={_domeIndexCount} SeaVert={_seaVertexCount} TerrainIdx={_terrainIndexCount}");
-            Debug.WriteLine($"[Render] Camera pos={state.CameraPosition}");
-            Debug.WriteLine($"[Render] View[0]={state.ViewMatrix.M11:F3},{state.ViewMatrix.M12:F3},{state.ViewMatrix.M13:F3},{state.ViewMatrix.M14:F3}");
-            Debug.WriteLine($"[Render] Proj[0]={state.ProjectionMatrix.M11:F3},{state.ProjectionMatrix.M12:F3},{state.ProjectionMatrix.M13:F3},{state.ProjectionMatrix.M14:F3}");
-            Debug.WriteLine($"[Render] VP row0={vp.M11:F3},{vp.M12:F3},{vp.M13:F3},{vp.M14:F3}");
-            Debug.WriteLine($"[Render] VP row1={vp.M21:F3},{vp.M22:F3},{vp.M23:F3},{vp.M24:F3}");
-            Debug.WriteLine($"[Render] VP row2={vp.M31:F3},{vp.M32:F3},{vp.M33:F3},{vp.M34:F3}");
-            Debug.WriteLine($"[Render] VP row3={vp.M41:F3},{vp.M42:F3},{vp.M43:F3},{vp.M44:F3}");
-            // Clear any stale errors
-            while (_gl.GetError() != GLEnum.NoError) { }
-        }
 
         // Draw dome (behind everything, no depth write)
         // Camera is inside the dome, so disable back-face culling
@@ -138,7 +104,6 @@ public sealed class OpenGlRenderer : IRenderer
             SetUniformMatrix(_terrainMvpLoc, vp);
             _gl.BindVertexArray(_domeVao);
             _gl.DrawElements(PrimitiveType.Triangles, (uint)_domeIndexCount, DrawElementsType.UnsignedInt, null);
-            if (diag) { var e = _gl.GetError(); Debug.WriteLine($"[Render] After dome draw: {(e == GLEnum.NoError ? "OK" : e.ToString())}"); }
             _gl.Enable(EnableCap.CullFace);
             _gl.DepthMask(true);
         }
@@ -152,14 +117,12 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.Uniform4(_solidColorLoc, 0.05f, 0.15f, 0.1f, 1.0f);
             _gl.BindVertexArray(_seaVao);
             _gl.DrawArrays(PrimitiveType.Triangles, 0, (uint)_seaVertexCount);
-            if (diag) { var e = _gl.GetError(); Debug.WriteLine($"[Render] After sea ground draw: {(e == GLEnum.NoError ? "OK" : e.ToString())}"); }
 
             // Draw sea surface with blending
             _gl.Enable(EnableCap.Blend);
             _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             _gl.Uniform4(_solidColorLoc, state.SeaColor.X, state.SeaColor.Y, state.SeaColor.Z, 0.5f);
             _gl.DrawArrays(PrimitiveType.Triangles, 0, (uint)_seaVertexCount);
-            if (diag) { var e = _gl.GetError(); Debug.WriteLine($"[Render] After sea surface draw: {(e == GLEnum.NoError ? "OK" : e.ToString())}"); }
             _gl.Disable(EnableCap.Blend);
             _gl.Enable(EnableCap.CullFace);
         }
@@ -172,7 +135,6 @@ public sealed class OpenGlRenderer : IRenderer
             SetUniformMatrix(_terrainMvpLoc, vp);
             _gl.BindVertexArray(_terrainVao);
             _gl.DrawElements(PrimitiveType.Triangles, (uint)_terrainIndexCount, DrawElementsType.UnsignedInt, null);
-            if (diag) { var e = _gl.GetError(); Debug.WriteLine($"[Render] After terrain draw: {(e == GLEnum.NoError ? "OK" : e.ToString())}"); }
             _gl.Enable(EnableCap.CullFace);
         }
 
@@ -206,8 +168,6 @@ public sealed class OpenGlRenderer : IRenderer
 
     public unsafe void UploadTerrain(TerrainRenderData terrain)
     {
-        Debug.WriteLine($"[UploadTerrain] Vertices={terrain.VertexCount} Indices={terrain.IndexCount} PosLen={terrain.Positions.Length} ColLen={terrain.Colors.Length}");
-        _loggedFirstRender = false; // re-log on next render after terrain upload
         // Clean up previous terrain buffers
         if (_terrainVao != 0)
         {

@@ -12,21 +12,83 @@
     <DockPanel>
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">
+            <!-- File -->
             <MenuItem Header="_File">
-                <MenuItem Header="_New World" x:Name="MenuNewWorld" />
-                <MenuItem Header="_Open World..." x:Name="MenuOpenWorld" />
-                <MenuItem Header="_Save World" x:Name="MenuSaveWorld" />
-                <MenuItem Header="Save World _As..." x:Name="MenuSaveWorldAs" />
+                <MenuItem Header="New map..." x:Name="MenuNewWorld" />
+                <MenuItem Header="Open map..." x:Name="MenuOpenWorld" />
+                <Separator/>
+                <MenuItem Header="Save map" x:Name="MenuSaveWorld" />
+                <MenuItem Header="Save map as..." x:Name="MenuSaveWorldAs" />
+                <Separator/>
+                <MenuItem Header="Close map" x:Name="MenuCloseMap" />
+                <Separator/>
+                <MenuItem Header="Clear terrain" x:Name="MenuClearTerrain" />
+                <MenuItem Header="Clear objects" x:Name="MenuClearObjects" />
+                <MenuItem Header="Import">
+                    <MenuItem Header="Terrain (GTI)..." x:Name="MenuImportTerrain" />
+                    <MenuItem Header="Objects (W_*.BIN)..." x:Name="MenuImportObjects" />
+                </MenuItem>
+                <MenuItem Header="Export">
+                    <MenuItem Header="Export light map..." x:Name="MenuExportLightmap" />
+                    <MenuItem Header="Export height map..." x:Name="MenuExportHeightmap" />
+                    <MenuItem Header="Export triangle map..." x:Name="MenuExportTrimap" />
+                    <MenuItem Header="Export terrain..." x:Name="MenuExportTerrain" />
+                    <MenuItem Header="Export objects..." x:Name="MenuExportObjects" />
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="E_xit" x:Name="MenuExit" />
             </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem Header="_Terrain" x:Name="MenuShowTerrain" />
-                <MenuItem Header="_Dome" x:Name="MenuShowDome" />
-                <MenuItem Header="_Sea" x:Name="MenuShowSea" />
-                <MenuItem Header="_Objects" x:Name="MenuShowObjects" />
+            <!-- Editor -->
+            <MenuItem Header="_Editor">
+                <MenuItem Header="Draw dome" x:Name="MenuDrawDome" />
+                <MenuItem Header="Dome color..." x:Name="MenuDomeColor" />
+                <MenuItem Header="Sea color..." x:Name="MenuSeaColor" />
+                <MenuItem Header="Sea ground color..." x:Name="MenuSeaGroundColor" />
+                <MenuItem Header="Go to location..." x:Name="MenuGoToLocation" />
                 <Separator/>
-                <MenuItem Header="Reset _Camera" x:Name="MenuResetCamera" />
+                <MenuItem Header="View terrain mesh" x:Name="MenuViewTerrainMesh" />
+                <MenuItem Header="View objects through terrain" x:Name="MenuViewObjThruTerrain" />
+                <Separator/>
+                <MenuItem Header="Camera mode" x:Name="MenuModeCamera" />
+                <MenuItem Header="Height editing mode" x:Name="MenuModeHeight" />
+                <MenuItem Header="Light editing mode" x:Name="MenuModeLight" />
+                <MenuItem Header="Triangle editing mode" x:Name="MenuModeTriangle" />
+                <MenuItem Header="Object editing mode" x:Name="MenuModeObject" />
+                <Separator/>
+                <MenuItem Header="Reset camera" x:Name="MenuResetCamera" />
+            </MenuItem>
+            <!-- Terrain -->
+            <MenuItem Header="_Terrain">
+                <MenuItem Header="Stretch / Move..." x:Name="MenuStretchMove" />
+                <MenuItem Header="Crop..." x:Name="MenuCrop" />
+                <MenuItem Header="Add borders..." x:Name="MenuAddBorders" />
+                <MenuItem Header="Fix open edges..." x:Name="MenuFixEdges" />
+                <Separator/>
+                <MenuItem Header="Soften map (no edges)" x:Name="MenuSoftenNoEdges" />
+                <MenuItem Header="Soften map (including edges)" x:Name="MenuSoftenWithEdges" />
+                <Separator/>
+                <MenuItem Header="Automatic lighting..." x:Name="MenuAutoLighting" />
+            </MenuItem>
+            <!-- Map -->
+            <MenuItem Header="_Map">
+                <MenuItem Header="Map names and properties..." x:Name="MenuMapNames" />
+                <MenuItem Header="Map objects tree view..." x:Name="MenuMapObjTree" />
+                <MenuItem Header="Missions..." x:Name="MenuMissions" />
+                <MenuItem Header="Mission objects tree view..." x:Name="MenuMissionObjTree" />
+                <MenuItem Header="Marker report..." x:Name="MenuMarkerReport" />
+                <Separator/>
+                <MenuItem Header="Place all objects on surface" x:Name="MenuPlaceOnSurface" />
+            </MenuItem>
+            <!-- Special -->
+            <MenuItem Header="_Special">
+                <MenuItem Header="Create weird matrix" x:Name="MenuWeirdMatrix" />
+                <MenuItem Header="Create inverse parabolic shape" x:Name="MenuParabolic" />
+                <Separator/>
+                <MenuItem Header="Show console" x:Name="MenuShowConsole" />
+            </MenuItem>
+            <!-- Help -->
+            <MenuItem Header="_Help">
+                <MenuItem Header="About..." x:Name="MenuAbout" />
             </MenuItem>
         </Menu>
 

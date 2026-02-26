@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.MarkerReportDialog"
+        Title="Marker Report" Width="400" Height="350"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" Text="The following markers were found in this map:"
+                   FontWeight="Bold" Margin="0,0,0,8" />
+
+        <Button DockPanel.Dock="Bottom" x:Name="BtnClose" Content="Close" Width="80"
+                HorizontalAlignment="Right" Margin="0,8,0,0" />
+
+        <TextBox x:Name="TxtReport" IsReadOnly="True" AcceptsReturn="True"
+                 TextWrapping="Wrap" />
+    </DockPanel>
+</Window>

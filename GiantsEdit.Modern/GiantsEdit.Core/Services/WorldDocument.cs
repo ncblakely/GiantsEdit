@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Numerics;
 using GiantsEdit.Core.DataModel;
 using GiantsEdit.Core.Formats;
@@ -41,37 +40,46 @@ public class WorldDocument
     public string? FilePath { get; private set; }
     public string? TerrainPath { get; private set; }
 
+    // Map metadata (matches Delphi 'map' record)
+    public string MapBinName { get; set; } = string.Empty;
+    public string UserMessage { get; set; } = string.Empty;
+    public int MapType { get; set; } = -1;
+    public bool Shareable { get; set; }
+
     public event Action? WorldChanged;
     public event Action? SelectionChanged;
     public event Action? TerrainChanged;
+
+    /// <summary>Raises TerrainChanged for external callers.</summary>
+    public void NotifyTerrainChanged() => TerrainChanged?.Invoke();
 
     /// <summary>
     /// Loads a world .bin file and its associated terrain .gti.
     /// </summary>
     public void LoadWorld(string binPath)
     {
-        Debug.WriteLine($"[LoadWorld] Loading: {binPath}");
         byte[] binData = File.ReadAllBytes(binPath);
         var reader = new BinWorldReader();
         _worldRoot = reader.Load(binData);
-        Debug.WriteLine($"[LoadWorld] Root node: {_worldRoot?.Name}, children: {_worldRoot?.NodeCount ?? 0}");
 
         FilePath = binPath;
+        MapBinName = Path.GetFileName(binPath);
         IsModified = false;
 
         // Try to load terrain if referenced in the world data
         var fileStart = _worldRoot?.FindChildNode("[FileStart]");
         var gtiLeaf = fileStart?.FindChildLeaf("GtiName");
-        Debug.WriteLine($"[LoadWorld] GtiName leaf: {gtiLeaf?.StringValue ?? "(null)"}");
         if (gtiLeaf != null)
         {
             string gtiName = gtiLeaf.StringValue;
             string dir = Path.GetDirectoryName(binPath) ?? ".";
             string gtiPath = Path.Combine(dir, gtiName);
-            Debug.WriteLine($"[LoadWorld] Looking for GTI at: {gtiPath}, exists={File.Exists(gtiPath)}");
             if (File.Exists(gtiPath))
                 LoadTerrain(gtiPath);
         }
+
+        // Extract metadata from tree
+        ExtractMapMetadata();
 
         WorldChanged?.Invoke();
     }
@@ -81,7 +89,6 @@ public class WorldDocument
     /// </summary>
     public void LoadTerrain(string gtiPath)
     {
-        Debug.WriteLine($"[LoadTerrain] Loading: {gtiPath} ({new FileInfo(gtiPath).Length} bytes)");
         byte[] gtiData = File.ReadAllBytes(gtiPath);
         LoadTerrainFromBytes(gtiData);
         TerrainPath = gtiPath;
@@ -93,12 +100,6 @@ public class WorldDocument
     private void LoadTerrainFromBytes(byte[] gtiData)
     {
         _terrain = GtiFormat.Load(gtiData);
-        Debug.WriteLine($"[LoadTerrain] Terrain {_terrain.Width}x{_terrain.Height}, stretch={_terrain.Header.Stretch}, offset=({_terrain.Header.XOffset},{_terrain.Header.YOffset})");
-
-        // Log triangle type distribution for diagnostics
-        var triCounts = new int[8];
-        foreach (var t in _terrain.Triangles) triCounts[t & 7]++;
-        Debug.WriteLine($"[LoadTerrain] Triangle types: 0(empty)={triCounts[0]} 1={triCounts[1]} 2={triCounts[2]} 3={triCounts[3]} 4={triCounts[4]} 5={triCounts[5]} 6={triCounts[6]} 7={triCounts[7]}");
 
         TerrainChanged?.Invoke();
     }
@@ -108,10 +109,7 @@ public class WorldDocument
     /// </summary>
     public void LoadGck(string gckPath)
     {
-        Debug.WriteLine($"[LoadGck] Opening: {gckPath}");
-
         var entries = GzpArchive.ListEntries(gckPath);
-        Debug.WriteLine($"[LoadGck] Archive contains {entries.Count} entries: {string.Join(", ", entries)}");
 
         // Find the w_*.bin entry
         string? binEntry = entries.FirstOrDefault(e =>
@@ -122,17 +120,13 @@ public class WorldDocument
         string? gtiEntry = entries.FirstOrDefault(e =>
             e.EndsWith(".gti", StringComparison.OrdinalIgnoreCase));
 
-        Debug.WriteLine($"[LoadGck] BIN entry: {binEntry ?? "(none)"}, GTI entry: {gtiEntry ?? "(none)"}");
-
         if (binEntry != null)
         {
             byte[]? binData = GzpArchive.ExtractFile(gckPath, binEntry);
             if (binData != null)
             {
-                Debug.WriteLine($"[LoadGck] Extracted BIN: {binData.Length} bytes");
                 var reader = new BinWorldReader();
                 _worldRoot = reader.Load(binData);
-                Debug.WriteLine($"[LoadGck] Root node: {_worldRoot?.Name}, children: {_worldRoot?.NodeCount ?? 0}");
             }
         }
 
@@ -141,14 +135,15 @@ public class WorldDocument
             byte[]? gtiData = GzpArchive.ExtractFile(gckPath, gtiEntry);
             if (gtiData != null)
             {
-                Debug.WriteLine($"[LoadGck] Extracted GTI: {gtiData.Length} bytes");
                 LoadTerrainFromBytes(gtiData);
             }
         }
 
         FilePath = gckPath;
+        MapBinName = binEntry != null ? Path.GetFileName(binEntry) : string.Empty;
         TerrainPath = null;
         IsModified = false;
+        ExtractMapMetadata();
         WorldChanged?.Invoke();
     }
 
@@ -268,12 +263,8 @@ public class WorldDocument
     public TerrainRenderData? BuildTerrainRenderData()
     {
         if (_terrain == null)
-        {
-            Debug.WriteLine("[BuildTerrainRenderData] No terrain loaded");
             return null;
-        }
         var data = TerrainMeshBuilder.Build(_terrain);
-        Debug.WriteLine($"[BuildTerrainRenderData] Built mesh: {data.VertexCount} vertices, {data.IndexCount} indices");
         return data;
     }
 
@@ -404,5 +395,115 @@ public class WorldDocument
     {
         SelectedObject = obj;
         SelectionChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Extracts map metadata (user message, map type, shareable) from the world tree.
+    /// The Delphi code reads these from special leaf nodes during BIN loading.
+    /// </summary>
+    private void ExtractMapMetadata()
+    {
+        if (_worldRoot == null) return;
+
+        // Look for GmmData node which contains user message, map type, shareable
+        var gmmData = _worldRoot.FindChildNode("GmmData");
+        if (gmmData != null)
+        {
+            UserMessage = gmmData.FindChildLeaf("UserMessage")?.StringValue ?? string.Empty;
+            MapType = gmmData.FindChildLeaf("MapType")?.Int32Value ?? -1;
+            Shareable = (gmmData.FindChildLeaf("Shareable")?.Int32Value ?? 0) != 0;
+        }
+    }
+
+    /// <summary>
+    /// Gets marker objects (Type=679) with their AIMode and TeamID for the marker report.
+    /// </summary>
+    public List<(int AIMode, int TeamID)> GetMarkers()
+    {
+        var markers = new List<(int, int)>();
+        if (_worldRoot == null) return markers;
+
+        foreach (var node in _worldRoot.EnumerateNodes())
+        {
+            if (node.Name != "Object") continue;
+            int type = node.FindChildLeaf("Type")?.Int32Value ?? 0;
+            if (type != 679) continue;
+
+            int aiMode = node.FindChildLeaf("AIMode")?.ByteValue ?? -1;
+            int teamId = node.FindChildLeaf("TeamID")?.Int32Value ?? -1;
+            markers.Add((aiMode, teamId));
+        }
+
+        return markers;
+    }
+
+    /// <summary>
+    /// Adds a new empty mission.
+    /// </summary>
+    public TreeNode AddMission(string? name = null)
+    {
+        name ??= $"wm_defaultmission_{RandomChars(4)}";
+        var mission = new TreeNode(name);
+        mission.AddNode("<Objects>");
+        var options = mission.AddNode("<Options>");
+        options.AddInt32("NoJetpack", 0);
+        options.AddInt32("NoNitro", 0);
+        options.AddInt32("Character 0", 0);
+        options.AddInt32("Character 1", 0);
+        options.AddInt32("Character 2", 0);
+        options.AddInt32("Character 3", 0);
+        options.AddInt32("Icons", 0);
+        _missions.Add(mission);
+        IsModified = true;
+        return mission;
+    }
+
+    /// <summary>
+    /// Removes a mission by index.
+    /// </summary>
+    public void RemoveMission(int index)
+    {
+        if (index >= 0 && index < _missions.Count)
+        {
+            _missions.RemoveAt(index);
+            IsModified = true;
+        }
+    }
+
+    private static string RandomChars(int count)
+    {
+        var rng = Random.Shared;
+        var chars = new char[count];
+        for (int i = 0; i < count; i++)
+            chars[i] = (char)('a' + rng.Next(26));
+        return new string(chars);
+    }
+
+    /// <summary>
+    /// Generates an export report listing which tree sections exist and which were
+    /// not written by the BIN writer (matching Delphi ScanDone behavior).
+    /// </summary>
+    public string GetExportReport()
+    {
+        if (_worldRoot == null) return string.Empty;
+
+        // Known sections that the writer handles
+        var handledSections = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "[FileStart]", "<Objects>", "<PreObjects>", "[textures]",
+            "[fx]", "[scenerios]", "[includefiles]", "[sfxlist]", "[unknown]"
+        };
+
+        var unhandled = new List<string>();
+        foreach (var node in _worldRoot.EnumerateNodes())
+        {
+            if (!handledSections.Contains(node.Name))
+                unhandled.Add(node.Name);
+        }
+
+        if (unhandled.Count == 0) return string.Empty;
+
+        return "ScanNode debug report\nThe following nodes were not scanned:\n" +
+               string.Join("\n", unhandled.Select(n => $"Untouched: {n}"));
     }
 }

@@ -21,11 +21,24 @@ public class TerrainMeshBuilderTests
     }
 
     [TestMethod]
-    public void Build_AllTriType1_Generates2TrianglesPerCell()
+    public void Build_AllTriType1_Generates1TrianglePerCell()
     {
         var terrain = GtiFormat.CreateNew(3, 3);
         for (int i = 0; i < terrain.Triangles.Length; i++)
             terrain.Triangles[i] = 1;
+
+        var mesh = TerrainMeshBuilder.Build(terrain);
+
+        // 2x2 inner cells, 1 triangle each, 3 indices each = 12
+        Assert.AreEqual(12, mesh.IndexCount);
+    }
+
+    [TestMethod]
+    public void Build_AllTriType5_Generates2TrianglesPerCell()
+    {
+        var terrain = GtiFormat.CreateNew(3, 3);
+        for (int i = 0; i < terrain.Triangles.Length; i++)
+            terrain.Triangles[i] = 5;
 
         var mesh = TerrainMeshBuilder.Build(terrain);
 

@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.MapNamesDialog"
+        Title="Map names" Width="500" Height="440"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16" Spacing="8">
+        <TextBlock Text="Map name:" />
+        <TextBox x:Name="TxtMapName" />
+
+        <TextBlock Text="Message:" />
+        <TextBox x:Name="TxtMessage" AcceptsReturn="True" Height="80"
+                 TextWrapping="Wrap" />
+
+        <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Map type:" FontWeight="Bold" />
+                <RadioButton x:Name="RbSingle" Content="Singleplayer" GroupName="MapType" IsChecked="True" />
+                <RadioButton x:Name="Rb3Way" Content="Multiplayer (3 way)" GroupName="MapType" />
+                <RadioButton x:Name="RbMecc" Content="Multiplayer (Mecc vs Mecc)" GroupName="MapType" />
+                <RadioButton x:Name="RbReaper" Content="Multiplayer (Reaper vs Reaper)" GroupName="MapType" />
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <RadioButton x:Name="RbCustom" Content="Custom:" GroupName="MapType" />
+                    <TextBox x:Name="TxtCustomType" Width="60" IsEnabled="False" />
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="16,0,0,0">
+                <TextBlock Text="Flags breakdown:" FontWeight="Bold" />
+                <TextBlock x:Name="TxtFlags" Foreground="#999" TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+
+        <CheckBox x:Name="ChkShareable" Content="Map is shareable (may be downloaded by others)" Margin="0,4,0,0" />
+
+        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
+            <TextBlock Text="File name:" VerticalAlignment="Center" Foreground="#888" />
+            <TextBlock x:Name="TxtFileName" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+            <Button x:Name="BtnHelp" Content="Help" Width="80" />
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" />
+            <Button x:Name="BtnOk" Content="OK" Width="80" />
+        </StackPanel>
+    </StackPanel>
+</Window>

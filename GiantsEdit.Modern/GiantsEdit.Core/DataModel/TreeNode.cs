@@ -300,6 +300,25 @@ public class TreeNode
     public IReadOnlyList<List<TreeLeaf>> LeafSlots => _childLeaves;
 
     /// <summary>
+    /// Gets all child nodes in a given DTD slot.
+    /// </summary>
+    public IReadOnlyList<TreeNode> GetChildNodes(int slotIndex)
+    {
+        if (slotIndex >= 0 && slotIndex < _childNodes.Count)
+            return _childNodes[slotIndex];
+        return [];
+    }
+
+    /// <summary>
+    /// Removes all child nodes from a given DTD slot.
+    /// </summary>
+    public void ClearSlot(int slotIndex)
+    {
+        if (slotIndex >= 0 && slotIndex < _childNodes.Count)
+            _childNodes[slotIndex].Clear();
+    }
+
+    /// <summary>
     /// Recursively visits all nodes and leaves in the tree.
     /// </summary>
     public void Walk(Action<TreeNode>? onNode = null, Action<TreeLeaf>? onLeaf = null)
