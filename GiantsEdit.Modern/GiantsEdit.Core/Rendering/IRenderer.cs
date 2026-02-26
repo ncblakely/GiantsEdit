@@ -1,5 +1,6 @@
 using System.Numerics;
 using GiantsEdit.Core.DataModel;
+using GiantsEdit.Core.Formats;
 
 namespace GiantsEdit.Core.Rendering;
 
@@ -23,6 +24,9 @@ public interface IRenderer : IDisposable
 
     /// <summary>Upload a GBS model for later instanced drawing.</summary>
     int UploadModel(ModelRenderData model);
+
+    /// <summary>Upload map object shapes and type→shape mapping for editor object rendering.</summary>
+    void UploadMapObjects(Formats.MapObjectReader mapObjects);
 
     /// <summary>Release all GPU resources.</summary>
     void Cleanup();

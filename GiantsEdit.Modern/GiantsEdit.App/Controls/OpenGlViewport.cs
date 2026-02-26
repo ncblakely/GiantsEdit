@@ -5,6 +5,7 @@ using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
 using Avalonia.Threading;
 using GiantsEdit.App.Rendering;
+using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Rendering;
 using Silk.NET.OpenGL;
 
@@ -22,6 +23,7 @@ public class OpenGlViewport : OpenGlControlBase
     private Point _lastMousePos;
     private MouseButton _activeButton;
     private TerrainRenderData? _pendingTerrain;
+    private MapObjectReader? _pendingMapObjects;
 
     public EditorCamera Camera { get; } = new();
 
@@ -37,6 +39,12 @@ public class OpenGlViewport : OpenGlControlBase
     public void QueueTerrainUpload(TerrainRenderData terrain)
     {
         _pendingTerrain = terrain;
+        Invalidate();
+    }
+
+    public void QueueMapObjectsUpload(MapObjectReader mapObjects)
+    {
+        _pendingMapObjects = mapObjects;
         Invalidate();
     }
 
@@ -89,6 +97,13 @@ public class OpenGlViewport : OpenGlControlBase
         {
             _pendingTerrain = null;
             _renderer.UploadTerrain(pending);
+        }
+
+        var pendingMapObj = _pendingMapObjects;
+        if (pendingMapObj != null)
+        {
+            _pendingMapObjects = null;
+            _renderer.UploadMapObjects(pendingMapObj);
         }
 
         // Ask the host to provide render state if we don't have one

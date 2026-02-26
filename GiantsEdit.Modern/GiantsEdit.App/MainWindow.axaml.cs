@@ -232,6 +232,9 @@ public partial class MainWindow : Window
 
         Viewport.RenderStateNeeded += OnRenderStateNeeded;
 
+        // Load map object shapes for editor rendering
+        LoadMapObjectShapes();
+
         // Mouse input on viewport panel (Panel provides hit-test surface)
         ViewportPanel.PointerPressed += OnViewportPointerPressed;
         ViewportPanel.PointerMoved += OnViewportPointerMoved;
@@ -744,6 +747,32 @@ public partial class MainWindow : Window
         var terrainData = _vm.Document.BuildTerrainRenderData();
         if (terrainData != null)
             Viewport.QueueTerrainUpload(terrainData);
+    }
+
+    private void LoadMapObjectShapes()
+    {
+        try
+        {
+            var asm = typeof(MainWindow).Assembly;
+            var resourceName = asm.GetManifestResourceNames()
+                .FirstOrDefault(n => n.EndsWith("Mapobj.txt", StringComparison.OrdinalIgnoreCase));
+            if (resourceName == null) return;
+
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream == null) return;
+            using var reader = new StreamReader(stream);
+            var lines = new List<string>();
+            while (reader.ReadLine() is { } line)
+                lines.Add(line);
+
+            var mapObjReader = new GiantsEdit.Core.Formats.MapObjectReader();
+            mapObjReader.Load(lines);
+            Viewport.QueueMapObjectsUpload(mapObjReader);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[LoadMapObjects] Error: {ex.Message}");
+        }
     }
 
     private void RebuildTreeView()

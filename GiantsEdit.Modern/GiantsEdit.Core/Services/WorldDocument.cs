@@ -261,9 +261,23 @@ public class WorldDocument
             float az = obj.FindChildLeaf("Angle")?.SingleValue ??
                         obj.FindChildLeaf("Angle Z")?.SingleValue ?? 0;
 
+            int modelId = typeLeaf.Int32Value;
+
+            // Remap type 679 markers by AIMode to special shapes (matches Delphi Draww)
+            if (modelId == 679)
+            {
+                int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+                modelId = aiMode switch
+                {
+                    1 => -1, 2 => -2, 3 => -3, 4 => -4,
+                    27 => -5, 22 => -6, 23 => -7,
+                    _ => 679
+                };
+            }
+
             result.Add(new ObjectInstance
             {
-                ModelId = typeLeaf.Int32Value,
+                ModelId = modelId,
                 Position = new Vector3(x, y, z),
                 Rotation = new Vector3(ax, ay, az),
                 Scale = scale,

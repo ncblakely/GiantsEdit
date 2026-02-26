@@ -160,10 +160,10 @@ public class MapObjectReader
         var parts = line.Split(',');
         if (parts.Length >= 3)
         {
-            float r = ParseFloat(parts[0]);
-            float g = ParseFloat(parts[1]);
-            float b = ParseFloat(parts[2]);
-            colors.Add(((byte)(r * 255), (byte)(g * 255), (byte)(b * 255)));
+            byte r = (byte)Math.Clamp((int)ParseFloat(parts[0]), 0, 255);
+            byte g = (byte)Math.Clamp((int)ParseFloat(parts[1]), 0, 255);
+            byte b = (byte)Math.Clamp((int)ParseFloat(parts[2]), 0, 255);
+            colors.Add((r, g, b));
         }
     }
 

@@ -26,4 +26,8 @@
   <ItemGroup>
     <ProjectReference Include="..\GiantsEdit.Core\GiantsEdit.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Mapobj.txt" />
+  </ItemGroup>
 </Project>

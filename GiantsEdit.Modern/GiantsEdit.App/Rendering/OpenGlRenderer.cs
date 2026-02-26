@@ -1,4 +1,5 @@
 using System.Numerics;
+using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Rendering;
 using Silk.NET.OpenGL;
 
@@ -46,6 +47,11 @@ public sealed class OpenGlRenderer : IRenderer
 
     private readonly Dictionary<int, ModelGpuData> _models = new();
     private int _nextModelId;
+
+    // Map object shapes: shapeIndex → GPU data, typeId → shapeIndex
+    private readonly Dictionary<int, ModelGpuData> _mapObjShapes = new();
+    private readonly Dictionary<int, int> _mapObjWrap = new();
+    private bool _mapObjsLoaded;
 
     /// <summary>
     /// Sets the GL context. Must be called before Init().
@@ -143,11 +149,25 @@ public sealed class OpenGlRenderer : IRenderer
         {
             _gl.UseProgram(_modelShader);
             SetUniformMatrix(_modelMvpLoc, vp);
+            _gl.Disable(EnableCap.CullFace);
 
             foreach (var obj in state.Objects)
             {
-                if (!_models.TryGetValue(obj.ModelId, out var gpuData))
+                // Try real model first, then mapobj shape
+                ModelGpuData gpuData;
+                if (_models.TryGetValue(obj.ModelId, out gpuData))
+                {
+                    // Real model (GBS) — use as-is
+                }
+                else if (_mapObjsLoaded && _mapObjWrap.TryGetValue(obj.ModelId, out int shapeIdx)
+                         && _mapObjShapes.TryGetValue(shapeIdx, out gpuData))
+                {
+                    // Map object shape from Mapobj.txt
+                }
+                else
+                {
                     continue;
+                }
 
                 var model = Matrix4x4.CreateScale(obj.Scale)
                     * Matrix4x4.CreateRotationZ(obj.Rotation.Z)
@@ -160,6 +180,7 @@ public sealed class OpenGlRenderer : IRenderer
                 _gl.DrawElements(PrimitiveType.Triangles, (uint)gpuData.IndexCount,
                     DrawElementsType.UnsignedInt, null);
             }
+            _gl.Enable(EnableCap.CullFace);
         }
 
         _gl.BindVertexArray(0);
@@ -254,6 +275,94 @@ public sealed class OpenGlRenderer : IRenderer
         return id;
     }
 
+    public unsafe void UploadMapObjects(MapObjectReader mapObjects)
+    {
+        // Clean up previous
+        foreach (var s in _mapObjShapes.Values)
+        {
+            _gl.DeleteVertexArray(s.Vao);
+            _gl.DeleteBuffer(s.Vbo);
+            _gl.DeleteBuffer(s.Ebo);
+        }
+        _mapObjShapes.Clear();
+        _mapObjWrap.Clear();
+
+        // Copy the type → shape mapping
+        foreach (var (typeId, shapeIdx) in mapObjects.ObjectWrap)
+            _mapObjWrap[typeId] = shapeIdx;
+
+        // Upload each shape: pack as interleaved pos(3) + normal(3) + uv(2) + color(3) = 11 floats
+        for (int si = 0; si < mapObjects.Objects.Count; si++)
+        {
+            var shape = mapObjects.Objects[si];
+            if (shape.Triangles.Count == 0) continue;
+
+            int vertCount = shape.Triangles.Count * 3;
+            var verts = new float[vertCount * 11]; // 11 floats per vertex
+            var indices = new uint[vertCount];
+
+            for (int ti = 0; ti < shape.Triangles.Count; ti++)
+            {
+                var tri = shape.Triangles[ti];
+                WriteVertex(verts, ti * 3 + 0, tri.V0);
+                WriteVertex(verts, ti * 3 + 1, tri.V1);
+                WriteVertex(verts, ti * 3 + 2, tri.V2);
+                indices[ti * 3 + 0] = (uint)(ti * 3 + 0);
+                indices[ti * 3 + 1] = (uint)(ti * 3 + 1);
+                indices[ti * 3 + 2] = (uint)(ti * 3 + 2);
+            }
+
+            var gpuData = new ModelGpuData();
+            gpuData.Vao = _gl.GenVertexArray();
+            _gl.BindVertexArray(gpuData.Vao);
+
+            gpuData.Vbo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, gpuData.Vbo);
+            fixed (float* p = verts)
+                _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(verts.Length * sizeof(float)),
+                    p, BufferUsageARB.StaticDraw);
+
+            uint stride = 11 * sizeof(float);
+            _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, (void*)0);
+            _gl.EnableVertexAttribArray(0);
+            _gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, (void*)(3 * sizeof(float)));
+            _gl.EnableVertexAttribArray(1);
+            _gl.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, (void*)(6 * sizeof(float)));
+            _gl.EnableVertexAttribArray(2);
+            _gl.VertexAttribPointer(3, 3, VertexAttribPointerType.Float, false, stride, (void*)(8 * sizeof(float)));
+            _gl.EnableVertexAttribArray(3);
+
+            gpuData.Ebo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, gpuData.Ebo);
+            fixed (uint* p = indices)
+                _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)),
+                    p, BufferUsageARB.StaticDraw);
+
+            gpuData.IndexCount = indices.Length;
+            _gl.BindVertexArray(0);
+
+            _mapObjShapes[si] = gpuData;
+        }
+
+        _mapObjsLoaded = true;
+
+        static void WriteVertex(float[] buf, int vi, MapObjVertex v)
+        {
+            int off = vi * 11;
+            buf[off + 0] = v.X;
+            buf[off + 1] = v.Y;
+            buf[off + 2] = v.Z;
+            // Normal (dummy up vector)
+            buf[off + 3] = 0; buf[off + 4] = 0; buf[off + 5] = 1;
+            // UV (unused)
+            buf[off + 6] = 0; buf[off + 7] = 0;
+            // Color (0-1 range)
+            buf[off + 8] = v.R / 255f;
+            buf[off + 9] = v.G / 255f;
+            buf[off + 10] = v.B / 255f;
+        }
+    }
+
     public void Cleanup()
     {
         if (_terrainVao != 0) _gl.DeleteVertexArray(_terrainVao);
@@ -275,6 +384,16 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.DeleteBuffer(m.Ebo);
         }
         _models.Clear();
+
+        foreach (var s in _mapObjShapes.Values)
+        {
+            _gl.DeleteVertexArray(s.Vao);
+            _gl.DeleteBuffer(s.Vbo);
+            _gl.DeleteBuffer(s.Ebo);
+        }
+        _mapObjShapes.Clear();
+        _mapObjWrap.Clear();
+        _mapObjsLoaded = false;
 
         if (_terrainShader != 0) _gl.DeleteProgram(_terrainShader);
         if (_solidShader != 0) _gl.DeleteProgram(_solidShader);
