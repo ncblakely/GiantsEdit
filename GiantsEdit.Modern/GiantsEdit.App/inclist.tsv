@@ -1,0 +1,951 @@
+# Object catalog: ID	Name	Model
+1	xx_kabuto_flick	kb (0)
+1	xx_kabutolev1	kb (0..7)
+2	xx_mecc_flick	mc (0..7)
+2	xx_mecclev1	mc (0..7)
+3	xx_reaper_flick	rp (0..7)
+3	xx_reaperlev1	rp (0..7)
+4	xx_lander	m_lander (0)
+8	xx_vimp	vp (1..7)
+11	xx_smartie	sm (0..7)
+14	xx_mecc_flick	mc_bullet
+14	xx_mecclev1	mc_bullet
+14	xx_rpman_weapons	mc_bullet
+21	xx_mecc_flick	mc_gun (0..5)
+21	xx_mecclev1	mc_gun (0..5)
+21	xx_rpman_weapons	mc_gun (0..5)
+22	xx_mecc_flick	mc_shotgun (0..5)
+22	xx_mecclev1	mc_shotgun (0..5)
+22	xx_rpman_weapons	mc_shotgun (0..5)
+23	xx_mecclev1	mc_syringe
+23	xx_rpman_weapons	mc_syringe
+24	xx_reaper_spells	rw_tornado
+25	xx_mecclev1	mc_laser
+25	xx_rpman_weapons	mc_laser
+28	xx_mecc_flick	mc_beamring
+28	xx_mecclev1	mc_beamring
+28	xx_rpman_weapons	mc_beamring
+29	xx_mecclev1	mc_lasergun
+29	xx_rpman_weapons	mc_lasergun
+30	xx_raik	rp_bow (_..5)
+30	xx_reaper_flick	rp_bow (_..5)
+30	xx_reaperlev1	rp_bow (_..5)
+31	xx_efx	rp_glow
+33	xx_reaperlev1	rw_warning
+34	xx_reaperlev1	rparrow
+35	xx_reaperlev1	rp_fire
+36	xx_mecclev1	mcbush
+36	xx_rpman_weapons	mcbush
+37	xx_efx	rp_glow
+38	xx_mecc_flick	mc_zip
+38	xx_mecclev1	mc_zip
+38	xx_rpman_weapons	mc_zip
+40	xx_reaper_spells	mr_invisible
+42	xx_mecc_flick	mc_gun (0..5)
+42	xx_mecclev1	mc_gun (0..5)
+42	xx_rpman_weapons	mc_gun (0..5)
+43	xx_mecc_flick	mc_bullet
+43	xx_mecclev1	mc_bullet
+43	xx_rpman_weapons	mc_bullet
+44	xx_permanentaliens	ex_flash
+45	xx_permanentaliens	ex_smoke_ring
+49	xx_permanentaliens	mr_invisible (_,_)
+53	xx_smartie_stuff	pub (_..4)
+60	xx_mecclev1	mc_turret (_..4)
+60	xx_rpman_weapons	mc_turret (_..4)
+71	xx_efx	sm_glow
+73	xx_ripper	ripper (_,rip 1..6)
+74	xx_efx	smoke
+75	xx_seamonster	rm_seamonster (_..6)
+78	xx_rocks	rock_1
+79	xx_rocks	rock_2
+84	xx_mecc_flick	mcthrust
+84	xx_mecclev1	mcthrust
+84	xx_rpman_weapons	mcthrust
+85	xx_mecc_flick	mcthrust2
+85	xx_mecclev1	mcthrust2
+85	xx_rpman_weapons	mcthrust2
+90	xx_ripper	ripspit
+91	xx_rocks	rock_3
+92	xx_plants	b_pod (_..2)
+93	xx_plants	b_bush (_..1)
+101	xx_ptree	ptree
+102	xx_ptree	ptree_bob (_..7)
+109	xx_efx	dust
+118	xx_bridge	bridge
+121	xx_efx	water_rings
+121	xx_water_rings	water_rings
+123	xx_birds	flak (0..1)
+124	xx_birds	lobird (0)
+125	xx_ptree	b_leaf1
+127	xx_mecclev1	mcflag
+127	xx_rpman_weapons	mcflag
+128	xx_fish	shiner
+129	xx_plants	s_weeds
+130	xx_plants	b_lilly
+133	xx_mecclev1_nothrust	mc_nothrust (0)
+135	xx_efx	m_blueglow
+137	xx_efx	water_drip
+137	xx_water_rings	water_drip
+138	xx_plants	s_flower1
+208	xx_lander	mecc_crash1
+215	xx_reaperman	rpman (0..7)
+216	xx_smfemale	smf (0..6)
+218	xx_ripper	ripnest
+219	xx_ripper	mound
+220	xx_ripper	dirt1
+223	xx_birds	feather1
+224	xx_reaperman	rpm_horn (0..4)
+226	xx_ripper	ripnest_x
+229	xx_ripper	ripper (_,rip 1..6)
+230	xx_ripper	ripper (_,rip 1..6)
+232	xx_ripper	ripspitbig
+235	xx_smartie_stuff	sm_fork
+236	xx_smartie_stuff	sm_knife
+240	xx_reaperman	rpman_spear (_..4)
+245	xx_plants	mcbush
+247	xx_bridge	bridge_end
+254	xx_mecc_flick	mcjetpack
+254	xx_mecclev1	mcjetpack
+254	xx_rpman_weapons	mcjetpack
+256	xx_bridge	bridge_100ft
+257	xx_bridge	bridge_200ft
+258	xx_bridge	bridge_300ft
+270	xx_bigwalls	bw_arch_100
+271	xx_bigwalls	bw_arch_150
+272	xx_bigwalls	bw_arch_200
+273	xx_bigwalls	bw_corner
+274	xx_bigwalls	bw_wall_100
+275	xx_reaperman	rpman_tracer
+276	xx_offspring	rpman_grenade (_..1)
+276	xx_reaperman	rpman_grenade (_..1)
+276	xx_seamonster	rpman_grenade (_..1)
+300	xx_mecc_flick	mc_machinegun (0..5)
+300	xx_mecclev1	mc_machinegun (0..5)
+300	xx_rpman_weapons	mc_machinegun (0..5)
+301	xx_mecc_flick	mc_grenade (0,_)
+301	xx_mecclev1	mc_grenade (0,_)
+301	xx_rpman_weapons	mc_grenade (0,_)
+302	xx_mecclev1	mc_shotgun (0..5)
+302	xx_rpman_weapons	mc_shotgun (0..5)
+303	xx_mecclev1	mc_machinegun (0..5)
+303	xx_rpman_weapons	mc_machinegun (0..5)
+311	xx_reaper_flick	rp (3..7)
+311	xx_reaperlev1	rp (7)
+312	xx_reaperlev1	rp_sword_trail
+506	xx_smartie_stuff	sm_boat (0)
+507	xx_smartie_stuff	sm_cart (0)
+508	xx_smartie_stuff	sm_chimney (0)
+509	xx_smartie_stuff	sm_dome (0..4)
+510	xx_smartie_stuff	sm_domed1 (0)
+511	xx_smartie_stuff	sm_door (0..3)
+512	xx_smartie_stuff	sm_fences (0)
+513	xx_smartie_stuff	sm_seat (0)
+514	xx_smartie_stuff	sm_table (0)
+515	xx_smartie_stuff	sm_tower (0)
+516	xx_smartie_stuff	sm_well (0)
+517	xx_smartie_stuff	sm_window (0..2)
+518	xx_smartie_stuff	sm_tube (0..2)
+519	xx_smartie_stuff	sm_ladder (0)
+520	xx_smartie_stuff	sm_fences2 (0)
+521	xx_smartie_stuff	sm_post (0)
+522	xx_smartie_stuff	sm_hatch (0)
+523	xx_smartie_stuff	sm_vconnect1
+524	xx_smartie_stuff	sm_vconnect2
+525	xx_smartie_stuff	sm_sphere (_..2)
+527	xx_smartie_stuff	sm_sphere2
+528	xx_bridge	bridge_400ft
+529	xx_smartie_stuff	sm_spheredark (_..2)
+530	xx_smartie_stuff	sm_spheredark2
+531	xx_smartie_stuff	sm_post_tall
+532	xx_bridge	bridge_500ft
+533	xx_pier	pier_straight
+534	xx_pier	pier_bend90
+535	xx_pier	pier_round_rings
+536	xx_pier	pier_round_tile
+537	xx_pier	pier_square
+538	xx_pier	pier_post20
+539	xx_pier	pier_post30
+540	xx_pier	pier_post40
+541	xx_shadows	shadow_round
+542	xx_shadows	shadow_elipse
+543	xx_shadows	shadow_elipse2
+544	xx_smartie_stuff	smw_entrance
+545	xx_smartie_stuff	smw_curvehi
+546	xx_smartie_stuff	smw_column
+547	xx_smartie_stuff	smw_curvemed
+548	xx_smartie_stuff	smw_curvelow
+549	xx_smartie_stuff	smw_column2
+550	xx_smartie_stuff	smw_cwall_low
+551	xx_smartie_stuff	smw_wall_hi
+552	xx_smartie_stuff	smw_wall_med
+553	xx_smartie_stuff	smw_wall_hi_hole
+555	xx_bigwalls	bw_gate_portcullis
+556	xx_bigwalls	bw_wall_150
+557	xx_bigwalls	bw_wall_200
+558	xx_bigwalls	bw_parapit
+558	xx_bigwalls_lite	bw_parapit
+559	xx_bigwalls	bw_sr_arch_100
+560	xx_bigwalls	bw_sr_corner
+562	xx_verm	verm (0,2,4..7)
+563	xx_pier	canopy_1
+564	xx_pier	bent_post
+565	xx_pier	pier_straight_80
+566	xx_pier	pier_straight_160
+567	xx_bigwalls	bw_column_20
+567	xx_bigwalls_lite	bw_column_20
+568	xx_bigwalls	bw_column_30
+568	xx_bigwalls_lite	bw_column_30
+569	xx_bigwalls	bw_column_40
+569	xx_bigwalls_lite	bw_column_40
+570	xx_bigwalls	bw_column_60
+570	xx_bigwalls_lite	bw_column_60
+571	xx_verm	verm_egg (0)
+572	xx_verm	verm (0,2,4..7)
+574	xx_charger	charger (_..6)
+575	xx_sonak	sonak (0..6)
+576	xx_verm	verm_egg_d1 (0)
+577	xx_verm	verm_eggshell1
+578	xx_bigwalls	bw_bunker1
+579	xx_bigwalls	bw_top_platform
+580	xx_bigwalls	bw_top_connect1
+583	xx_smtimmy	smtimmy (0..6)
+583	xx_smtimmy_flick	smtimmy (0)
+584	xx_smborjoyzee	smborjoyzee (0..6)
+584	xx_smborjoyzee_flick	smborjoyzee (0,sm 7)
+586	xx_sonak	sonak_seat (0)
+587	xx_bigwalls	bw_wall_100_window
+588	xx_bigwalls	bw_bunker_low
+589	xx_smartie_stuff	smw_curvehi_m
+590	xx_smartie_stuff	smw_house1 (_..4)
+591	xx_smartie_stuff	smw_house2 (_..4)
+592	xx_smartie_stuff	smw_house3 (_..4)
+593	xx_smartie_stuff	smw_house4 (_..4)
+594	xx_smartie_stuff	smw_curvemed_m
+595	xx_smartie_stuff	smw_curvelow_m
+596	xx_smartie_stuff	sm_canopy_1_blue
+597	xx_smartie_stuff	sm_canopy_1_red
+598	xx_smartie_stuff	sm_canopy_1_green
+599	xx_smartie_stuff	sm_panel
+601	xx_bigwalls	bw_sr_arch_150
+602	xx_bigwalls	bw_sr_arch_200
+606	xx_smartie_stuff	sm_raft (0)
+607	xx_sonak	sonak_ring
+609	xx_ptree	ptree_simple
+610	xx_reaperman	rpman_tracer
+611	xx_bigwalls	bw_debri_piece1
+611	xx_bigwalls_lite	bw_debri_piece1
+612	xx_bigwalls	bw_debri_piece2
+612	xx_bigwalls_lite	bw_debri_piece2
+613	xx_bigwalls	bw_debri_piece3
+613	xx_bigwalls_lite	bw_debri_piece3
+614	xx_bigwalls	bw_debri_piece4
+614	xx_bigwalls_lite	bw_debri_piece4
+615	xx_bigwalls	bw_debri_column1
+615	xx_bigwalls_lite	bw_debri_column1
+616	xx_bigwalls	bw_debri_column2
+616	xx_bigwalls_lite	bw_debri_column2
+617	xx_bigwalls	bw_debri_bunker1
+617	xx_bigwalls_lite	bw_debri_bunker1
+618	xx_shadows	shadow_blastmark_1
+619	xx_shadows	shadow_blastmark_2
+620	xx_effects	dust_ring
+621	xx_effects	water_spray
+622	xx_effects	dust_blast
+623	xx_mecc_base	muzzle_flash
+623	xx_reaper_base	muzzle_flash
+623	xx_reaperman	muzzle_flash
+625	xx_reaperman	rpman_gunseat (0)
+627	xx_mecc_base	muzzle_flash2
+627	xx_reaper_base	muzzle_flash2
+627	xx_reaperman	muzzle_flash2
+628	xx_effects	dust_flash
+646	xx_effects	shrap_ground
+647	xx_mecclev1	mc_pickup_shells
+647	xx_rpman_weapons	mc_pickup_shells
+648	xx_mecclev1	mc_pickup_clips
+648	xx_rpman_weapons	mc_pickup_clips
+649	xx_mecclev1	mc_pickup_health
+649	xx_rpman_weapons	mc_pickup_health
+650	xx_mecclev1	mc_pickup_grenades
+650	xx_rpman_weapons	mc_pickup_grenades
+651	xx_mecclev1	mcbush
+651	xx_rpman_weapons	mcbush
+652	xx_bigwalls	bw_bunker1_d1
+652	xx_bigwalls_lite	bw_bunker1_d1
+653	xx_bigwalls	bw_bunker_top
+654	xx_bigwalls	bw_bunker_low_d1
+654	xx_bigwalls_lite	bw_bunker_low_d1
+655	xx_bigwalls	bw_column_20_d1
+655	xx_bigwalls_lite	bw_column_20_d1
+656	xx_bigwalls	bw_column_30_d1
+656	xx_bigwalls_lite	bw_column_30_d1
+657	xx_bigwalls	bw_column_40_d1
+657	xx_bigwalls_lite	bw_column_40_d1
+658	xx_bigwalls	bw_column_60_d1
+658	xx_bigwalls_lite	bw_column_60_d1
+659	xx_bigwalls	bw_parapit_d1
+659	xx_bigwalls_lite	bw_parapit_d1
+660	xx_mecc_flick	mc_machinegun_shell
+660	xx_mecclev1	mc_machinegun_shell
+660	xx_rpman_weapons	mc_machinegun_shell
+662	xx_guard_buildings	muzzle_flash
+662	xx_guard_turrets	muzzle_flash
+662	xx_mecc_base	muzzle_flash
+662	xx_mecc_flick	muzzle_flash
+662	xx_mecclev1	muzzle_flash
+662	xx_reaper_base	muzzle_flash
+662	xx_rpman_weapons	muzzle_flash
+663	xx_guard_buildings	muzzle_flash2
+663	xx_guard_turrets	muzzle_flash2
+663	xx_mecc_base	muzzle_flash2
+663	xx_mecc_flick	muzzle_flash2
+663	xx_mecclev1	muzzle_flash2
+663	xx_reaper_base	muzzle_flash2
+663	xx_rpman_weapons	muzzle_flash2
+664	xx_ptree	ptree_bob_d1
+665	xx_smborjoyzee	sm_staff
+665	xx_smborjoyzee_flick	sm_staff
+666	xx_rpqueen	rpqueen (0..7)
+666	xx_rpqueen_flick	rpqueen (0)
+667	xx_mecc_flick	blast_ring
+667	xx_mecclev1	blast_ring
+667	xx_rpman_weapons	blast_ring
+668	xx_mecc_flick	mc_shotgun_blast
+668	xx_mecclev1	mc_shotgun_blast
+668	xx_rpman_weapons	mc_shotgun_blast
+669	xx_raik	rp_sword (_..5)
+669	xx_reaper_flick	rp_sword (_..5)
+669	xx_reaperlev1	rp_sword (_..5)
+670	xx_smartie_stuff	sm_borj_house (0..6)
+671	xx_effects	dust_ball
+672	xx_effects	dust_smoke
+677	xx_kab_stuff	mud_ball
+678	xx_kab_stuff	hot_rock
+679	xx_markers	marker
+680	xx_rocks	rock_rpman_1
+681	xx_rocks	rock_rpman_2
+682	xx_kab_stuff	hot_rock_d
+683	xx_guard_log_launcher	log_carrier
+685	xx_permanentaliens	cleaner (0..2)
+686	xx_guard_barracks	barracks (_..5)
+687	xx_rocks	rock_rpman_3
+688	xx_guard_log_launcher	log_launcher
+689	xx_guard_log_launcher	log_launcher_base
+690	xx_birds	hitcher
+693	xx_reaperman	rpman_tuba (_..4)
+696	xx_effects	cast_spell
+697	xx_effects	rain
+702	xx_reaperlev1	rpbomb
+705	xx_bridge	bridge_200ft_d
+706	xx_bigwalls	bw_column_40_b
+706	xx_bigwalls_lite	bw_column_40_b
+707	xx_smartie_stuff	apple
+709	xx_mecc_base	wood_wall (_..3)
+710	xx_mecc_base	wood_gift (_..6)
+711	xx_mecc_base	wood_pub (_..6)
+712	xx_mecc_base	wood_shop (_..6)
+714	xx_mecc_base	stone_wall (_..4)
+716	xx_mecc_base	stone_gift (_..6)
+717	xx_mecc_base	stone_shop (_..6)
+729	xx_reaper_base	extractor_1 (_..6)
+730	xx_reaper_base	extractor_2 (_..6)
+735	xx_reaper_base	spellshop_1 (_..6)
+736	xx_reaper_base	spellshop_2 (_..6)
+742	xx_smyan	smyan (0..6)
+742	xx_smyan_flick	smyan (0)
+744	xx_mecc_base	wood_gate (_..4)
+745	xx_offspring	offspring (0..6)
+746	xx_offspring	offspring_egg (0)
+747	xx_offspring	offspring_egg_d1 (0)
+748	xx_offspring	offspring_eggshell1
+749	xx_kabutolev1	kb_hotspot
+750	xx_mecc_base	sm_firepit
+752	xx_smartie_stuff	sm_table_full
+753	xx_smartie_stuff	sm_shovel
+754	xx_smartie_stuff	sm_tankard
+755	xx_smartie_stuff	sm_hammer
+756	xx_smartie_stuff	sm_saw
+757	xx_smartie_stuff	sm_drumstick
+758	xx_smartie_stuff	sm_ribs
+759	xx_smartie_stuff	sm_pool
+761	xx_smartie_stuff	sm_planks
+762	xx_smartie_stuff	sm_woodshop_pile
+763	xx_mecc_base	d_wood_shop (_..4)
+764	xx_mecc_base	d_stone_gift (_..4)
+765	xx_mecc_base	d_stone_shop (_..4)
+768	xx_mecc_base	d_wood_gift (_..4)
+769	xx_mecc_base	d_wood_wall (_..2)
+771	xx_mecc_base	d_stone_wall (_..2)
+772	xx_mecc_base	d_wood_gate (_..2)
+773	xx_mecc_base	d_stone_gate (_..2)
+775	xx_mecc_base	stone_gate (_..4)
+779	xx_mecc_base	d_wood_pub (_..4)
+781	xx_mecclev1	mcthrust_nitro
+781	xx_rpman_weapons	mcthrust_nitro
+782	xx_smartie_stuff	sm_bricks
+783	xx_smartie_stuff	sm_metal
+785	xx_mecc_flick	mc_launcher (0..5)
+785	xx_mecclev1	mc_launcher (0..5)
+785	xx_rpman_weapons	mc_launcher (0..5)
+787	xx_mecc_flick	mc_snipergun (0..5)
+787	xx_mecclev1	mc_snipergun (0..5)
+787	xx_rpman_weapons	mc_snipergun (0..5)
+788	xx_sm_book	sm_book
+788	xx_smartie_stuff	sm_book
+788	xx_smyan_pagoda	sm_book
+790	xx_mecc_flick	mc_mortar (0..5)
+790	xx_mecclev1	mc_mortar (0..5)
+790	xx_rpman_weapons	mc_mortar (0..5)
+792	xx_mecclev1	mc_pickup_sn_clips
+792	xx_rpman_weapons	mc_pickup_sn_clips
+793	xx_mecclev1	mc_sniper_bullit
+793	xx_rpman_weapons	mc_sniper_bullit
+794	xx_efx	efx_flash
+796	xx_efx	efx_debri1
+797	xx_efx	efx_debri2
+798	xx_efx	efx_fireball
+799	xx_efx	efx_shockwave
+800	xx_mecc_flick	mc_rocket
+800	xx_mecclev1	mc_rocket
+800	xx_rpman_weapons	mc_rocket
+801	xx_mecclev1	mc_pickup_rockets
+801	xx_rpman_weapons	mc_pickup_rockets
+802	xx_mecclev1	mc_pickup_lbombs
+802	xx_rpman_weapons	mc_pickup_lbombs
+803	xx_mecc_flick	mc_rocket_proximity
+803	xx_mecclev1	mc_rocket_proximity
+803	xx_rpman_weapons	mc_rocket_proximity
+804	xx_mecclev1	mc_pickup_proximity
+804	xx_rpman_weapons	mc_pickup_proximity
+805	xx_mecc_flick	mc_mine
+805	xx_mecclev1	mc_mine (_..4)
+805	xx_rpman_weapons	mc_mine (_..4)
+806	xx_mecc_flick	mc_rocket_homing
+806	xx_mecclev1	mc_rocket_homing
+806	xx_rpman_weapons	mc_rocket_homing
+807	xx_mecclev1	mc_pickup_homing
+807	xx_rpman_weapons	mc_pickup_homing
+808	xx_mecc_flick	mc_lbomb
+808	xx_mecclev1	mc_lbomb
+808	xx_rpman_weapons	mc_lbomb
+809	xx_story4	s6_dungeon
+810	xx_story4	s6_cage
+811	xx_efx	efx_shockwave_w
+813	xx_efx	efx_dustball
+814	xx_efx	efx_smoke_black
+815	xx_efx	efx_fire_trail
+816	xx_efx	efx_shockwave_b
+817	xx_efx	efx_ref_horiz_circle
+818	xx_efx	efx_ref_sphere
+819	xx_efx	efx_ref_plume
+820	xx_efx	efx_bfire_trail
+821	xx_efx	efx_ref_line_back
+822	xx_mecc_flick	mc_popupbomb
+822	xx_mecclev1	mc_popupbomb
+822	xx_rpman_weapons	mc_popupbomb
+823	xx_efx	efx_ref_line_up
+824	xx_efx	efx_shockwave_bh
+826	xx_efx	efx_smoke_blue
+827	xx_efx	efx_gfire_trail
+828	xx_efx	efx_smoke_mgrey
+829	xx_efx	efx_sniper_flash
+830	xx_snow_stuff	snowtree
+830	xx_snowtree	snowtree
+834	xx_mecc_base	sm_dropoff
+834	xx_smartie_stuff	sm_dropoff
+835	xx_smartie_stuff	base_flag_red
+836	xx_smartie_stuff	base_flag_blue
+837	xx_efx	efx_ref_line_l2r
+839	xx_efx	efx_rain
+840	xx_efx	efx_snow
+841	xx_efx	efx_hail
+846	xx_efx	efx_waterdrop
+847	xx_efx	efx_glint
+848	xx_efx	efx_bubble_reflection
+849	xx_efx	efx_bubble_hilight
+850	xx_efx	efx_bubble_glow
+851	xx_reaper_base	rp_smartie_waiting
+854	xx_efx	efx_water_ring
+857	xx_reaper_base	sm_podium_reap
+858	xx_reaper_base	sm_dropoff_reap
+859	xx_efx	efx_vimp_ghost
+861	xx_efx	efx_water_bubble
+862	xx_efx	efx_ref_bubbles
+866	xx_efx	efx_blast_area_check
+867	xx_efx	efx_dust_ball
+868	xx_efx	efx_dust_swirl
+869	xx_efx	efx_mist
+872	xx_efx	efx_smartie_spell
+873	xx_efx	efx_ref_ground_hit
+874	xx_efx	efx_snow_ball
+875	xx_efx	efx_snow_swirl
+882	xx_reaper_base	rp_soul_dropoff
+883	xx_efx	efx_redlight
+884	xx_efx	mr_invisible
+885	xx_efx	efx_blue_wide
+886	xx_efx	efx_blue_wide
+887	xx_efx	efx_ref_spin
+888	xx_efx	efx_ref_firewall
+890	xx_efx	efx_fire
+892	xx_mecclev1	mc_jetpack_2
+892	xx_rpman_weapons	mc_jetpack_2
+894	xx_efx	efx_slow_spell
+897	xx_mecclev1	mc_repairpack
+897	xx_rpman_weapons	mc_repairpack
+898	xx_mecclev1	mc_repairgun
+898	xx_rpman_weapons	mc_repairgun
+899	xx_efx	efx_lightning
+900	xx_efx	efx_wood_debri_1
+901	xx_efx	efx_wood_debri_2
+902	xx_mecclev1	mc_shield
+902	xx_rpman_weapons	mc_shield
+903	xx_reaperlev1	rp_head
+904	xx_efx	efx_hail_missile
+905	xx_efx	efx_hail_shrapnel
+906	xx_efx	mc_chunk1
+907	xx_efx	mc_chunk2
+908	xx_efx	mc_chunk3
+909	xx_efx	mc_chunk4
+910	xx_efx	mc_chunk5
+911	xx_efx	mc_chunk6
+912	xx_efx	efx_metal_debri_1
+913	xx_efx	efx_stone_debri_1
+914	xx_efx	efx_splat
+915	xx_efx	efx_spray
+916	xx_efx	efx_blood
+917	xx_efx	efx_build_select
+918	xx_mecc_base	fun_house (_..6)
+919	xx_efx	efx_mc_death
+920	xx_mecclev1	mc_bushpack
+920	xx_rpman_weapons	mc_bushpack
+921	xx_efx	efx_circle_spell
+922	xx_efx	efx_debri_3
+923	xx_efx	efx_ref_circle_out
+924	xx_efx	efx_ref_sphere_in
+925	xx_efx	efx_rp_target
+926	xx_efx	efx_prx_sphere
+927	xx_efx	efx_fire_roll
+928	xx_reaperlev1	rp_bow_homing (_..5)
+929	xx_reaperlev1	rp_bow_sniper (_..5)
+930	xx_reaperlev1	rp_bow_rpg (_..5)
+931	xx_reaperlev1	rp_bow_powerup (_..5)
+932	xx_efx	efx_dark_fire
+933	xx_efx	efx_box_alpha
+934	xx_reaperlev1	rp_screamer
+935	xx_efx	efx_bglow
+936	xx_mecc_base	d_fun_house (_..4)
+937	xx_tools	scott_test
+938	xx_efx	efx_blooddrop
+942	xx_efx	efx_ice_target
+945	xx_offspring	offs_hotspot
+946	xx_efx	efx_swirl
+947	xx_efx	efx_lightning_1
+948	xx_efx	efx_lightning_2
+950	xx_efx	efx_rp_debri_1
+951	xx_smartie_stuff	sm_flag
+952	xx_smartie_stuff	sm_flag1
+953	xx_smartie_stuff	sm_flag2
+954	xx_smartie_stuff	sm_flag3
+955	xx_efx	efx_sun_yellow
+956	xx_efx	efx_sun_yellow_f
+959	xx_efx	efx_clockhand_1
+960	xx_efx	efx_clockhand_2
+964	xx_efx	efx_bow_charged
+965	xx_efx	efx_fire_ring
+966	xx_efx	efx_splash
+967	xx_reaper_base	d_spellshop_1 (_..4)
+968	xx_reaper_base	d_spellshop_2 (_..4)
+970	xx_reaper_base	d_extractor_2 (_..4)
+977	xx_bones	bone_femur
+978	xx_bones	bone_rib
+979	xx_bones	bone_spine
+980	xx_efx	efx_3dxhair
+981	xx_mecc_base	mecc_base_template_1
+983	xx_mecc_base	s_mecc_teleport (_..3)
+984	xx_mecc_base	s_mecc_gpad (_..4,4)
+985	xx_reaper_base	rp_base_template_1
+986	xx_mecc_base	s_mecc_shop (_..6)
+988	xx_mecc_base	s_mecc_tower (_..6)
+989	xx_reaper_base	s_reaper_shop (_..6)
+991	xx_mecc_base	gyro (0)
+992	xx_plants	shrub1 (_,1)
+993	xx_plants	shrub2
+994	xx_plants	shrub3
+996	xx_plants	shrub5 (_..3)
+997	xx_plants	shrub6 (_..3)
+998	xx_plants	shrub7 (_..3)
+999	xx_plants	shrub8 (_..3)
+1001	xx_story1	w_story1_hang
+1002	xx_smartie_stuff	smw_house5 (_..4)
+1003	xx_smartie_stuff	smw_house6 (_..4)
+1004	xx_tools	light
+1005	xx_permanentaliens	piranha
+1006	xx_ptree	ptree_bob_busted
+1007	xx_bigwalls	guard_center
+1007	xx_bigwalls_lite	guard_center
+1008	xx_story1	w_story1_ramp_1
+1009	xx_story1	w_story1_ramp_2 (_,_)
+1009	xx_story1	w_story1_ramp_2 (_,_)
+1009	xx_story1	w_story1_ramp_2 (_,_)
+1009	xx_story1	w_story1_ramp_2 (_,_)
+1010	xx_story1	w_story1_ramp_3
+1011	xx_story1	w_story1_ramp_4
+1012	xx_story1	w_story1_rock_1
+1013	xx_story1	w_story1_rock_2
+1014	xx_story1	w_story1_rock_3
+1015	xx_bigwalls	bw_gate_swing
+1016	xx_efx	efx_blur
+1017	xx_tools	sphere_coll
+1018	xx_kabutolev1	kabuto_shield
+1019	xx_menus	mu_mpselect
+1020	xx_menus	efx_menu
+1021	xx_guard_drawbridge	bw_drawbridge (_,bw_drawbridge_coll)
+1022	xx_bigwalls	bw_fence
+1023	xx_guard_prison	bw_prison (_..3)
+1024	xx_smartie_stuff	fun_house_int
+1025	xx_menus	mu_idselect
+1026	xx_menus	mu_wdselect
+1027	xx_menus	mu_gnselect
+1028	xx_smartie_stuff	mctower
+1029	xx_plants	shrub9 (_..3)
+1030	xx_plants	shrub10 (_..2)
+1031	xx_plants	shrub11
+1041	xx_smartie_stuff	mcbarrack (_..6)
+1042	xx_rocks	desert_rock_1
+1043	xx_rocks	desert_rock_2
+1044	xx_rocks	desert_rock_3
+1045	xx_ptree	ptree_canopy (_..2)
+1047	xx_reaperman	rpm_snipergun (_..4)
+1048	xx_reaperman	rpm_bazooka (_..4)
+1049	xx_reaperman	rpm_jetpack (_..4)
+1050	xx_guard_buildings	guard_tower1 (_..4)
+1051	xx_guard_buildings	guard_tower2 (_..4)
+1052	xx_markers	marker_spline
+1053	xx_story4	story4
+1054	xx_formations	1sonak_4guards
+1055	xx_reaperman	rpm_torch
+1056	xx_guard_drawbridge	bw_drawbridge_open (_,bw_drawbridgeo_coll)
+1057	xx_story4	story4_gate
+1058	xx_formations	1tsonak_4guards
+1059	xx_formations	1mcsonak_4guards
+1060	xx_guard_barracks	bw_minibarracks (_..4)
+1061	xx_guard_buildings	guard_sam (_..4)
+1061	xx_guard_turrets	guard_sam (_..4)
+1062	xx_guard_buildings	guard_turret (_..4)
+1062	xx_guard_turrets	guard_turret (_..4)
+1063	xx_guard_prison	bw_prisoncrater (_..3)
+1064	xx_charger	charger_hotspot
+1065	xx_guard_buildings	guard_lift (_..4)
+1066	xx_guard_buildings	guard_lift_strut (_..4)
+1067	xx_formations	2x4_guards
+1068	xx_formations	2x5_guards
+1069	xx_formations	2x3_guards
+1070	xx_formations	2x2_guards
+1071	xx_formations	2x1_guards
+1072	xx_guard_buildings	guard_bunker (_..4)
+1073	xx_smartie_stuff	sm_plate
+1074	xx_guard_buildings	guard_stable (_..4)
+1075	xx_smartie_stuff	potato
+1076	xx_jetski	rp_jetski
+1077	xx_guard_reaper_tower	bw_reapertower (_..5)
+1078	xx_smartie_stuff	potato_basket
+1079	xx_reaperman	rpm_telescope (_..4)
+1080	xx_raik	raik (0..7)
+1081	xx_snow_stuff	iceberg1
+1082	xx_smyan_pagoda	sm_pagoda (_..4)
+1083	xx_smyan_pagoda	sm_pagodagong (_..4)
+1084	xx_smartie_stuff	sm_pagodagate
+1084	xx_smyan_pagoda	sm_pagodagate
+1085	xx_snow_stuff	iceberg2
+1086	xx_snow_stuff	iceberg3
+1087	xx_snow_stuff	iceberg4
+1088	xx_snow_stuff	iceberg_ramp
+1089	xx_snow_stuff	ice_wall
+1092	xx_guard_buildings	guard_shop (_..4)
+1093	xx_mecc_base	stone_command (_..6)
+1094	xx_guard_buildings	guard_lift_base (_..4)
+1095	xx_mecc_base	wood_command
+1096	xx_rocks	story3_ridge
+1097	xx_guard_buildings	guard_buoy (_..4)
+1098	xx_markers	buoy_spline
+1099	xx_jetski	p_jetski_homing
+1100	xx_jetski	p_jetski_missile
+1101	xx_jetski	p_jetski_turbo
+1102	xx_efx	efx_sunflare
+1104	xx_ripper	rip_gore_head
+1105	xx_ripper	rip_gore_arm
+1106	xx_efx	efx_ref_machinegun
+1107	xx_efx	efx_sniper_flash2
+1108	xx_efx	efx_smoke_ring
+1109	xx_efx	efx_ref_vert_circle
+1111	xx_efx	efx_shotgun_blast
+1112	xx_efx	efx_ripper_lspit
+1113	xx_efx	efx_ripper_mspit
+1114	xx_mecc_flick	mc_shotgun_shell
+1114	xx_mecclev1	mc_shotgun_shell
+1114	xx_rpman_weapons	mc_shotgun_shell
+1115	xx_formations	1tsonak
+1116	xx_sonak	rpman_sonak_shell
+1117	xx_vimp	vimpfoodchunk1
+1118	xx_vimp	vimpfoodchunk2
+1119	xx_vimp	vimpfoodchunk3
+1120	xx_efx	efx_sam_debri
+1121	xx_efx	efx_ref_sam_explode
+1122	xx_efx	efx_ref_turret_explode
+1123	xx_mecclev1	mc_pickup_mines
+1123	xx_rpman_weapons	mc_pickup_mines
+1124	xx_efx	efx_turret_debri
+1125	xx_efx	efx_smoke_ring_white
+1126	xx_giants_logo_3d	giants_logo_3d
+1127	xx_guard_buildings	guard_tower1d (_..3)
+1128	xx_guard_buildings	guard_bunkerd (_..4)
+1129	xx_guard_buildings	guard_tower2d (_..3)
+1130	xx_efx	efx_sunflare2
+1134	xx_efx	efx_stable_debri_2
+1135	xx_efx	efx_stable_debri_1
+1136	xx_efx	efx_stable_debri_3
+1137	xx_efx	efx_stable_debri_4
+1138	xx_guard_buildings	guard_stabled
+1139	xx_efx	efx_sun_orange
+1140	xx_efx	efx_guard_tower2
+1142	xx_efx	efx_smoke_green
+1144	xx_ptree	ptree_bob_coll
+1145	xx_efx	efx_mc_lbomb
+1146	xx_rstory4	rstory4
+1147	xx_rstory3	r3_start_finish
+1147	xx_rstory5	r3_start_finish
+1148	xx_reaper_base	magic_wall1
+1149	xx_reaper_base	magic_wall2
+1150	xx_reaper_base	magic_gate1
+1151	xx_reaper_base	magic_gate2
+1152	xx_reaper_base	rp_workshop (_..6)
+1153	xx_reaper_base	d_rp_workshop (_..4)
+1154	xx_reaper_base	rp_generator (_..6)
+1155	xx_reaper_base	d_rp_generator (_..4)
+1156	xx_reaper_base	rp_fun_house (_..6)
+1157	xx_reaper_base	d_rp_fun_house (_..4)
+1158	xx_reaper_base	rp_command (_..6)
+1159	xx_jetski_rpm	rpm_jetski
+1160	xx_rstory3	r3_lap_marker
+1160	xx_rstory5	r3_lap_marker
+1161	xx_guard_army_barracks	guard_army_barracks (_..6)
+1162	xx_markers	army_spline
+1163	xx_rocks	pebble
+1164	xx_rstory3	r_grid (_..2)
+1164	xx_rstory5	r_grid
+1165	xx_efx	efx_rstory5_volcano
+1166	xx_rstory5	rstory5_cave
+1168	xx_toby	toby
+1169	xx_story4	story4_door
+1170	xx_efx	efx_ice_wall_debri
+1171	xx_reaper_ship	reaper_ship
+1172	xx_reaper_ship	reaper_ship_husk
+1173	xx_guard_army_barracks	guard_army_barracks_husk
+1174	xx_formations	7_flying_guards
+1175	xx_kab_stuff	mag_crystal
+1176	xx_formations	1_ripper
+1177	xx_formations	2_rippers
+1178	xx_formations	3_rippers
+1180	xx_formations	1_kamikazi
+1181	xx_reaper_base	s_reaper_pier (_..6)
+1185	xx_mecc_base	s_mecc_sam (_..6)
+1186	xx_mecc_base	s_mecc_turret (_..6)
+1187	xx_reaper_base	s_reaper_turret (_..6)
+1188	xx_reaper_base	s_reaper_sam (_..6)
+1189	xx_reaper_base	s_reaper_tower (_..6)
+1190	xx_guard_barracks	barracks_husk
+1192	xx_reaper_base	s_reaper_portal
+1198	xx_lander	mother_ship
+1199	xx_kab_stuff	mag_crystal_shard
+1200	xx_smyan	yan_sword
+1200	xx_smyan_flick	yan_sword
+1201	xx_story4	mc_cutout1
+1202	xx_story4	mc_cutout2
+1203	xx_reaperman	rpm_bomb (_..4)
+1204	xx_kab_stuff	kabuto_stone
+1204	xx_kabuto_flick	kabuto_stone
+1205	xx_efx	efx_portal
+1206	xx_efx	efx_mc_rocket
+1207	xx_giantwalls	giantwall1 (_..4)
+1208	xx_giantwalls	giantwall2 (_..4)
+1209	xx_giantwalls	giantwall3 (_..4)
+1210	xx_kab_stuff	kab_ash
+1211	xx_guard_buildings	guard_portal
+1212	xx_smtimmy	sm_timmygrave
+1212	xx_smtimmy_flick	sm_timmygrave
+1213	xx_guard_buildings	guard_portal_m
+1214	xx_reaper_ship	reaper_galleon
+1215	xx_kab_stuff	k_rock_gen
+1216	xx_kstory5	k_pocket
+1217	xx_smdoomed	smdoomed (0)
+1218	xx_smdoomed	smd_ground
+1219	xx_formations	5_flying_guards
+1220	xx_formations	3_flying_guards
+1221	xx_efx	efx_portal_charm
+1222	xx_reaperlev1	rp_mine  (_..4)
+1223	xx_reaperlev1	rp_pickup_mines
+1224	xx_reaperlev1	rp_health
+1225	xx_reaperlev1	rp_pickup_health
+1226	xx_guard_barracks	guard_ripperbarracks  (_..4)
+1228	xx_reaper_base	d_magic_wall1
+1229	xx_reaper_base	d_magic_wall2
+1230	xx_reaper_base	d_magic_gate1
+1231	xx_reaper_base	d_magic_gate2
+1233	xx_reaperlev1	rp_pickup_repair
+1234	xx_story1	w_story1_walls
+1235	xx_story1	w_story1_arch
+1236	xx_story1	w_story1_entrance
+1237	xx_mecc_base	d_stone_command  (_..4)
+1238	xx_reaper_base	d_rp_command  (_..4)
+1239	xx_raik	raik (7)
+1240	xx_rpqueen	rpqueen (7)
+1241	xx_theend	reg_kiss
+1242	xx_kab_stuff	k_lava_ball
+1242	xx_seamonster	k_lava_ball
+1243	xx_kab_stuff	k_volcano_debri
+1244	xx_kab_stuff	k_exhaust
+1245	xx_efx	efx_repair_ring
+1246	xx_kab_stuff	k_rock_gen_top
+1247	xx_story1	w_story1_mine
+1248	xx_story1	w_story1_walls_1
+1249	xx_story1	w_story1_walls_2
+1250	xx_story1	w_story1_walls_3
+1251	xx_story1	w_story1_walls_4
+1252	xx_story1	w_story1_walls_5
+1253	xx_story1	w_story1_walls_6
+1255	xx_reaper_base	efx_magic_w1
+1256	xx_efx	efx_portal_open_loop
+1257	xx_efx	efx_portal_open_flick
+1258	xx_efx	efx_portal_close_flick
+1259	xx_story1	w_story1_hang_flick
+1274	xx_plants	shrub5_coll
+1275	xx_tools	ripper_radius
+1276	xx_guard_barracks	barracks_story2 (_,barracks 1..5)
+1277	xx_giantwalls	giantwall4 (_..4)
+1279	xx_ambient	a_m1_near_beach
+1280	xx_ambient	a_m2_mnt_beach
+1281	xx_ambient	a_m3_cliffs_sand
+1282	xx_ambient	a_m4_beach_dark
+1283	xx_ambient	a_m5_beach_waves
+1284	xx_ambient	a_r1_light_rain
+1285	xx_ambient	a_r2_snow
+1286	xx_ambient	a_r3_race
+1287	xx_ambient	a_r4_darker
+1288	xx_ambient	a_r5_mountain
+1289	xx_ambient	a_k1
+1290	xx_ambient	a_k5_storm
+1291	xx_ambient	a_crashed_lander
+1293	xx_ambient	a_floating_gate
+1295	xx_ambient	a_cage
+1296	xx_ambient	a_distant_birds
+1297	xx_ambient	a_wind_gusts
+1298	xx_ambient	a_single_tree
+1299	xx_ambient	a_trees
+1300	xx_ambient	a_shoreline
+1301	xx_ambient	a_pools
+1302	xx_ambient	a_pier
+1303	xx_ambient	a_big_leaf_tree
+1304	xx_ambient	a_reaper_tower
+1305	xx_ambient	a_int_volcano
+1306	xx_ambient	a_smartie_village
+1308	xx_ambient	a_high_winds
+1309	xx_ambient	a_prison
+1310	xx_ambient	a_army_barracks
+1312	xx_ambient	a_forest_trees
+1313	xx_ambient	a_distant_animals
+1314	xx_formations	4_wide_guards
+1315	xx_ambient	a_shoreline_long
+1316	xx_ambient	a_shoreline_dark_short
+1317	xx_ambient	a_shoreline_dark_long
+1318	xx_ambient	a_river
+1319	xx_ambient	a_high_winds_light
+1320	xx_ambient	a_cold_wind_gusts
+1322	xx_efx	efx_giantwall4
+1323	xx_music_temp	a_kabuto_temp
+1324	xx_music_temp	a_mecc_temp
+1325	xx_music_temp	a_mecc_temp_amb
+1326	xx_music_temp	a_mecc_temp_battle
+1327	xx_music_temp	a_mecc_temp_sus
+1328	xx_story4	story4_tower (_..5)
+1330	xx_guard_buildings	guard_buoy_coll
+1331	xx_jetski_rpm	rpm_jetski_coll
+1332	xx_reaper_base	efx_magic_w2
+1333	xx_giantwalls	giantwall5 (_..4)
+1334	xx_kab_stuff	kabutopad
+1335	xx_smartie_stuff	smw_house7 (_..4)
+1336	xx_smartie_stuff	smw_house8 (_..4)
+1337	xx_sm_evil	sm_evil (0)
+1338	xx_ambient	a_k2
+1339	xx_ambient	a_k3
+1340	xx_ambient	a_k4
+1342	xx_ambient	a_special_tree
+1343	xx_ambient	a_pools_large
+1344	xx_ambient	a_boat
+1348	xx_smartie_stuff	sm_tower_timmy
+1349	xx_jetski	p_jetski_coll
+1350	xx_reaper_base	efx_magic_gate1
+1351	xx_reaper_base	efx_magic_gate2
+1354	xx_smartie_stuff	sm_table_dad
+1355	xx_ambient	a_volcano
+1356	xx_rstory5	rstory5_volcano_coll
+1357	xx_rstory5	rstory5_fake
+1358	xx_efx	efx_flare
+1359	xx_giantwalls	giantwall3_nick
+1360	xx_efx	efx_offspring_spit
+1361	xx_efx	efx_offspring_fire
+1363	xx_efx	efx_red_rings
+1364	xx_efx	efx_ref_crooked_line
+1365	xx_efx	efx_whizzer
+1366	xx_efx	efx_whizzer_sparkles
+1367	xx_efx	efx_deep_red
+1368	xx_efx	efx_whizzer_charml
+1369	xx_efx	efx_whizzer_charmr
+1370	xx_kstory5	k_spike
+1371	xx_kstory5	k_bridge_1
+1372	xx_kstory5	k_bridge_2
+1373	xx_kstory5	k_bridge_3
+1374	xx_jetski	sign
+1375	xx_kab_stuff	efx_crystal_debri
+1376	xx_guard_barracks	efx_ref_minibarracks
+1377	xx_guard_barracks	efx_mini_debri_top
+1378	xx_guard_barracks	efx_mini_debri_1
+1379	xx_guard_barracks	efx_mini_debri_2
+1380	xx_guard_barracks	efx_mini_debri_3
+1381	xx_guard_buildings	efx_ref_guard_tower_1
+1382	xx_guard_buildings	efx_guard_tower_debri_1
+1383	xx_guard_buildings	efx_guard_tower_debri_2
+1384	xx_guard_buildings	efx_guard_tower_debri_3
+1385	xx_guard_buildings	efx_guard_tower_debri_4
+1386	xx_guard_buildings	efx_guard_tower_debri_5
+1387	xx_guard_buildings	efx_ref_guard_tower_2
+1388	xx_guard_buildings	efx_tower_2_debri_1
+1389	xx_guard_buildings	efx_tower_2_debri_2
+1390	xx_guard_buildings	efx_tower_2_debri_3
+1391	xx_guard_barracks	efx_rpbarracks_debri_1
+1392	xx_guard_barracks	efx_rpbarracks_debri_2
+1393	xx_guard_barracks	efx_rpbarracks_debri_3
+1394	xx_giantwalls	efx_ref_giantwall3
+1395	xx_giantwalls	efx_giantwall_debri_1
+1396	xx_giantwalls	efx_giantwall_debri_2
+1397	xx_giantwalls	efx_giantwall_debri_3
+1398	xx_giantwalls	efx_giantwall_debri_4
+1399	xx_giantwalls	efx_giantwall_debri_5
+1400	xx_giantwalls	efx_giantwall_debri_6
+1401	xx_giantwalls	efx_giantwall_debri_7
+1402	xx_giantwalls	efx_giantwall_debri_8
+1403	xx_giantwalls	efx_giantwall_debri_9
+1404	xx_giantwalls	efx_giantwall_debri_10
+1405	xx_giantwalls	efx_giantwall_debri_11
+1406	xx_giantwalls	efx_giantwall_debri_12
+1407	xx_giantwalls	efx_giantwall_debri_13
+1408	xx_giantwalls	efx_giantwall_debri_14
+1409	xx_giantwalls	efx_ref_giantwall5
+1410	xx_giantwalls	efx_giantwall5_debri_1
+1411	xx_giantwalls	efx_giantwall3_debri_s
+1412	xx_efx	efx_smoke_ring_b
+1413	xx_bridge	bridge_wide
+1414	xx_guard_drawbridge	bw_drawbridge_coll
+1415	xx_guard_drawbridge	bw_drawbridgeo_coll
+1416	xx_kab_stuff	k_rock_gen_coll
+1417	xx_efx	efx_soot

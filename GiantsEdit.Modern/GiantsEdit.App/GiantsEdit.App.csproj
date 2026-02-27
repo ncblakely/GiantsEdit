@@ -33,5 +33,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Mapobj.txt" />
+    <EmbeddedResource Include="inclist.tsv" />
   </ItemGroup>
 </Project>

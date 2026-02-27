@@ -24,6 +24,7 @@ public class OpenGlViewport : OpenGlControlBase
     private MouseButton _activeButton;
     private TerrainRenderData? _pendingTerrain;
     private MapObjectReader? _pendingMapObjects;
+    private Action<IRenderer>? _pendingGlAction;
 
     public EditorCamera Camera { get; } = new();
 
@@ -45,6 +46,15 @@ public class OpenGlViewport : OpenGlControlBase
     public void QueueMapObjectsUpload(MapObjectReader mapObjects)
     {
         _pendingMapObjects = mapObjects;
+        Invalidate();
+    }
+
+    /// <summary>
+    /// Queues an action to run on the GL thread during the next render frame.
+    /// </summary>
+    public void QueueGlAction(Action<IRenderer> action)
+    {
+        _pendingGlAction = action;
         Invalidate();
     }
 
@@ -107,6 +117,13 @@ public class OpenGlViewport : OpenGlControlBase
         {
             _pendingMapObjects = null;
             _renderer.UploadMapObjects(pendingMapObj);
+        }
+
+        var pendingGl = _pendingGlAction;
+        if (pendingGl != null)
+        {
+            _pendingGlAction = null;
+            pendingGl(_renderer);
         }
 
         // Ask the host to provide render state if we don't have one

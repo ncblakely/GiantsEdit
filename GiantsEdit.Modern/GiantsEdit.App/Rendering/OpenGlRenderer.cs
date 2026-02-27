@@ -197,10 +197,10 @@ public sealed class OpenGlRenderer : IRenderer
                     continue;
                 }
 
-                // Delphi DrawObject only applies scale when DrawRealObjects is true.
-                // For Mapobj shapes, only translate + Z-rotate.
+                // Delphi DrawObject: scale is always applied when DrawRealObjects is true.
+                // For Mapobj shapes without DrawRealObjects, only translate + Z-rotate.
                 Matrix4x4 model;
-                if (isRealModel)
+                if (isRealModel || state.DrawRealObjects)
                 {
                     model = Matrix4x4.CreateScale(obj.Scale)
                         * Matrix4x4.CreateRotationZ(obj.Rotation.Z)
@@ -324,9 +324,9 @@ public sealed class OpenGlRenderer : IRenderer
         _gl.BindVertexArray(0);
     }
 
-    public unsafe int UploadModel(ModelRenderData model)
+    public unsafe int UploadModel(ModelRenderData model, int modelId = -1)
     {
-        int id = _nextModelId++;
+        int id = modelId >= 0 ? modelId : _nextModelId++;
 
         var gpuData = new ModelGpuData();
         gpuData.Vao = _gl.GenVertexArray();

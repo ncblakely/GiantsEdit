@@ -46,6 +46,7 @@
                 <MenuItem Header="Sea ground color..." x:Name="MenuSeaGroundColor" />
                 <MenuItem Header="Go to location..." x:Name="MenuGoToLocation" />
                 <Separator/>
+                <MenuItem Header="Draw real objects" x:Name="MenuDrawRealObjects" InputGesture="F10" />
                 <MenuItem Header="View terrain mesh" x:Name="MenuViewTerrainMesh" />
                 <MenuItem Header="View objects through terrain" x:Name="MenuViewObjThruTerrain" />
                 <Separator/>
@@ -56,6 +57,8 @@
                 <MenuItem Header="Object editing mode" x:Name="MenuModeObject" />
                 <Separator/>
                 <MenuItem Header="Reset camera" x:Name="MenuResetCamera" />
+                <Separator/>
+                <MenuItem Header="Set game path..." x:Name="MenuSetGamePath" />
             </MenuItem>
             <!-- Terrain -->
             <MenuItem Header="_Terrain">

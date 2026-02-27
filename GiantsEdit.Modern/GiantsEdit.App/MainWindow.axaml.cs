@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -8,6 +9,7 @@ using Avalonia.Platform.Storage;
 using GiantsEdit.App.Dialogs;
 using GiantsEdit.App.ViewModels;
 using GiantsEdit.Core.DataModel;
+using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Rendering;
 using GiantsEdit.Core.Services;
 
@@ -22,6 +24,7 @@ public partial class MainWindow : Window
     private bool _showObjects = true;
     private bool _viewTerrainMesh;
     private bool _viewObjThruTerrain;
+    private bool _drawRealObjects;
     private Point _lastMousePos;
     private bool _isClickDown; // true on pointer-down, false after first move
 
@@ -35,8 +38,16 @@ public partial class MainWindow : Window
     private byte _paintR = 255, _paintG = 255, _paintB = 255;
     private bool _lightPanelUpdating;
 
+    // Model loading
+    private readonly ObjectCatalog _objectCatalog;
+    private readonly ModelManager _modelManager;
+
     public MainWindow()
     {
+        // Load object catalog from embedded resource
+        _objectCatalog = LoadEmbeddedCatalog();
+        _modelManager = new ModelManager(_objectCatalog);
+
         InitializeComponent();
         DataContext = _vm;
 
@@ -65,12 +76,14 @@ public partial class MainWindow : Window
         MenuGoToLocation.Click += async (_, _) => await GoToLocationAsync();
         MenuViewTerrainMesh.Click += (_, _) => { _viewTerrainMesh = !_viewTerrainMesh; InvalidateViewport(); };
         MenuViewObjThruTerrain.Click += (_, _) => { _viewObjThruTerrain = !_viewObjThruTerrain; InvalidateViewport(); };
+        MenuDrawRealObjects.Click += async (_, _) => await ToggleDrawRealObjectsAsync();
         MenuModeCamera.Click += (_, _) => SetMode(EditMode.Camera, 0);
         MenuModeHeight.Click += (_, _) => SetMode(EditMode.HeightEdit, 1);
         MenuModeLight.Click += (_, _) => SetMode(EditMode.LightPaint, 2);
         MenuModeTriangle.Click += (_, _) => SetMode(EditMode.TriangleEdit, 3);
         MenuModeObject.Click += (_, _) => SetMode(EditMode.ObjectEdit, 4);
         MenuResetCamera.Click += (_, _) => { Viewport.Camera.Reset(); InvalidateViewport(); };
+        MenuSetGamePath.Click += async (_, _) => await SetGamePathAsync();
 
         // === Terrain menu ===
         MenuStretchMove.Click += (_, _) => StatusText.Text = "Stretch/Move: not yet implemented";
@@ -730,6 +743,7 @@ public partial class MainWindow : Window
             ShowSea = _showSea,
             ShowObjects = _showObjects,
             ShowTerrainMesh = _viewTerrainMesh,
+            DrawRealObjects = _drawRealObjects,
             Objects = _vm.Document.GetObjectInstances(),
             SplineLines = _vm.Document.GetSplineLines()
         };
@@ -1236,6 +1250,72 @@ public partial class MainWindow : Window
 
         RefreshViewport();
         StatusText.Text = "Object properties applied";
+    }
+
+    #endregion
+
+    #region Model loading
+
+    private static ObjectCatalog LoadEmbeddedCatalog()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var resName = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("inclist.tsv"));
+        if (resName == null) return new ObjectCatalog();
+
+        using var stream = asm.GetManifestResourceStream(resName)!;
+        using var reader = new StreamReader(stream);
+        var lines = new List<string>();
+        while (reader.ReadLine() is { } line)
+            lines.Add(line);
+        return ObjectCatalog.LoadFromTsv(lines);
+    }
+
+    private async Task SetGamePathAsync()
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Select Giants: Citizen Kabuto installation folder",
+            AllowMultiple = false
+        });
+
+        if (folders.Count == 0) return;
+
+        string path = folders[0].Path.LocalPath;
+        _modelManager.SetGamePath(path);
+        StatusText.Text = _modelManager.HasGameData
+            ? $"Game path set — {path}"
+            : "No .gzp files found in bin/ folder";
+    }
+
+    private async Task ToggleDrawRealObjectsAsync()
+    {
+        _drawRealObjects = !_drawRealObjects;
+
+        if (_drawRealObjects && !_modelManager.HasGameData)
+        {
+            // Prompt user to set game path first
+            await SetGamePathAsync();
+            if (!_modelManager.HasGameData)
+            {
+                _drawRealObjects = false;
+                StatusText.Text = "Draw real objects requires game path to be set";
+                return;
+            }
+        }
+
+        if (_drawRealObjects)
+        {
+            StatusText.Text = "Loading models...";
+            var objects = _vm.Document.GetObjectInstances();
+
+            // Preload models on the GL thread
+            Viewport.QueueGlAction(renderer =>
+            {
+                _modelManager.PreloadModels(objects, renderer);
+            });
+        }
+
+        InvalidateViewport();
     }
 
     #endregion

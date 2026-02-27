@@ -23,7 +23,7 @@ public interface IRenderer : IDisposable
     void UploadTerrain(TerrainRenderData terrain);
 
     /// <summary>Upload a GBS model for later instanced drawing.</summary>
-    int UploadModel(ModelRenderData model);
+    int UploadModel(ModelRenderData model, int modelId = -1);
 
     /// <summary>Upload map object shapes and type→shape mapping for editor object rendering.</summary>
     void UploadMapObjects(Formats.MapObjectReader mapObjects);
@@ -50,6 +50,7 @@ public class RenderState
     public bool ShowSea { get; init; } = true;
     public bool ShowObjects { get; init; } = true;
     public bool ShowTerrainMesh { get; init; }
+    public bool DrawRealObjects { get; init; }
 
     // Fog
     public Vector3 FogColor { get; init; }
