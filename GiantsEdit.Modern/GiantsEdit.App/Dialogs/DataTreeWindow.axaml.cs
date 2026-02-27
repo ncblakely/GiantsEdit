@@ -18,8 +18,16 @@ public partial class DataTreeWindow : Window
     {
         _rootNode = root;
         Title = title;
-        var items = new ObservableCollection<DataTreeNodeVm> { new(root) };
+        var rootVm = new DataTreeNodeVm(root);
+        var items = new ObservableCollection<DataTreeNodeVm> { rootVm };
         DataTree.ItemsSource = items;
+
+        // Expand root node once the tree has rendered
+        DataTree.Loaded += (_, _) =>
+        {
+            if (DataTree.ContainerFromItem(rootVm) is TreeViewItem rootItem)
+                rootItem.IsExpanded = true;
+        };
 
         DataTree.SelectionChanged += (_, _) =>
         {

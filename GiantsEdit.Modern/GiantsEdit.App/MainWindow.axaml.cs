@@ -296,6 +296,21 @@ public partial class MainWindow : Window
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        bool ctrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        if (ctrl)
+        {
+            switch (e.Key)
+            {
+                case Key.N: _ = NewWorldAsync(); e.Handled = true; return;
+                case Key.O: _ = OpenWorldAsync(); e.Handled = true; return;
+                case Key.S when shift: _ = SaveWorldAsAsync(); e.Handled = true; return;
+                case Key.S: _vm.Document.SaveWorld(); StatusText.Text = "Map saved"; e.Handled = true; return;
+                case Key.W: CloseMap(); e.Handled = true; return;
+            }
+        }
+
         switch (e.Key)
         {
             case Key.F1: SetMode(EditMode.Camera, 0); e.Handled = true; break;

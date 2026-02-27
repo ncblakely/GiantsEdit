@@ -8,14 +8,13 @@
     <DockPanel>
         <!-- Status bar -->
         <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom"
-                   Background="#2D2D30" Foreground="#999" Padding="8,4"
+                   Padding="8,4"
                    Text="Select a node to view its properties" />
 
         <!-- Main split: tree left, properties right -->
         <Grid ColumnDefinitions="*,4,300">
             <!-- Tree -->
-            <TreeView x:Name="DataTree" Grid.Column="0" Margin="4"
-                      Background="#1E1E1E" Foreground="#CCC">
+            <TreeView x:Name="DataTree" Grid.Column="0" Margin="4">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate x:DataType="dlg:DataTreeNodeVm"
                                       ItemsSource="{Binding Children}">
@@ -24,24 +23,23 @@
                 </TreeView.ItemTemplate>
             </TreeView>
 
-            <GridSplitter Grid.Column="1" Width="4" Background="#333" />
+            <GridSplitter Grid.Column="1" Width="4" />
 
             <!-- Properties panel -->
-            <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#333" BorderThickness="1,0,0,0">
+            <Border Grid.Column="2" BorderThickness="1,0,0,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Properties"
-                               Foreground="#CCC" FontWeight="Bold" Margin="8,4" />
+                               FontWeight="Bold" Margin="8,4" />
                     <ScrollViewer>
                         <ItemsControl x:Name="PropertiesList" Margin="4">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="dlg:LeafPropertyVm">
                                     <Grid ColumnDefinitions="120,*" Margin="0,1">
                                         <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                   Foreground="#888" VerticalAlignment="Center"
+                                                   VerticalAlignment="Center"
                                                    Margin="4,0" />
                                         <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}"
-                                                 Foreground="#CCC" Background="#2D2D30"
-                                                 BorderBrush="#444" Padding="4,2"
+                                                 Padding="4,2"
                                                  IsReadOnly="{Binding IsReadOnly}" />
                                     </Grid>
                                 </DataTemplate>

@@ -38,7 +38,12 @@ Right click         Object context menu (create/delete)</TextBlock>
 
             <Separator/>
             <TextBlock FontWeight="Bold" FontSize="16" Text="Menu Shortcuts" />
-            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">F1                  Camera mode
+            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">Ctrl+N              New map
+Ctrl+O              Open map
+Ctrl+S              Save map
+Ctrl+Shift+S        Save map as
+Ctrl+W              Close map
+F1                  Camera mode
 F2                  Height editing mode
 F3                  Light editing mode
 F4                  Triangle editing mode
