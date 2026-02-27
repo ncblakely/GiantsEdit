@@ -347,12 +347,22 @@ public class WorldDocument
             float scale = obj.FindChildLeaf("Scale")?.SingleValue ?? 1f;
 
             // Delphi reads "Angle", then "Angle X" overwrites if present.
-            // Both feed into glRotate(angle,0,0,1) — a single Z-axis rotation in degrees.
-            float angleDeg = obj.FindChildLeaf("Angle")?.SingleValue ?? 0;
+            // Single "Angle" = Z-axis rotation. "Angle X/Y/Z" = full 3-axis rotation.
+            float angleXDeg = 0, angleYDeg = 0, angleZDeg = 0;
             var angleXLeaf = obj.FindChildLeaf("Angle X");
-            if (angleXLeaf != null) angleDeg = angleXLeaf.SingleValue;
+            if (angleXLeaf != null)
+            {
+                angleXDeg = angleXLeaf.SingleValue;
+                angleYDeg = obj.FindChildLeaf("Angle Y")?.SingleValue ?? 0;
+                angleZDeg = obj.FindChildLeaf("Angle Z")?.SingleValue ?? 0;
+            }
+            else
+            {
+                angleZDeg = obj.FindChildLeaf("Angle")?.SingleValue ?? 0;
+            }
 
-            float angleRad = angleDeg * MathF.PI / 180f;
+            const float deg2Rad = MathF.PI / 180f;
+            var rotation = new Vector3(angleXDeg * deg2Rad, angleYDeg * deg2Rad, angleZDeg * deg2Rad);
 
             int modelId = typeLeaf.Int32Value;
 
@@ -372,7 +382,7 @@ public class WorldDocument
             {
                 ModelId = modelId,
                 Position = new Vector3(x, y, z),
-                Rotation = new Vector3(0, 0, angleRad),
+                Rotation = rotation,
                 Scale = scale,
                 SourceNode = obj
             });

@@ -212,6 +212,24 @@ public partial class MainWindow : Window
             RefreshViewport();
         };
 
+        // Optional property checkboxes: enable/disable text box and add/remove leaf
+        ChkObjScale.IsCheckedChanged += (_, _) =>
+        {
+            PropObjScale.IsEnabled = ChkObjScale.IsChecked == true;
+            ToggleOptionalLeaf("Scale", ChkObjScale.IsChecked == true, PropObjScale, 1.0f);
+        };
+        ChkObjAIMode.IsCheckedChanged += (_, _) =>
+        {
+            PropObjAIMode.IsEnabled = ChkObjAIMode.IsChecked == true;
+            ToggleOptionalByteLeaf("AIMode", ChkObjAIMode.IsChecked == true, PropObjAIMode, 0);
+        };
+        ChkObjTeamID.IsCheckedChanged += (_, _) =>
+        {
+            PropObjTeamID.IsEnabled = ChkObjTeamID.IsChecked == true;
+            ToggleOptionalInt32Leaf("TeamID", ChkObjTeamID.IsChecked == true, PropObjTeamID, 0);
+        };
+        ChkObj3DRotation.IsCheckedChanged += (_, _) => Toggle3DRotation();
+
         // Document events
         _vm.Document.WorldChanged += () =>
         {
@@ -573,8 +591,11 @@ public partial class MainWindow : Window
 
     private Vector3? _newObjPosition;
 
+    private bool _suppressOptionalLeafToggle;
+
     private void SelectObject(TreeNode objNode)
     {
+        _suppressOptionalLeafToggle = true;
         _vm.Document.SelectedObject = objNode;
         ObjPropsPanel.IsVisible = true;
 
@@ -583,9 +604,38 @@ public partial class MainWindow : Window
         PropObjY.Text = (objNode.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
         PropObjZ.Text = (objNode.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
         PropObjAngle.Text = (objNode.FindChildLeaf("Angle")?.SingleValue ??
-                             objNode.FindChildLeaf("Angle Z")?.SingleValue ?? 0).ToString("F2");
-        PropObjScale.Text = (objNode.FindChildLeaf("Scale")?.SingleValue ?? 1f).ToString("F2");
+                             objNode.FindChildLeaf("Angle X")?.SingleValue ?? 0).ToString("F2");
+
+        // 3D rotation (Angle X/Y/Z vs single Angle)
+        bool has3D = objNode.FindChildLeaf("Angle X") != null;
+        ChkObj3DRotation.IsChecked = has3D;
+        PanelAngleYZ.IsVisible = has3D;
+        if (has3D)
+        {
+            PropObjAngleY.Text = (objNode.FindChildLeaf("Angle Y")?.SingleValue ?? 0).ToString("F2");
+            PropObjAngleZ.Text = (objNode.FindChildLeaf("Angle Z")?.SingleValue ?? 0).ToString("F2");
+        }
+
+        // Scale (optional)
+        var scaleLeaf = objNode.FindChildLeaf("Scale");
+        ChkObjScale.IsChecked = scaleLeaf != null;
+        PropObjScale.IsEnabled = scaleLeaf != null;
+        PropObjScale.Text = (scaleLeaf?.SingleValue ?? 1f).ToString("F2");
+
+        // AIMode (optional)
+        var aiLeaf = objNode.FindChildLeaf("AIMode");
+        ChkObjAIMode.IsChecked = aiLeaf != null;
+        PropObjAIMode.IsEnabled = aiLeaf != null;
+        PropObjAIMode.Text = (aiLeaf?.ByteValue ?? 0).ToString();
+
+        // TeamID (optional)
+        var teamLeaf = objNode.FindChildLeaf("TeamID");
+        ChkObjTeamID.IsChecked = teamLeaf != null;
+        PropObjTeamID.IsEnabled = teamLeaf != null;
+        PropObjTeamID.Text = (teamLeaf?.Int32Value ?? 0).ToString();
+
         PropHeader.Text = $"Object (Type {PropObjType.Text})";
+        _suppressOptionalLeafToggle = false;
     }
 
     private void DeselectObject()
@@ -1266,10 +1316,134 @@ public partial class MainWindow : Window
         if (float.TryParse(PropObjZ.Text, out float z))
             obj.FindChildLeaf("Z")?.SetSingle(z);
         if (float.TryParse(PropObjAngle.Text, out float angle))
-            obj.FindChildLeaf("Angle")?.SetSingle(angle);
+        {
+            var angleLeaf = obj.FindChildLeaf("Angle") ?? obj.FindChildLeaf("Angle X");
+            angleLeaf?.SetSingle(angle);
+        }
+        if (ChkObj3DRotation.IsChecked == true)
+        {
+            if (float.TryParse(PropObjAngleY.Text, out float ay))
+                obj.FindChildLeaf("Angle Y")?.SetSingle(ay);
+            if (float.TryParse(PropObjAngleZ.Text, out float az))
+                obj.FindChildLeaf("Angle Z")?.SetSingle(az);
+        }
 
-        RefreshViewport();
+        // Apply optional fields only if their checkbox is checked
+        if (ChkObjScale.IsChecked == true && float.TryParse(PropObjScale.Text, out float scale))
+            obj.FindChildLeaf("Scale")?.SetSingle(scale);
+        if (ChkObjAIMode.IsChecked == true && byte.TryParse(PropObjAIMode.Text, out byte aiMode))
+        {
+            var leaf = obj.FindChildLeaf("AIMode");
+            if (leaf != null) leaf.ByteValue = aiMode;
+        }
+        if (ChkObjTeamID.IsChecked == true && int.TryParse(PropObjTeamID.Text, out int teamId))
+        {
+            var leaf = obj.FindChildLeaf("TeamID");
+            if (leaf != null) leaf.Int32Value = teamId;
+        }
+
+        InvalidateViewport();
         StatusText.Text = "Object properties applied";
+    }
+
+    private void ToggleOptionalLeaf(string name, bool enabled, TextBox textBox, float defaultValue)
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        if (enabled)
+        {
+            obj.AddSingle(name, defaultValue);
+            textBox.Text = defaultValue.ToString("F2");
+        }
+        else
+        {
+            var leaf = obj.FindChildLeaf(name);
+            if (leaf != null) obj.RemoveLeaf(leaf);
+        }
+        InvalidateViewport();
+    }
+
+    private void ToggleOptionalByteLeaf(string name, bool enabled, TextBox textBox, byte defaultValue)
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        if (enabled)
+        {
+            obj.AddByte(name, defaultValue);
+            textBox.Text = defaultValue.ToString();
+        }
+        else
+        {
+            var leaf = obj.FindChildLeaf(name);
+            if (leaf != null) obj.RemoveLeaf(leaf);
+        }
+        InvalidateViewport();
+    }
+
+    private void ToggleOptionalInt32Leaf(string name, bool enabled, TextBox textBox, int defaultValue)
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        if (enabled)
+        {
+            obj.AddInt32(name, defaultValue);
+            textBox.Text = defaultValue.ToString();
+        }
+        else
+        {
+            var leaf = obj.FindChildLeaf(name);
+            if (leaf != null) obj.RemoveLeaf(leaf);
+        }
+        InvalidateViewport();
+    }
+
+    private void Toggle3DRotation()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        bool enable3D = ChkObj3DRotation.IsChecked == true;
+        PanelAngleYZ.IsVisible = enable3D;
+
+        if (enable3D)
+        {
+            // Convert single "Angle" → "Angle X" + "Angle Y" + "Angle Z"
+            var angleLeaf = obj.FindChildLeaf("Angle");
+            float currentAngle = angleLeaf?.SingleValue ?? 0;
+            if (angleLeaf != null) obj.RemoveLeaf(angleLeaf);
+
+            obj.AddSingle("Angle X", currentAngle);
+            obj.AddSingle("Angle Y", 0);
+            obj.AddSingle("Angle Z", 0);
+
+            PropObjAngle.Text = currentAngle.ToString("F2");
+            PropObjAngleY.Text = "0.00";
+            PropObjAngleZ.Text = "0.00";
+        }
+        else
+        {
+            // Convert "Angle X/Y/Z" → single "Angle"
+            var axLeaf = obj.FindChildLeaf("Angle X");
+            float currentAngle = axLeaf?.SingleValue ?? 0;
+
+            if (axLeaf != null) obj.RemoveLeaf(axLeaf);
+            var ayLeaf = obj.FindChildLeaf("Angle Y");
+            if (ayLeaf != null) obj.RemoveLeaf(ayLeaf);
+            var azLeaf = obj.FindChildLeaf("Angle Z");
+            if (azLeaf != null) obj.RemoveLeaf(azLeaf);
+
+            obj.AddSingle("Angle", currentAngle);
+            PropObjAngle.Text = currentAngle.ToString("F2");
+        }
+
+        InvalidateViewport();
     }
 
     #endregion
