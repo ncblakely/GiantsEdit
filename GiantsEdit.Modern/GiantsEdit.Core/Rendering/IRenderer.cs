@@ -19,6 +19,12 @@ public interface IRenderer : IDisposable
     /// <summary>Render one frame.</summary>
     void Render(RenderState state);
 
+    /// <summary>Begin rendering to MSAA framebuffer if available.</summary>
+    void BeginRender(uint targetFramebuffer);
+
+    /// <summary>Resolve MSAA framebuffer to target if active.</summary>
+    void EndRender();
+
     /// <summary>Upload terrain mesh data to the GPU.</summary>
     void UploadTerrain(TerrainRenderData terrain);
 

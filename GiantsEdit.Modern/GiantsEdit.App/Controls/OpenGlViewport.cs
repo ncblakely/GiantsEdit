@@ -138,7 +138,9 @@ public class OpenGlViewport : OpenGlControlBase
             CameraPosition = Camera.Position
         };
 
+        _renderer.BeginRender((uint)fb);
         _renderer.Render(state);
+        _renderer.EndRender();
     }
 
     /// <summary>

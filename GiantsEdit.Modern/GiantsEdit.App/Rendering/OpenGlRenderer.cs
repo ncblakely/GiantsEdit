@@ -15,6 +15,15 @@ public sealed class OpenGlRenderer : IRenderer
     private int _viewportWidth;
     private int _viewportHeight;
 
+    // MSAA framebuffer
+    private uint _msaaFbo;
+    private uint _msaaColorRbo;
+    private uint _msaaDepthRbo;
+    private int _msaaSamples;
+    private int _msaaWidth;
+    private int _msaaHeight;
+    private uint _avaloniaFbo; // Avalonia's framebuffer to blit to
+
     // Terrain
     private uint _terrainVao;
     private uint _terrainVboPos;
@@ -80,6 +89,11 @@ public sealed class OpenGlRenderer : IRenderer
         _gl.CullFace(TriangleFace.Back);
         _gl.ClearColor(0.05f, 0.05f, 0.1f, 1.0f);
 
+        // Query max MSAA samples supported (GL_MAX_SAMPLES = 0x8D57)
+        int maxSamples = 0;
+        _gl.GetInteger((GetPName)0x8D57, &maxSamples);
+        _msaaSamples = Math.Clamp(maxSamples, 1, 16);
+
         _terrainShader = CreateShader(TerrainVertSrc, TerrainFragSrc);
         _terrainMvpLoc = _gl.GetUniformLocation(_terrainShader, "uMVP");
 
@@ -104,6 +118,9 @@ public sealed class OpenGlRenderer : IRenderer
         _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
         _gl.EnableVertexAttribArray(0);
         _gl.BindVertexArray(0);
+
+        if (_msaaSamples > 1)
+            CreateMsaaFbo(viewportWidth, viewportHeight);
     }
 
     public void Resize(int width, int height)
@@ -111,6 +128,37 @@ public sealed class OpenGlRenderer : IRenderer
         _viewportWidth = width;
         _viewportHeight = height;
         _gl.Viewport(0, 0, (uint)width, (uint)height);
+
+        if (_msaaSamples > 1 && (width != _msaaWidth || height != _msaaHeight))
+            CreateMsaaFbo(width, height);
+    }
+
+    /// <summary>
+    /// Stores Avalonia's framebuffer and binds the MSAA FBO if available.
+    /// </summary>
+    public void BeginRender(uint avaloniaFb)
+    {
+        _avaloniaFbo = avaloniaFb;
+        if (_msaaSamples > 1 && _msaaFbo != 0)
+        {
+            _gl.BindFramebuffer(FramebufferTarget.Framebuffer, _msaaFbo);
+        }
+    }
+
+    /// <summary>
+    /// Blits the MSAA FBO to Avalonia's framebuffer if MSAA is active.
+    /// </summary>
+    public void EndRender()
+    {
+        if (_msaaSamples > 1 && _msaaFbo != 0)
+        {
+            _gl.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _msaaFbo);
+            _gl.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _avaloniaFbo);
+            _gl.BlitFramebuffer(0, 0, _msaaWidth, _msaaHeight,
+                                0, 0, _msaaWidth, _msaaHeight,
+                                ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
+            _gl.BindFramebuffer(FramebufferTarget.Framebuffer, _avaloniaFbo);
+        }
     }
 
     public unsafe void Render(RenderState state)
@@ -684,8 +732,42 @@ public sealed class OpenGlRenderer : IRenderer
         }
     }
 
+    private void CreateMsaaFbo(int width, int height)
+    {
+        // Delete old MSAA resources
+        if (_msaaFbo != 0) _gl.DeleteFramebuffer(_msaaFbo);
+        if (_msaaColorRbo != 0) _gl.DeleteRenderbuffer(_msaaColorRbo);
+        if (_msaaDepthRbo != 0) _gl.DeleteRenderbuffer(_msaaDepthRbo);
+
+        _msaaWidth = width;
+        _msaaHeight = height;
+
+        _msaaFbo = _gl.GenFramebuffer();
+        _gl.BindFramebuffer(FramebufferTarget.Framebuffer, _msaaFbo);
+
+        _msaaColorRbo = _gl.GenRenderbuffer();
+        _gl.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _msaaColorRbo);
+        _gl.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer,
+            (uint)_msaaSamples, InternalFormat.Rgba8, (uint)width, (uint)height);
+        _gl.FramebufferRenderbuffer(FramebufferTarget.Framebuffer,
+            FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, _msaaColorRbo);
+
+        _msaaDepthRbo = _gl.GenRenderbuffer();
+        _gl.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _msaaDepthRbo);
+        _gl.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer,
+            (uint)_msaaSamples, InternalFormat.Depth24Stencil8, (uint)width, (uint)height);
+        _gl.FramebufferRenderbuffer(FramebufferTarget.Framebuffer,
+            FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, _msaaDepthRbo);
+
+        _gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+    }
+
     public void Cleanup()
     {
+        if (_msaaFbo != 0) _gl.DeleteFramebuffer(_msaaFbo);
+        if (_msaaColorRbo != 0) _gl.DeleteRenderbuffer(_msaaColorRbo);
+        if (_msaaDepthRbo != 0) _gl.DeleteRenderbuffer(_msaaDepthRbo);
+
         if (_terrainVao != 0) _gl.DeleteVertexArray(_terrainVao);
         if (_terrainVboPos != 0) _gl.DeleteBuffer(_terrainVboPos);
         if (_terrainVboColor != 0) _gl.DeleteBuffer(_terrainVboColor);
