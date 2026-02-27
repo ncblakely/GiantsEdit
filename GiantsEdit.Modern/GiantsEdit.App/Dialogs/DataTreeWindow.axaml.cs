@@ -53,13 +53,16 @@ public partial class DataTreeWindow : Window
 /// </summary>
 public class DataTreeNodeVm
 {
+    private static readonly HashSet<string> HiddenSections = ["[sfx]", "[objdefs]"];
+
     public DataTreeNodeVm(TreeNode node)
     {
         Model = node;
         Name = node.Name;
 
         foreach (var child in node.EnumerateNodes())
-            Children.Add(new DataTreeNodeVm(child));
+            if (!HiddenSections.Contains(child.Name))
+                Children.Add(new DataTreeNodeVm(child));
     }
 
     public string Name { get; }

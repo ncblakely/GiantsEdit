@@ -129,7 +129,7 @@ public partial class MainViewModel : ObservableObject
             ObjX = obj.FindChildLeaf("X")?.SingleValue ?? 0;
             ObjY = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
             ObjZ = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
-            ObjAngle = obj.FindChildLeaf("Angle")?.SingleValue ?? 0;
+            ObjAngle = obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
             ObjScale = obj.FindChildLeaf("Scale")?.SingleValue ?? 1f;
             ObjType = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
         }
@@ -178,7 +178,7 @@ public partial class MainViewModel : ObservableObject
         obj.FindChildLeaf("Y")?.SetSingle(ObjY);
         obj.FindChildLeaf("Z")?.SetSingle(ObjZ);
 
-        var angleLeaf = obj.FindChildLeaf("Angle");
+        var angleLeaf = obj.FindChildLeaf("DirFacing");
         angleLeaf?.SetSingle(ObjAngle);
     }
 }

@@ -53,7 +53,7 @@ public class BinMissionReader
                 obj.AddSingle("X", _r.ReadSingle());
                 obj.AddSingle("Y", _r.ReadSingle());
                 obj.AddSingle("Z", _r.ReadSingle());
-                obj.AddSingle("Angle", _r.ReadSingle());
+                obj.AddSingle("DirFacing", _r.ReadSingle());
                 break;
             }
             case 0x04: // 3-angled object
@@ -64,18 +64,18 @@ public class BinMissionReader
                 obj.AddSingle("X", _r.ReadSingle());
                 obj.AddSingle("Y", _r.ReadSingle());
                 obj.AddSingle("Z", _r.ReadSingle());
-                obj.AddSingle("Angle", _r.ReadSingle());
-                obj.AddSingle("Tilt Forward", _r.ReadSingle());
-                obj.AddSingle("Tilt Left", _r.ReadSingle());
+                obj.AddSingle("DirFacing", _r.ReadSingle());
+                obj.AddSingle("TiltForward", _r.ReadSingle());
+                obj.AddSingle("TiltLeft", _r.ReadSingle());
                 break;
             }
             case 0x05:
                 _currentObject.AddByte("AIMode", _r.ReadByte());
                 break;
             case 0x06:
-                _currentObject.AddSingle("OData 0", _r.ReadSingle());
-                _currentObject.AddSingle("OData 1", _r.ReadSingle());
-                _currentObject.AddSingle("OData 2", _r.ReadSingle());
+                _currentObject.AddSingle("OData1", _r.ReadSingle());
+                _currentObject.AddSingle("OData2", _r.ReadSingle());
+                _currentObject.AddSingle("OData3", _r.ReadSingle());
                 break;
             case 0x07:
                 _currentObject.AddInt32("TeamID", _r.ReadInt32());
@@ -139,8 +139,8 @@ public class BinMissionReader
                 var lockNode = _currentObject.AddNode("Lock");
                 _currentObject = lockNode;
                 lockNode.AddInt32("Type", _r.ReadInt32());
-                lockNode.AddByte("Lock 1", _r.ReadByte());
-                lockNode.AddByte("Lock 2", _r.ReadByte());
+                lockNode.AddByte("LockRefSrc", _r.ReadByte());
+                lockNode.AddByte("LockRefDst", _r.ReadByte());
                 break;
             }
             case 0x17: // Pop lock
@@ -180,7 +180,7 @@ public class BinMissionReader
                 _currentObject.AddByte("SplineStartID", _r.ReadByte());
                 break;
             case 0x21:
-                _currentObject.AddInt32("SplineKeyTime", _r.ReadInt32());
+                _currentObject.AddInt32("KeyTime", _r.ReadInt32());
                 break;
             case 0x22:
                 root.GetOrAddNode("<Options>").AddVoid("JetskiRace");
@@ -316,7 +316,7 @@ public class BinMissionWriter
 
     private void WriteObject(BinaryDataWriter w, TreeNode obj)
     {
-        bool hasTilt = obj.FindChildLeaf("Tilt Forward") != null;
+        bool hasTilt = obj.FindChildLeaf("TiltForward") != null;
 
         if (hasTilt)
         {
@@ -325,9 +325,9 @@ public class BinMissionWriter
             w.WriteSingle(obj.GetChildLeaf("X").SingleValue);
             w.WriteSingle(obj.GetChildLeaf("Y").SingleValue);
             w.WriteSingle(obj.GetChildLeaf("Z").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Angle").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Tilt Forward").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Tilt Left").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("DirFacing").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("TiltForward").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("TiltLeft").SingleValue);
         }
         else
         {
@@ -336,7 +336,7 @@ public class BinMissionWriter
             w.WriteSingle(obj.GetChildLeaf("X").SingleValue);
             w.WriteSingle(obj.GetChildLeaf("Y").SingleValue);
             w.WriteSingle(obj.GetChildLeaf("Z").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Angle").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("DirFacing").SingleValue);
         }
 
         // Write optional attributes
@@ -347,16 +347,16 @@ public class BinMissionWriter
         WriteLeafIfPresent(w, obj, "SpecialText", 0x0D, LeafWriteKind.Int32);
         WriteLeafIfPresent(w, obj, "FlickUsed", 0x14, LeafWriteKind.String32);
         WriteLeafIfPresent(w, obj, "SplineStartID", 0x20, LeafWriteKind.Byte);
-        WriteLeafIfPresent(w, obj, "SplineKeyTime", 0x21, LeafWriteKind.Int32);
+        WriteLeafIfPresent(w, obj, "KeyTime", 0x21, LeafWriteKind.Int32);
 
         // OData ($06)
-        var odata0 = obj.FindChildLeaf("OData 0");
-        if (odata0 != null)
+        var odata1 = obj.FindChildLeaf("OData1");
+        if (odata1 != null)
         {
             w.WriteByte(0x06);
-            w.WriteSingle(odata0.SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("OData 1").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("OData 2").SingleValue);
+            w.WriteSingle(odata1.SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("OData2").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("OData3").SingleValue);
         }
 
         // Directions ($18)
@@ -424,8 +424,8 @@ public class BinMissionWriter
     {
         w.WriteByte(0x16);
         w.WriteInt32(lockNode.GetChildLeaf("Type").Int32Value);
-        w.WriteByte(lockNode.GetChildLeaf("Lock 1").ByteValue);
-        w.WriteByte(lockNode.GetChildLeaf("Lock 2").ByteValue);
+        w.WriteByte(lockNode.GetChildLeaf("LockRefSrc").ByteValue);
+        w.WriteByte(lockNode.GetChildLeaf("LockRefDst").ByteValue);
 
         // Write nested objects/locks
         foreach (var child in lockNode.EnumerateNodes())

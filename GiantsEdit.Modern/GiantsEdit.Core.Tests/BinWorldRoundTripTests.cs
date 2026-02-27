@@ -26,17 +26,17 @@ public class BinWorldRoundTripTests
 
         // Verify Tiling
         var tiling = loaded.GetChildNode("Tiling");
-        Assert.AreEqual(1.0f, tiling.GetChildLeaf("p0").SingleValue);
+        Assert.AreEqual(1.0f, tiling.GetChildLeaf("Obsolete0").SingleValue);
 
         // Verify Fog
         var fog = loaded.GetChildNode("Fog");
-        Assert.AreEqual(100.0f, fog.GetChildLeaf("Near distance").SingleValue);
-        Assert.AreEqual(500.0f, fog.GetChildLeaf("Far distance").SingleValue);
+        Assert.AreEqual(100.0f, fog.GetChildLeaf("FogMin").SingleValue);
+        Assert.AreEqual(500.0f, fog.GetChildLeaf("FogMax").SingleValue);
         Assert.AreEqual((byte)128, fog.GetChildLeaf("Red").ByteValue);
 
-        // Verify [sfxlist]
-        var sfx = loaded.GetChildNode("[sfxlist]");
-        Assert.AreEqual(42, sfx.GetChildLeaf("p0").Int32Value);
+        // Verify [sfx]
+        var sfx = loaded.GetChildNode("[sfx]");
+        Assert.AreEqual(42, sfx.GetChildLeaf("NumOrVersion").Int32Value);
 
         // Verify [textures]
         var tex = loaded.GetChildNode("[textures]");
@@ -59,16 +59,16 @@ public class BinWorldRoundTripTests
         obj1.AddSingle("X", 10.0f);
         obj1.AddSingle("Y", 20.0f);
         obj1.AddSingle("Z", 30.0f);
-        obj1.AddSingle("Angle", 1.57f);
+        obj1.AddSingle("DirFacing", 1.57f);
 
         var obj2 = objects.AddNode("Object");
         obj2.AddInt32("Type", 200);
         obj2.AddSingle("X", -5.0f);
         obj2.AddSingle("Y", -10.0f);
         obj2.AddSingle("Z", 0.0f);
-        obj2.AddSingle("Angle", 0.1f);
-        obj2.AddSingle("Tilt Forward", 0.2f);
-        obj2.AddSingle("Tilt Left", 0.3f);
+        obj2.AddSingle("DirFacing", 0.1f);
+        obj2.AddSingle("TiltForward", 0.2f);
+        obj2.AddSingle("TiltLeft", 0.3f);
 
         var writer = new BinWorldWriter();
         byte[] data = writer.Save(root);
@@ -84,11 +84,11 @@ public class BinWorldRoundTripTests
         // First object (1-angle)
         Assert.AreEqual(102, nodes[0].GetChildLeaf("Type").Int32Value);
         Assert.AreEqual(10.0f, nodes[0].GetChildLeaf("X").SingleValue);
-        Assert.AreEqual(1.57f, nodes[0].GetChildLeaf("Angle").SingleValue);
+        Assert.AreEqual(1.57f, nodes[0].GetChildLeaf("DirFacing").SingleValue);
 
         // Second object (with tilt)
         Assert.AreEqual(200, nodes[1].GetChildLeaf("Type").Int32Value);
-        Assert.AreEqual(0.2f, nodes[1].GetChildLeaf("Tilt Forward").SingleValue);
+        Assert.AreEqual(0.2f, nodes[1].GetChildLeaf("TiltForward").SingleValue);
     }
 
     private static DataModel.TreeNode BuildMinimalWorld()
@@ -100,19 +100,24 @@ public class BinWorldRoundTripTests
         fs.AddString("GtiName", "test.gti");
 
         var tiling = root.AddNode("Tiling");
-        for (int i = 0; i < 7; i++)
-            tiling.AddSingle($"p{i}", (float)(i + 1));
+        tiling.AddSingle("Obsolete0", 1.0f);
+        tiling.AddSingle("Obsolete1", 2.0f);
+        tiling.AddSingle("Obsolete2", 3.0f);
+        tiling.AddSingle("MixNear", 4.0f);
+        tiling.AddSingle("MixFar", 5.0f);
+        tiling.AddSingle("MixNearBlend", 6.0f);
+        tiling.AddSingle("MixFarBlend", 7.0f);
 
         var fog = root.AddNode("Fog");
-        fog.AddSingle("Near distance", 100.0f);
-        fog.AddSingle("Far distance", 500.0f);
+        fog.AddSingle("FogMin", 100.0f);
+        fog.AddSingle("FogMax", 500.0f);
         fog.AddByte("Red", 128);
         fog.AddByte("Green", 200);
         fog.AddByte("Blue", 255);
 
         var wfog = root.AddNode("WaterFog");
-        wfog.AddSingle("Near distance", 50.0f);
-        wfog.AddSingle("Far distance", 300.0f);
+        wfog.AddSingle("FogMin", 50.0f);
+        wfog.AddSingle("FogMax", 300.0f);
         wfog.AddByte("Red", 0);
         wfog.AddByte("Green", 100);
         wfog.AddByte("Blue", 200);
@@ -123,15 +128,18 @@ public class BinWorldRoundTripTests
         t1.AddByte("IsSkyDome", 1);
         t1.AddString("Name", "sky.tga");
 
-        var sfx = root.AddNode("[sfxlist]");
-        for (int i = 0; i < 5; i++)
-            sfx.AddInt32($"p{i}", 42 + i);
+        var sfx = root.AddNode("[sfx]");
+        sfx.AddInt32("NumOrVersion", 42);
+        sfx.AddInt32("SfxVersion", 43);
+        sfx.AddInt32("Count", 44);
+        sfx.AddInt32("EntrySize", 45);
+        sfx.AddInt32("DataSize", 46);
 
-        var unkn = root.AddNode("[unknown]");
-        unkn.AddByte("unknown", 0);
+        var obj = root.AddNode("[objdefs]");
+        obj.AddByte("data", 0);
 
         var fx = root.AddNode("[fx]");
-        fx.AddInt32("p0", 1);
+        fx.AddInt32("EnvironmentType", 1);
 
         var scen = root.AddNode("[scenerios]");
 

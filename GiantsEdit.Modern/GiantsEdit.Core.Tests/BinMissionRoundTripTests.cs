@@ -18,7 +18,7 @@ public class BinMissionRoundTripTests
         obj1.AddSingle("X", 1.0f);
         obj1.AddSingle("Y", 2.0f);
         obj1.AddSingle("Z", 3.0f);
-        obj1.AddSingle("Angle", 0.5f);
+        obj1.AddSingle("DirFacing", 0.5f);
 
         // 3-angle object
         var obj2 = objects.AddNode("Object");
@@ -26,9 +26,9 @@ public class BinMissionRoundTripTests
         obj2.AddSingle("X", -1.0f);
         obj2.AddSingle("Y", -2.0f);
         obj2.AddSingle("Z", -3.0f);
-        obj2.AddSingle("Angle", 0.1f);
-        obj2.AddSingle("Tilt Forward", 0.2f);
-        obj2.AddSingle("Tilt Left", 0.3f);
+        obj2.AddSingle("DirFacing", 0.1f);
+        obj2.AddSingle("TiltForward", 0.2f);
+        obj2.AddSingle("TiltLeft", 0.3f);
 
         var writer = new BinMissionWriter();
         byte[] data = writer.Save(root);
@@ -41,10 +41,10 @@ public class BinMissionRoundTripTests
         Assert.AreEqual(2, objs.Count);
 
         Assert.AreEqual(50, objs[0].GetChildLeaf("Type").Int32Value);
-        Assert.AreEqual(0.5f, objs[0].GetChildLeaf("Angle").SingleValue);
+        Assert.AreEqual(0.5f, objs[0].GetChildLeaf("DirFacing").SingleValue);
 
         Assert.AreEqual(100, objs[1].GetChildLeaf("Type").Int32Value);
-        Assert.AreEqual(0.2f, objs[1].GetChildLeaf("Tilt Forward").SingleValue);
+        Assert.AreEqual(0.2f, objs[1].GetChildLeaf("TiltForward").SingleValue);
     }
 
     [TestMethod]
@@ -58,7 +58,7 @@ public class BinMissionRoundTripTests
         obj.AddSingle("X", 0f);
         obj.AddSingle("Y", 0f);
         obj.AddSingle("Z", 0f);
-        obj.AddSingle("Angle", 0f);
+        obj.AddSingle("DirFacing", 0f);
         obj.AddByte("AIMode", 3);
         obj.AddInt32("TeamID", 2);
         obj.AddSingle("Scale", 1.5f);

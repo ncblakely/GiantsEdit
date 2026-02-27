@@ -309,7 +309,7 @@ public class WorldDocument
         _worldRoot.AddNode("Fog");
         _worldRoot.AddNode("WaterFog");
         _worldRoot.AddNode("[textures]");
-        _worldRoot.AddNode("[sfxlist]");
+        _worldRoot.AddNode("[sfx]");
         _worldRoot.AddNode("[unknown]");
         _worldRoot.AddNode("[fx]");
         _worldRoot.AddNode("[scenerios]");
@@ -346,9 +346,9 @@ public class WorldDocument
             float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
             float scale = obj.FindChildLeaf("Scale")?.SingleValue ?? 1f;
 
-            float dirFacing = obj.FindChildLeaf("Angle")?.SingleValue ?? 0;
-            float tiltFwd = obj.FindChildLeaf("Tilt Forward")?.SingleValue ?? 0;
-            float tiltLeft = obj.FindChildLeaf("Tilt Left")?.SingleValue ?? 0;
+            float dirFacing = obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
+            float tiltFwd = obj.FindChildLeaf("TiltForward")?.SingleValue ?? 0;
+            float tiltLeft = obj.FindChildLeaf("TiltLeft")?.SingleValue ?? 0;
 
             int modelId = typeLeaf.Int32Value;
 
@@ -570,7 +570,7 @@ public class WorldDocument
         obj.AddSingle("X", x);
         obj.AddSingle("Y", y);
         obj.AddSingle("Z", z);
-        obj.AddSingle("Angle", angle);
+        obj.AddSingle("DirFacing", angle);
 
         IsModified = true;
         WorldChanged?.Invoke();
@@ -692,7 +692,7 @@ public class WorldDocument
         var handledSections = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "[FileStart]", "<Objects>", "<PreObjects>", "[textures]",
-            "[fx]", "[scenerios]", "[includefiles]", "[sfxlist]", "[unknown]"
+            "[fx]", "[scenerios]", "[includefiles]", "[sfx]", "[objdefs]"
         };
 
         var unhandled = new List<string>();

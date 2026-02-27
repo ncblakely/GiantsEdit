@@ -36,8 +36,8 @@ public class BinWorldWriter
         WriteIfExists(root, "Tiling", SaveTiling);
         WriteIfExists(root, "<Textures>", SaveTextures);
         WriteIfExists(root, "SeaSpeed", SaveSeaSpeed);
-        WriteIfExists(root, "<Teleport>", SaveTeleport);
-        WriteIfExists(root, "<StartLoc>", SaveStartLoc);
+        WriteIfExists(root, "<Teleports>", SaveTeleport);
+        WriteIfExists(root, "<StartLocs>", SaveStartLoc);
         WriteIfExists(root, "<Sun>", SaveSun);
         WriteIfExists(root, "<Flicks>", SaveFlicks);
         WriteIfExists(root, "<PreObjects>", SaveObjects);
@@ -51,20 +51,20 @@ public class BinWorldWriter
 
         WriteIfExists(root, "Fog", SaveFog);
         WriteIfExists(root, "WaterFog", SaveWaterFog);
-        WriteIfExists(root, "bumpclampvalue", n => { _w.WriteByte(0x75); WriteLeaf(n.GetChildLeaf("Value")); });
-        WriteIfExists(root, "DisableScenerios", n => { _w.WriteByte(0x60); WriteLeaf(n.GetChildLeaf("Value")); });
+        WriteIfExists(root, "BumpClampValue", n => { _w.WriteByte(0x75); WriteLeaf(n.GetChildLeaf("Value")); });
+        WriteIfExists(root, "NoScenerios", n => { _w.WriteByte(0x60); WriteLeaf(n.GetChildLeaf("Value")); });
         WriteIfExists(root, "LandAngles", n =>
         {
             _w.WriteByte(0x66);
-            WriteLeaf(n.GetChildLeaf("Angle 0"));
-            WriteLeaf(n.GetChildLeaf("Angle 1"));
+            WriteLeaf(n.GetChildLeaf("SlopeAngle"));
+            WriteLeaf(n.GetChildLeaf("WallAngle"));
         });
         WriteIfExists(root, "LandTexFade", n =>
         {
             _w.WriteByte(0x65);
-            WriteLeaf(n.GetChildLeaf("p0"));
-            WriteLeaf(n.GetChildLeaf("p1"));
-            WriteLeaf(n.GetChildLeaf("p2"));
+            WriteLeaf(n.GetChildLeaf("Falloff0"));
+            WriteLeaf(n.GetChildLeaf("Falloff1"));
+            WriteLeaf(n.GetChildLeaf("Falloff2"));
         });
         WriteIfExists(root, "WaterColor", SaveWaterColor);
         WriteIfExists(root, "<Missions>", SaveMissions);
@@ -84,7 +84,7 @@ public class BinWorldWriter
 
         // Pointer 4: [fx]
         pointers[4] = _w.Position;
-        WriteLeaf(root.GetChildNode("[fx]").GetChildLeaf("p0"));
+        WriteLeaf(root.GetChildNode("[fx]").GetChildLeaf("EnvironmentType"));
 
         // Pointer 5: [scenerios]
         pointers[5] = _w.Position;
@@ -94,18 +94,21 @@ public class BinWorldWriter
         pointers[6] = _w.Position;
         SaveIncludeFiles(root.GetChildNode("[includefiles]"));
 
-        // Pointer 2: [sfxlist]
+        // Pointer 2: [sfx]
         pointers[2] = _w.Position;
-        var sfx = root.GetChildNode("[sfxlist]");
-        for (int i = 0; i < 5; i++)
-            WriteLeaf(sfx.GetChildLeaf($"p{i}"));
+        var sfx = root.GetChildNode("[sfx]");
+        WriteLeaf(sfx.GetChildLeaf("NumOrVersion"));
+        WriteLeaf(sfx.GetChildLeaf("SfxVersion"));
+        WriteLeaf(sfx.GetChildLeaf("Count"));
+        WriteLeaf(sfx.GetChildLeaf("EntrySize"));
+        WriteLeaf(sfx.GetChildLeaf("DataSize"));
 
-        // Pointer 3: [unknown]
+        // Pointer 3: [objdefs]
         pointers[3] = _w.Position;
-        var unkn = root.GetChildNode("[unknown]");
-        var unknLeaves = unkn.EnumerateLeaves().ToList();
-        _w.WriteInt32(unknLeaves.Count);
-        foreach (var leaf in unknLeaves)
+        var objSec = root.GetChildNode("[objdefs]");
+        var objSecLeaves = objSec.EnumerateLeaves().ToList();
+        _w.WriteInt32(objSecLeaves.Count);
+        foreach (var leaf in objSecLeaves)
             WriteLeaf(leaf);
 
         // Write header: magic first, then 7 pointers (matches Delphi array[-1..6])
@@ -139,8 +142,13 @@ public class BinWorldWriter
     private void SaveTiling(TreeNode n)
     {
         _w.WriteByte(0x39);
-        for (int i = 0; i < 7; i++)
-            WriteLeaf(n.GetChildLeaf($"p{i}"));
+        WriteLeaf(n.GetChildLeaf("Obsolete0"));
+        WriteLeaf(n.GetChildLeaf("Obsolete1"));
+        WriteLeaf(n.GetChildLeaf("Obsolete2"));
+        WriteLeaf(n.GetChildLeaf("MixNear"));
+        WriteLeaf(n.GetChildLeaf("MixFar"));
+        WriteLeaf(n.GetChildLeaf("MixNearBlend"));
+        WriteLeaf(n.GetChildLeaf("MixFarBlend"));
     }
 
     private void SaveTextures(TreeNode n)
@@ -174,9 +182,9 @@ public class BinWorldWriter
             {
                 _w.WriteByte(code);
                 _w.WriteString32(child.GetChildLeaf("Name").StringValue);
-                WriteLeaf(child.GetChildLeaf("Stretch"));
-                WriteLeaf(child.GetChildLeaf("Offset X"));
-                WriteLeaf(child.GetChildLeaf("Offset Y"));
+                WriteLeaf(child.GetChildLeaf("Wrap"));
+                WriteLeaf(child.GetChildLeaf("OffsetX"));
+                WriteLeaf(child.GetChildLeaf("OffsetY"));
             }
         }
     }
@@ -184,9 +192,9 @@ public class BinWorldWriter
     private void SaveSeaSpeed(TreeNode n)
     {
         _w.WriteByte(0x2E);
-        WriteLeaf(n.GetChildLeaf("p0"));
-        WriteLeaf(n.GetChildLeaf("p1"));
-        WriteLeaf(n.GetChildLeaf("p2"));
+        WriteLeaf(n.GetChildLeaf("Cycle"));
+        WriteLeaf(n.GetChildLeaf("Speed"));
+        WriteLeaf(n.GetChildLeaf("Trans"));
     }
 
     private void SaveTeleport(TreeNode n)
@@ -198,7 +206,7 @@ public class BinWorldWriter
             WriteLeaf(child.GetChildLeaf("X"));
             WriteLeaf(child.GetChildLeaf("Y"));
             WriteLeaf(child.GetChildLeaf("Z"));
-            WriteLeaf(child.GetChildLeaf("Angle"));
+            WriteLeaf(child.GetChildLeaf("DirFacing"));
         }
     }
 
@@ -207,12 +215,12 @@ public class BinWorldWriter
         foreach (var child in n.EnumerateNodes())
         {
             _w.WriteByte(0x30);
-            WriteLeaf(child.GetChildLeaf("Index"));
-            WriteLeaf(child.GetChildLeaf("Unknown"));
+            WriteLeaf(child.GetChildLeaf("Type"));
+            WriteLeaf(child.GetChildLeaf("StartNumber"));
             WriteLeaf(child.GetChildLeaf("X"));
             WriteLeaf(child.GetChildLeaf("Y"));
             WriteLeaf(child.GetChildLeaf("Z"));
-            WriteLeaf(child.GetChildLeaf("Angle"));
+            WriteLeaf(child.GetChildLeaf("DirFacing"));
         }
     }
 
@@ -227,19 +235,31 @@ public class BinWorldWriter
                 WriteLeaf(child.GetChildLeaf("Green"));
                 WriteLeaf(child.GetChildLeaf("Blue"));
             }
-            else if (child.Name == "Sunfxname")
+            else if (child.Name == "SunFxName")
             {
                 _w.WriteByte(0x76);
                 _w.WriteString0(child.GetChildLeaf("Name").StringValue);
-                for (int i = 0; i < 5; i++)
-                    WriteLeaf(child.GetChildLeaf($"p{i}"));
+                WriteLeaf(child.GetChildLeaf("ColorR"));
+                WriteLeaf(child.GetChildLeaf("ColorG"));
+                WriteLeaf(child.GetChildLeaf("ColorB"));
+                WriteLeaf(child.GetChildLeaf("Exponent"));
+                WriteLeaf(child.GetChildLeaf("Factor"));
             }
             else if (child.Name is "Sunflare1" or "Sunflare2")
             {
                 _w.WriteByte((byte)(child.Name == "Sunflare1" ? 0x77 : 0x78));
-                WriteLeaf(child.GetChildLeaf("unknown"));
-                for (int i = 0; i < 11; i++)
-                    WriteLeaf(child.GetChildLeaf($"p{i}"));
+                WriteLeaf(child.GetChildLeaf("Type"));
+                WriteLeaf(child.GetChildLeaf("Base0"));
+                WriteLeaf(child.GetChildLeaf("Exponent0"));
+                WriteLeaf(child.GetChildLeaf("Factor0"));
+                WriteLeaf(child.GetChildLeaf("Damping0"));
+                WriteLeaf(child.GetChildLeaf("Base1"));
+                WriteLeaf(child.GetChildLeaf("Exponent1"));
+                WriteLeaf(child.GetChildLeaf("Factor1"));
+                WriteLeaf(child.GetChildLeaf("Damping1"));
+                WriteLeaf(child.GetChildLeaf("OscillationAmplitude"));
+                WriteLeaf(child.GetChildLeaf("OscillationFrequency"));
+                WriteLeaf(child.GetChildLeaf("SpinFrequency"));
             }
         }
     }
@@ -249,7 +269,7 @@ public class BinWorldWriter
         foreach (var obj in n.EnumerateNodes())
         {
             // Determine: has tilt → opcode 0x46 (Angle + TiltFwd + TiltLeft), else 0x2A (Angle only)
-            var tiltFwd = obj.FindChildLeaf("Tilt Forward");
+            var tiltFwd = obj.FindChildLeaf("TiltForward");
             if (tiltFwd != null)
             {
                 _w.WriteByte(0x46);
@@ -257,9 +277,9 @@ public class BinWorldWriter
                 WriteLeaf(obj.GetChildLeaf("X"));
                 WriteLeaf(obj.GetChildLeaf("Y"));
                 WriteLeaf(obj.GetChildLeaf("Z"));
-                WriteLeaf(obj.GetChildLeaf("Angle"));
+                WriteLeaf(obj.GetChildLeaf("DirFacing"));
                 WriteLeaf(tiltFwd);
-                WriteLeaf(obj.GetChildLeaf("Tilt Left"));
+                WriteLeaf(obj.GetChildLeaf("TiltLeft"));
             }
             else
             {
@@ -268,7 +288,7 @@ public class BinWorldWriter
                 WriteLeaf(obj.GetChildLeaf("X"));
                 WriteLeaf(obj.GetChildLeaf("Y"));
                 WriteLeaf(obj.GetChildLeaf("Z"));
-                WriteLeaf(obj.GetChildLeaf("Angle"));
+                WriteLeaf(obj.GetChildLeaf("DirFacing"));
             }
 
             var scale = obj.FindChildLeaf("Scale");
@@ -280,25 +300,25 @@ public class BinWorldWriter
             var teamId = obj.FindChildLeaf("TeamID");
             if (teamId != null) { _w.WriteByte(0x52); WriteLeaf(teamId); }
 
-            var splineKey = obj.FindChildLeaf("SplineKeyTime");
+            var splineKey = obj.FindChildLeaf("KeyTime");
             if (splineKey != null) { _w.WriteByte(0x6B); WriteLeaf(splineKey); }
 
-            var odata0 = obj.FindChildLeaf("OData 0");
-            if (odata0 != null)
+            var odata1 = obj.FindChildLeaf("OData1");
+            if (odata1 != null)
             {
                 _w.WriteByte(0x5A);
-                WriteLeaf(odata0);
-                WriteLeaf(obj.GetChildLeaf("OData 1"));
-                WriteLeaf(obj.GetChildLeaf("OData 2"));
+                WriteLeaf(odata1);
+                WriteLeaf(obj.GetChildLeaf("OData2"));
+                WriteLeaf(obj.GetChildLeaf("OData3"));
             }
 
-            var light0 = obj.FindChildLeaf("LightColor 0");
-            if (light0 != null)
+            var lightR = obj.FindChildLeaf("LightColorR");
+            if (lightR != null)
             {
                 _w.WriteByte(0x5F);
-                WriteLeaf(light0);
-                WriteLeaf(obj.GetChildLeaf("LightColor 1"));
-                WriteLeaf(obj.GetChildLeaf("LightColor 2"));
+                WriteLeaf(lightR);
+                WriteLeaf(obj.GetChildLeaf("LightColorG"));
+                WriteLeaf(obj.GetChildLeaf("LightColorB"));
             }
 
             // Locks (recursive)
@@ -306,8 +326,8 @@ public class BinWorldWriter
             {
                 _w.WriteByte(0x4C);
                 WriteLeaf(lockNode.GetChildLeaf("Type"));
-                WriteLeaf(lockNode.GetChildLeaf("Lock 1"));
-                WriteLeaf(lockNode.GetChildLeaf("Lock 2"));
+                WriteLeaf(lockNode.GetChildLeaf("LockRefSrc"));
+                WriteLeaf(lockNode.GetChildLeaf("LockRefDst"));
                 SaveObjects(lockNode);
                 _w.WriteByte(0x4D);
             }
@@ -317,8 +337,8 @@ public class BinWorldWriter
     private void SaveFog(TreeNode n)
     {
         _w.WriteByte(0x29);
-        WriteLeaf(n.GetChildLeaf("Near distance"));
-        WriteLeaf(n.GetChildLeaf("Far distance"));
+        WriteLeaf(n.GetChildLeaf("FogMin"));
+        WriteLeaf(n.GetChildLeaf("FogMax"));
         WriteLeaf(n.GetChildLeaf("Red"));
         WriteLeaf(n.GetChildLeaf("Green"));
         WriteLeaf(n.GetChildLeaf("Blue"));
@@ -327,8 +347,8 @@ public class BinWorldWriter
     private void SaveWaterFog(TreeNode n)
     {
         _w.WriteByte(0x58);
-        WriteLeaf(n.GetChildLeaf("Near distance"));
-        WriteLeaf(n.GetChildLeaf("Far distance"));
+        WriteLeaf(n.GetChildLeaf("FogMin"));
+        WriteLeaf(n.GetChildLeaf("FogMax"));
         WriteLeaf(n.GetChildLeaf("Red"));
         WriteLeaf(n.GetChildLeaf("Green"));
         WriteLeaf(n.GetChildLeaf("Blue"));
@@ -337,8 +357,20 @@ public class BinWorldWriter
     private void SaveWaterColor(TreeNode n)
     {
         _w.WriteByte(0x79);
-        for (int i = 0; i < 23; i++)
-            WriteLeaf(n.GetChildLeaf($"p{i}"));
+        WriteLeaf(n.GetChildLeaf("ColorR"));
+        WriteLeaf(n.GetChildLeaf("ColorG"));
+        WriteLeaf(n.GetChildLeaf("ColorB"));
+        for (int i = 0; i < 5; i++)
+        {
+            WriteLeaf(n.GetChildLeaf($"Color{i}R"));
+            WriteLeaf(n.GetChildLeaf($"Color{i}G"));
+            WriteLeaf(n.GetChildLeaf($"Color{i}B"));
+        }
+        WriteLeaf(n.GetChildLeaf("ReflectionFalloff"));
+        WriteLeaf(n.GetChildLeaf("ReflectionWidth"));
+        WriteLeaf(n.GetChildLeaf("ReflectionScale"));
+        WriteLeaf(n.GetChildLeaf("ReflectionAmplitude"));
+        WriteLeaf(n.GetChildLeaf("WaveSpeed"));
     }
 
     private void SaveFlicks(TreeNode n)
@@ -365,7 +397,7 @@ public class BinWorldWriter
         {
             _w.WriteByte(0x5C);
             WriteLeaf(child.GetChildLeaf("Type"));
-            WriteLeaf(child.GetChildLeaf("Index"));
+            WriteLeaf(child.GetChildLeaf("TriggersNeeded"));
             _w.WriteString32(child.GetChildLeaf("Name").StringValue);
         }
     }

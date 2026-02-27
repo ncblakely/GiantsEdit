@@ -259,7 +259,7 @@ public partial class MainWindow : Window
                 PropObjX.Text = (obj.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
                 PropObjY.Text = (obj.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
                 PropObjZ.Text = (obj.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
-                PropObjAngle.Text = (obj.FindChildLeaf("Angle")?.SingleValue ?? 0).ToString("F4");
+                PropObjAngle.Text = (obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0).ToString("F4");
                 PropObjScale.Text = (obj.FindChildLeaf("Scale")?.SingleValue ?? 1f).ToString("F4");
             }
             else
@@ -629,10 +629,10 @@ public partial class MainWindow : Window
         PropObjX.Text = (objNode.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
         PropObjY.Text = (objNode.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
         PropObjZ.Text = (objNode.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
-        PropObjAngle.Text = (objNode.FindChildLeaf("Angle")?.SingleValue ?? 0).ToString("F2");
+        PropObjAngle.Text = (objNode.FindChildLeaf("DirFacing")?.SingleValue ?? 0).ToString("F2");
 
-        // Tilt (optional: Tilt Forward / Tilt Left from OpObjectRef6)
-        var tiltFwdLeaf = objNode.FindChildLeaf("Tilt Forward");
+        // Tilt (optional: TiltForward / TiltLeft from ObjectRef6)
+        var tiltFwdLeaf = objNode.FindChildLeaf("TiltForward");
         bool hasTilt = tiltFwdLeaf != null;
         ChkObjTilt.IsChecked = hasTilt;
         PanelTilt.IsVisible = hasTilt;
@@ -641,7 +641,7 @@ public partial class MainWindow : Window
         if (hasTilt)
         {
             PropObjTiltFwd.Text = (tiltFwdLeaf?.SingleValue ?? 0).ToString("F2");
-            PropObjTiltLeft.Text = (objNode.FindChildLeaf("Tilt Left")?.SingleValue ?? 0).ToString("F2");
+            PropObjTiltLeft.Text = (objNode.FindChildLeaf("TiltLeft")?.SingleValue ?? 0).ToString("F2");
         }
 
         // Scale (optional)
@@ -765,7 +765,7 @@ public partial class MainWindow : Window
         if (src == null || !_newObjPosition.HasValue) return;
 
         int typeId = src.FindChildLeaf("Type")?.Int32Value ?? 0;
-        float angle = src.FindChildLeaf("Angle")?.SingleValue ?? 0;
+        float angle = src.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
         var pos = _newObjPosition.Value;
 
         var newObj = _vm.Document.AddObject(typeId, pos.X, pos.Y, pos.Z, angle);
@@ -900,6 +900,7 @@ public partial class MainWindow : Window
 
         if (dlg.Confirmed)
         {
+            CloseOwnedWindows();
             _vm.Document.NewWorld(dlg.MapWidth, dlg.MapHeight, dlg.TextureName);
             StatusText.Text = $"New map: {dlg.MapWidth}x{dlg.MapHeight}";
         }
@@ -934,6 +935,7 @@ public partial class MainWindow : Window
 
                 try
                 {
+                    CloseOwnedWindows();
                     if (path.EndsWith(".gck", StringComparison.OrdinalIgnoreCase))
                         _vm.Document.LoadGck(path);
                     else
@@ -1041,8 +1043,8 @@ public partial class MainWindow : Window
             var path = files[0].TryGetLocalPath();
             if (path != null)
             {
+                CloseOwnedWindows();
                 _vm.Document.LoadWorld(path);
-                StatusText.Text = $"Imported objects from: {System.IO.Path.GetFileName(path)}";
             }
         }
     }
@@ -1327,6 +1329,12 @@ public partial class MainWindow : Window
         win.Show(this);
     }
 
+    private void CloseOwnedWindows()
+    {
+        foreach (var w in OwnedWindows.ToList())
+            w.Close();
+    }
+
     private void PlaceAllObjectsOnSurface()
     {
         var terrain = _vm.Document.Terrain;
@@ -1374,13 +1382,13 @@ public partial class MainWindow : Window
         if (float.TryParse(PropObjZ.Text, out float z))
             obj.FindChildLeaf("Z")?.SetSingle(z);
         if (float.TryParse(PropObjAngle.Text, out float angle))
-            obj.FindChildLeaf("Angle")?.SetSingle(angle);
+            obj.FindChildLeaf("DirFacing")?.SetSingle(angle);
         if (ChkObjTilt.IsChecked == true)
         {
             if (float.TryParse(PropObjTiltFwd.Text, out float tf))
-                obj.FindChildLeaf("Tilt Forward")?.SetSingle(tf);
+                obj.FindChildLeaf("TiltForward")?.SetSingle(tf);
             if (float.TryParse(PropObjTiltLeft.Text, out float tl))
-                obj.FindChildLeaf("Tilt Left")?.SetSingle(tl);
+                obj.FindChildLeaf("TiltLeft")?.SetSingle(tl);
         }
 
         // Apply optional fields only if their checkbox is checked
@@ -1471,16 +1479,16 @@ public partial class MainWindow : Window
 
         if (enable)
         {
-            obj.AddSingle("Tilt Forward", 0);
-            obj.AddSingle("Tilt Left", 0);
+            obj.AddSingle("TiltForward", 0);
+            obj.AddSingle("TiltLeft", 0);
             PropObjTiltFwd.Text = "0.00";
             PropObjTiltLeft.Text = "0.00";
         }
         else
         {
-            var fwd = obj.FindChildLeaf("Tilt Forward");
+            var fwd = obj.FindChildLeaf("TiltForward");
             if (fwd != null) obj.RemoveLeaf(fwd);
-            var left = obj.FindChildLeaf("Tilt Left");
+            var left = obj.FindChildLeaf("TiltLeft");
             if (left != null) obj.RemoveLeaf(left);
         }
 
