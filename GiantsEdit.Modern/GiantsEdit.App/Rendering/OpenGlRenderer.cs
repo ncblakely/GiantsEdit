@@ -46,6 +46,8 @@ public sealed class OpenGlRenderer : IRenderer
     private int _solidColorLoc;
     private int _modelMvpLoc;
     private int _modelModelLoc;
+    private int _modelHasTexLoc;
+    private int _modelTexLoc;
 
     private readonly Dictionary<int, ModelGpuData> _models = new();
     private int _nextModelId;
@@ -88,6 +90,8 @@ public sealed class OpenGlRenderer : IRenderer
         _modelShader = CreateShader(ModelVertSrc, ModelFragSrc);
         _modelMvpLoc = _gl.GetUniformLocation(_modelShader, "uMVP");
         _modelModelLoc = _gl.GetUniformLocation(_modelShader, "uModel");
+        _modelHasTexLoc = _gl.GetUniformLocation(_modelShader, "uHasTex");
+        _modelTexLoc = _gl.GetUniformLocation(_modelShader, "uTex");
 
         BuildDome(10240f);
         BuildSea(10240f);
@@ -216,8 +220,51 @@ public sealed class OpenGlRenderer : IRenderer
 
                 SetUniformMatrix(_modelModelLoc, model);
                 _gl.BindVertexArray(gpuData.Vao);
-                _gl.DrawElements(PrimitiveType.Triangles, (uint)gpuData.IndexCount,
-                    DrawElementsType.UnsignedInt, null);
+
+                if (gpuData.Parts != null && gpuData.Parts.Length > 0)
+                {
+                    // Draw per-part with texture binding
+                    _gl.ActiveTexture(TextureUnit.Texture0);
+                    _gl.Uniform1(_modelTexLoc, 0);
+
+                    foreach (var part in gpuData.Parts)
+                    {
+                        if (part.TextureId != 0)
+                        {
+                            _gl.BindTexture(TextureTarget.Texture2D, part.TextureId);
+                            _gl.Uniform1(_modelHasTexLoc, 1);
+
+                            if (part.HasAlpha)
+                            {
+                                _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                                _gl.Enable(EnableCap.Blend);
+                            }
+                            else
+                            {
+                                _gl.Disable(EnableCap.Blend);
+                            }
+                        }
+                        else
+                        {
+                            _gl.Uniform1(_modelHasTexLoc, 0);
+                            _gl.Disable(EnableCap.Blend);
+                        }
+
+                        _gl.DrawElements(PrimitiveType.Triangles, (uint)part.IndexCount,
+                            DrawElementsType.UnsignedInt,
+                            (void*)(part.IndexOffset * sizeof(uint)));
+                    }
+
+                    _gl.Disable(EnableCap.Blend);
+                    _gl.BindTexture(TextureTarget.Texture2D, 0);
+                }
+                else
+                {
+                    // No parts — draw whole mesh without texture (mapobj shapes)
+                    _gl.Uniform1(_modelHasTexLoc, 0);
+                    _gl.DrawElements(PrimitiveType.Triangles, (uint)gpuData.IndexCount,
+                        DrawElementsType.UnsignedInt, null);
+                }
             }
             _gl.Enable(EnableCap.CullFace);
         }
@@ -362,6 +409,63 @@ public sealed class OpenGlRenderer : IRenderer
 
         gpuData.IndexCount = model.IndexCount;
 
+        // Upload textures for each part
+        if (model.Parts.Count > 0)
+        {
+            gpuData.Parts = new ModelPartGpu[model.Parts.Count];
+            for (int i = 0; i < model.Parts.Count; i++)
+            {
+                var part = model.Parts[i];
+                gpuData.Parts[i] = new ModelPartGpu
+                {
+                    IndexOffset = part.IndexOffset,
+                    IndexCount = part.IndexCount,
+                    HasAlpha = false
+                };
+
+                if (part.TextureImage is { } img)
+                {
+                    uint tex = _gl.GenTexture();
+                    _gl.BindTexture(TextureTarget.Texture2D, tex);
+                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
+                        (int)GLEnum.Repeat);
+                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
+                        (int)GLEnum.Repeat);
+                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                        (int)GLEnum.Linear);
+                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                        (int)GLEnum.LinearMipmapLinear);
+
+                    var format = img.Channels switch
+                    {
+                        1 => InternalFormat.R8,
+                        3 => InternalFormat.Rgb,
+                        4 => InternalFormat.Rgba,
+                        _ => InternalFormat.Rgb
+                    };
+                    var pixelFormat = img.Channels switch
+                    {
+                        1 => PixelFormat.Red,
+                        3 => PixelFormat.Rgb,
+                        4 => PixelFormat.Rgba,
+                        _ => PixelFormat.Rgb
+                    };
+
+                    fixed (byte* px = img.Pixels)
+                    {
+                        _gl.TexImage2D(TextureTarget.Texture2D, 0, format,
+                            (uint)img.Width, (uint)img.Height, 0,
+                            pixelFormat, PixelType.UnsignedByte, px);
+                    }
+
+                    _gl.GenerateMipmap(TextureTarget.Texture2D);
+
+                    gpuData.Parts[i].TextureId = tex;
+                    gpuData.Parts[i].HasAlpha = img.HasAlpha;
+                }
+            }
+        }
+
         _gl.BindVertexArray(0);
 
         _models[id] = gpuData;
@@ -478,6 +582,9 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.DeleteVertexArray(m.Vao);
             _gl.DeleteBuffer(m.Vbo);
             _gl.DeleteBuffer(m.Ebo);
+            if (m.Parts != null)
+                foreach (var p in m.Parts)
+                    if (p.TextureId != 0) _gl.DeleteTexture(p.TextureId);
         }
         _models.Clear();
 
@@ -728,9 +835,16 @@ public sealed class OpenGlRenderer : IRenderer
         precision mediump float;
         in vec3 vColor;
         in vec2 vUV;
+        uniform int uHasTex;
+        uniform sampler2D uTex;
         out vec4 FragColor;
         void main() {
-            FragColor = vec4(vColor, 1.0);
+            if (uHasTex == 1) {
+                vec4 texColor = texture(uTex, vUV);
+                FragColor = vec4(vColor * texColor.rgb, texColor.a);
+            } else {
+                FragColor = vec4(vColor, 1.0);
+            }
         }
         """;
 
@@ -740,5 +854,14 @@ public sealed class OpenGlRenderer : IRenderer
     {
         public uint Vao, Vbo, Ebo;
         public int IndexCount;
+        public ModelPartGpu[]? Parts; // null for mapobj shapes (no textures)
+    }
+
+    private struct ModelPartGpu
+    {
+        public int IndexOffset;
+        public int IndexCount;
+        public uint TextureId; // 0 = no texture
+        public bool HasAlpha;
     }
 }

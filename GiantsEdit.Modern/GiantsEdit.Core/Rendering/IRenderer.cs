@@ -132,4 +132,7 @@ public class ModelPartData
     public int IndexCount { get; init; }
     public string TextureName { get; init; } = string.Empty;
     public bool HasAlpha { get; init; }
+
+    /// <summary>Loaded texture image (set by ModelManager before upload).</summary>
+    public Formats.TgaImage? TextureImage { get; set; }
 }

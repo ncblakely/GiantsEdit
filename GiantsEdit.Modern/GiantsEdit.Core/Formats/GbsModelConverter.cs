@@ -22,11 +22,14 @@ public static class GbsModelConverter
         const int stride = 11;
         var vertices = new float[totalTris * 3 * stride];
         var indices = new uint[totalTris * 3];
+        var parts = new List<ModelPartData>();
         int vertIdx = 0;
         int idxIdx = 0;
 
         foreach (var part in model.Parts)
         {
+            int partIndexStart = idxIdx;
+
             // Extract diffuse color components (RGBA packed as uint)
             float diffR = (part.Diffuse & 0xFF) / 255f;
             float diffG = ((part.Diffuse >> 8) & 0xFF) / 255f;
@@ -70,6 +73,14 @@ public static class GbsModelConverter
                     idxIdx++;
                 }
             }
+
+            parts.Add(new ModelPartData
+            {
+                IndexOffset = partIndexStart,
+                IndexCount = idxIdx - partIndexStart,
+                TextureName = part.TextureName,
+                HasAlpha = false // determined at texture load time
+            });
         }
 
         return new ModelRenderData
@@ -78,7 +89,8 @@ public static class GbsModelConverter
             Indices = indices,
             VertexCount = vertIdx,
             IndexCount = idxIdx,
-            VertexStride = stride
+            VertexStride = stride,
+            Parts = parts
         };
     }
 }

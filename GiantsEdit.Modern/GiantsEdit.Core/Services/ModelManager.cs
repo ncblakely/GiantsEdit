@@ -146,6 +146,22 @@ public class ModelManager
         {
             var model = GbsModelLoader.Load(gbsData);
             var renderData = GbsModelConverter.ToRenderData(model);
+
+            // Load textures for each part
+            foreach (var part in renderData.Parts)
+            {
+                if (string.IsNullOrEmpty(part.TextureName)) continue;
+                byte[]? texData = LoadGameFile(part.TextureName + ".tga");
+                if (texData != null && texData.Length > 18)
+                {
+                    try
+                    {
+                        part.TextureImage = TgaLoader.Load(texData);
+                    }
+                    catch { /* texture load failure is non-fatal */ }
+                }
+            }
+
             int id = renderer.UploadModel(renderData, typeId);
             _rendererIds[typeId] = id;
             _modelCache[typeId] = model;
