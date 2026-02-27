@@ -21,6 +21,8 @@ public sealed class OpenGlRenderer : IRenderer
     private uint _terrainVboColor;
     private uint _terrainEbo;
     private int _terrainIndexCount;
+    private uint _terrainLineEbo;
+    private int _terrainLineIndexCount;
 
     // Dome
     private uint _domeVao;
@@ -153,7 +155,19 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.UseProgram(_terrainShader);
             SetUniformMatrix(_terrainMvpLoc, vp);
             _gl.BindVertexArray(_terrainVao);
-            _gl.DrawElements(PrimitiveType.Triangles, (uint)_terrainIndexCount, DrawElementsType.UnsignedInt, null);
+
+            if (state.ShowTerrainMesh)
+            {
+                // Wireframe overlay: draw edges as lines
+                _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainLineEbo);
+                _gl.DrawElements(PrimitiveType.Lines, (uint)_terrainLineIndexCount, DrawElementsType.UnsignedInt, null);
+                _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainEbo);
+            }
+            else
+            {
+                _gl.DrawElements(PrimitiveType.Triangles, (uint)_terrainIndexCount, DrawElementsType.UnsignedInt, null);
+            }
+
             _gl.Enable(EnableCap.CullFace);
         }
 
@@ -247,6 +261,7 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.DeleteBuffer(_terrainVboPos);
             _gl.DeleteBuffer(_terrainVboColor);
             _gl.DeleteBuffer(_terrainEbo);
+            if (_terrainLineEbo != 0) _gl.DeleteBuffer(_terrainLineEbo);
         }
 
         _terrainVao = _gl.GenVertexArray();
@@ -278,6 +293,33 @@ public sealed class OpenGlRenderer : IRenderer
                 p, BufferUsageARB.StaticDraw);
 
         _terrainIndexCount = terrain.IndexCount;
+
+        // Build wireframe line indices from triangles (each triangle → 3 edges)
+        if (_terrainLineEbo != 0)
+            _gl.DeleteBuffer(_terrainLineEbo);
+
+        int triCount = terrain.IndexCount / 3;
+        var lineIndices = new uint[triCount * 6]; // 3 edges × 2 vertices each
+        for (int i = 0; i < triCount; i++)
+        {
+            uint a = terrain.Indices[i * 3];
+            uint b = terrain.Indices[i * 3 + 1];
+            uint c = terrain.Indices[i * 3 + 2];
+            lineIndices[i * 6 + 0] = a; lineIndices[i * 6 + 1] = b;
+            lineIndices[i * 6 + 2] = b; lineIndices[i * 6 + 3] = c;
+            lineIndices[i * 6 + 4] = c; lineIndices[i * 6 + 5] = a;
+        }
+
+        _terrainLineEbo = _gl.GenBuffer();
+        _gl.BindVertexArray(_terrainVao);
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainLineEbo);
+        fixed (uint* p = lineIndices)
+            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(lineIndices.Length * sizeof(uint)),
+                p, BufferUsageARB.StaticDraw);
+        _terrainLineIndexCount = lineIndices.Length;
+
+        // Re-bind the triangle EBO as default
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainEbo);
 
         _gl.BindVertexArray(0);
     }
