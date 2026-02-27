@@ -53,6 +53,9 @@ public class RenderState
     public bool DrawRealObjects { get; init; }
     public bool ViewObjThruTerrain { get; init; }
 
+    /// <summary>The source node of the currently selected object (null if none).</summary>
+    public TreeNode? SelectedObjectNode { get; init; }
+
     // Fog
     public Vector3 FogColor { get; init; }
     public float FogNear { get; init; } = 100f;
@@ -122,6 +125,11 @@ public class ModelRenderData
     public int VertexStride { get; init; } = 11;
 
     public List<ModelPartData> Parts { get; init; } = [];
+
+    /// <summary>Axis-aligned bounding box minimum corner.</summary>
+    public Vector3 BoundsMin { get; set; }
+    /// <summary>Axis-aligned bounding box maximum corner.</summary>
+    public Vector3 BoundsMax { get; set; }
 }
 
 /// <summary>

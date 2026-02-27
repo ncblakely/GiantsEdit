@@ -763,6 +763,7 @@ public partial class MainWindow : Window
             ShowTerrainMesh = _viewTerrainMesh,
             DrawRealObjects = _drawRealObjects,
             ViewObjThruTerrain = _viewObjThruTerrain,
+            SelectedObjectNode = _vm.Document.SelectedObject,
             Objects = _vm.Document.GetObjectInstances(),
             SplineLines = _vm.Document.GetSplineLines()
         };

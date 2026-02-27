@@ -26,6 +26,10 @@ public static class GbsModelConverter
         int vertIdx = 0;
         int idxIdx = 0;
 
+        // Bounds computation
+        var boundsMin = new Vector3(float.MaxValue);
+        var boundsMax = new Vector3(float.MinValue);
+
         foreach (var part in model.Parts)
         {
             int partIndexStart = idxIdx;
@@ -43,6 +47,8 @@ public static class GbsModelConverter
                     int baseIdx = model.PointIndices1[l]; // map to basepoint
 
                     Vector3 pos = model.BasePoints[baseIdx];
+                    boundsMin = Vector3.Min(boundsMin, pos);
+                    boundsMax = Vector3.Max(boundsMax, pos);
                     float u = model.PointUVs[l][0];
                     float v = model.PointUVs[l][1];
 
@@ -90,7 +96,9 @@ public static class GbsModelConverter
             VertexCount = vertIdx,
             IndexCount = idxIdx,
             VertexStride = stride,
-            Parts = parts
+            Parts = parts,
+            BoundsMin = boundsMin,
+            BoundsMax = boundsMax
         };
     }
 }

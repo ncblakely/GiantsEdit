@@ -302,8 +302,115 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.Enable(EnableCap.DepthTest);
         }
 
+        // Draw selection bounding box
+        if (state.ShowObjects && state.SelectedObjectNode != null)
+        {
+            DrawSelectionBox(state, vp);
+        }
+
         _gl.BindVertexArray(0);
         _gl.UseProgram(0);
+    }
+
+    private unsafe void DrawSelectionBox(RenderState state, Matrix4x4 vp)
+    {
+        // Find the selected object instance
+        ObjectInstance? selected = null;
+        foreach (var obj in state.Objects)
+        {
+            if (obj.SourceNode == state.SelectedObjectNode)
+            {
+                selected = obj;
+                break;
+            }
+        }
+        if (selected == null) return;
+
+        var sel = selected.Value;
+
+        // Get bounds from GPU data
+        Vector3 bMin, bMax;
+        bool found = false;
+        if (state.DrawRealObjects && _models.TryGetValue(sel.ModelId, out var modelGpu))
+        {
+            bMin = modelGpu.BoundsMin;
+            bMax = modelGpu.BoundsMax;
+            found = true;
+        }
+        else if (_mapObjsLoaded && _mapObjWrap.TryGetValue(sel.ModelId, out int shapeIdx)
+                 && _mapObjShapes.TryGetValue(shapeIdx, out var shapeGpu))
+        {
+            bMin = shapeGpu.BoundsMin;
+            bMax = shapeGpu.BoundsMax;
+            found = true;
+        }
+        else
+        {
+            // Default cube ±16
+            bMin = new Vector3(-16);
+            bMax = new Vector3(16);
+            found = true;
+        }
+
+        if (!found) return;
+
+        // Build model matrix matching the object transform
+        Matrix4x4 model;
+        if (state.DrawRealObjects)
+        {
+            model = Matrix4x4.CreateScale(sel.Scale)
+                * Matrix4x4.CreateRotationZ(sel.Rotation.Z)
+                * Matrix4x4.CreateRotationY(sel.Rotation.Y)
+                * Matrix4x4.CreateRotationX(sel.Rotation.X)
+                * Matrix4x4.CreateTranslation(sel.Position);
+        }
+        else
+        {
+            model = Matrix4x4.CreateRotationZ(sel.Rotation.Z)
+                * Matrix4x4.CreateTranslation(sel.Position);
+        }
+
+        // 12 edges of a box = 24 line vertices (3 floats each)
+        float x0 = bMin.X, y0 = bMin.Y, z0 = bMin.Z;
+        float x1 = bMax.X, y1 = bMax.Y, z1 = bMax.Z;
+        float[] lines =
+        [
+            // Bottom face edges
+            x0,y0,z0, x1,y0,z0,
+            x1,y0,z0, x1,y1,z0,
+            x1,y1,z0, x0,y1,z0,
+            x0,y1,z0, x0,y0,z0,
+            // Top face edges
+            x0,y0,z1, x1,y0,z1,
+            x1,y0,z1, x1,y1,z1,
+            x1,y1,z1, x0,y1,z1,
+            x0,y1,z1, x0,y0,z1,
+            // Vertical edges
+            x0,y0,z0, x0,y0,z1,
+            x1,y0,z0, x1,y0,z1,
+            x1,y1,z0, x1,y1,z1,
+            x0,y1,z0, x0,y1,z1,
+        ];
+
+        var mvp = model * vp;
+
+        _gl.UseProgram(_solidShader);
+        SetUniformMatrix(_solidMvpLoc, mvp);
+        _gl.Uniform4(_solidColorLoc, 1.0f, 1.0f, 1.0f, 0.6f);
+        _gl.Enable(EnableCap.Blend);
+        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        _gl.Disable(EnableCap.DepthTest);
+
+        _gl.BindVertexArray(_lineVao);
+        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _lineVbo);
+        fixed (float* p = lines)
+            _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(lines.Length * sizeof(float)),
+                p, BufferUsageARB.DynamicDraw);
+
+        _gl.DrawArrays(PrimitiveType.Lines, 0, 24);
+
+        _gl.Disable(EnableCap.Blend);
+        _gl.Enable(EnableCap.DepthTest);
     }
 
     public unsafe void UploadTerrain(TerrainRenderData terrain)
@@ -415,6 +522,8 @@ public sealed class OpenGlRenderer : IRenderer
                 p, BufferUsageARB.StaticDraw);
 
         gpuData.IndexCount = model.IndexCount;
+        gpuData.BoundsMin = model.BoundsMin;
+        gpuData.BoundsMax = model.BoundsMax;
 
         // Upload textures for each part
         if (model.Parts.Count > 0)
@@ -543,6 +652,20 @@ public sealed class OpenGlRenderer : IRenderer
                     p, BufferUsageARB.StaticDraw);
 
             gpuData.IndexCount = indices.Length;
+
+            // Compute bounds from vertices
+            var bMin = new Vector3(float.MaxValue);
+            var bMax = new Vector3(float.MinValue);
+            for (int vi = 0; vi < vertCount; vi++)
+            {
+                int off = vi * 11;
+                var p = new Vector3(verts[off], verts[off + 1], verts[off + 2]);
+                bMin = Vector3.Min(bMin, p);
+                bMax = Vector3.Max(bMax, p);
+            }
+            gpuData.BoundsMin = bMin;
+            gpuData.BoundsMax = bMax;
+
             _gl.BindVertexArray(0);
 
             _mapObjShapes[si] = gpuData;
@@ -861,7 +984,8 @@ public sealed class OpenGlRenderer : IRenderer
     {
         public uint Vao, Vbo, Ebo;
         public int IndexCount;
-        public ModelPartGpu[]? Parts; // null for mapobj shapes (no textures)
+        public ModelPartGpu[]? Parts;
+        public Vector3 BoundsMin, BoundsMax;
     }
 
     private struct ModelPartGpu
