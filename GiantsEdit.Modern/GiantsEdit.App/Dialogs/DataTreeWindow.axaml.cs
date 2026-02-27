@@ -115,7 +115,19 @@ public class DataTreeNodeVm
     public DataTreeNodeVm(TreeNode node)
     {
         Model = node;
-        Name = node.Name;
+
+        // Show object name instead of generic "Object" for entries in the objects array
+        if (node.Name == "Object")
+        {
+            var typeLeaf = node.FindChildLeaf("Type");
+            Name = typeLeaf != null
+                ? ObjectNames.GetDisplayName(typeLeaf.Int32Value)
+                : node.Name;
+        }
+        else
+        {
+            Name = node.Name;
+        }
 
         foreach (var child in node.EnumerateNodes())
             if (!HiddenSections.Contains(child.Name))
@@ -135,20 +147,24 @@ public class DataTreeNodeVm
 public partial class LeafPropertyVm : ObservableObject
 {
     private readonly TreeLeaf _leaf;
+    private readonly bool _isObjectType;
 
     public LeafPropertyVm(TreeLeaf leaf, bool canDelete = false)
     {
         _leaf = leaf;
         Name = leaf.Name;
-        Value = leaf.PropertyType switch
-        {
-            PropertyType.Byte => leaf.ByteValue.ToString(),
-            PropertyType.Int32 => leaf.Int32Value.ToString(),
-            PropertyType.Single => leaf.SingleValue.ToString("F4"),
-            PropertyType.String => leaf.StringValue,
-            PropertyType.Void => "(void)",
-            _ => "?"
-        };
+        _isObjectType = leaf.Name == "Type" && leaf.PropertyType == PropertyType.Int32;
+        Value = _isObjectType
+            ? ObjectNames.GetDisplayName(leaf.Int32Value)
+            : leaf.PropertyType switch
+            {
+                PropertyType.Byte => leaf.ByteValue.ToString(),
+                PropertyType.Int32 => leaf.Int32Value.ToString(),
+                PropertyType.Single => leaf.SingleValue.ToString("F4"),
+                PropertyType.String => leaf.StringValue,
+                PropertyType.Void => "(void)",
+                _ => "?"
+            };
         IsReadOnly = leaf.PropertyType == PropertyType.Void;
         CanDelete = canDelete;
         DeleteCommand = new RelayCommand(() => DeleteRequested?.Invoke());
@@ -170,6 +186,17 @@ public partial class LeafPropertyVm : ObservableObject
     /// </summary>
     public void Apply()
     {
+        if (_isObjectType)
+        {
+            var parsed = ObjectNames.ParseInput(Value);
+            if (parsed.HasValue)
+            {
+                _leaf.Int32Value = parsed.Value;
+                Value = ObjectNames.GetDisplayName(parsed.Value);
+            }
+            return;
+        }
+
         switch (_leaf.PropertyType)
         {
             case PropertyType.Byte when byte.TryParse(Value, out byte b):

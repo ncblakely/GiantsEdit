@@ -259,8 +259,8 @@ public partial class MainWindow : Window
             ObjPropsPanel.IsVisible = obj != null;
             if (obj != null)
             {
-                PropHeader.Text = $"Object #{obj.FindChildLeaf("Type")?.Int32Value ?? 0}";
-                PropObjType.Text = (obj.FindChildLeaf("Type")?.Int32Value ?? 0).ToString();
+                PropHeader.Text = $"Object: {ObjectNames.GetDisplayName(obj.FindChildLeaf("Type")?.Int32Value ?? 0)}";
+                PropObjType.Text = ObjectNames.GetDisplayName(obj.FindChildLeaf("Type")?.Int32Value ?? 0);
                 PropObjX.Text = (obj.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
                 PropObjY.Text = (obj.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
                 PropObjZ.Text = (obj.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
@@ -739,7 +739,7 @@ public partial class MainWindow : Window
             if (picked.HasValue && picked.Value.SourceNode != null)
             {
                 SelectObject(picked.Value.SourceNode);
-                StatusText.Text = $"Selected object type {picked.Value.ModelId}";
+                StatusText.Text = $"Selected object: {ObjectNames.GetDisplayName(picked.Value.ModelId)}";
             }
             else
             {
@@ -799,7 +799,8 @@ public partial class MainWindow : Window
         _vm.Document.SelectedObject = objNode;
         ObjPropsPanel.IsVisible = true;
 
-        PropObjType.Text = (objNode.FindChildLeaf("Type")?.Int32Value ?? 0).ToString();
+        int typeId = objNode.FindChildLeaf("Type")?.Int32Value ?? 0;
+        PropObjType.Text = ObjectNames.GetDisplayName(typeId);
         PropObjX.Text = (objNode.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
         PropObjY.Text = (objNode.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
         PropObjZ.Text = (objNode.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
@@ -836,7 +837,7 @@ public partial class MainWindow : Window
         PropObjTeamID.IsEnabled = teamLeaf != null;
         PropObjTeamID.Text = (teamLeaf?.Int32Value ?? 0).ToString();
 
-        PropHeader.Text = $"Object (Type {PropObjType.Text})";
+        PropHeader.Text = $"Object: {PropObjType.Text}";
         _suppressOptionalLeafToggle = false;
     }
 
@@ -959,7 +960,6 @@ public partial class MainWindow : Window
     {
         if (!_newObjPosition.HasValue) return;
 
-        // Prompt for object type ID
         var dialog = new Window
         {
             Title = "New Object",
@@ -969,8 +969,8 @@ public partial class MainWindow : Window
             CanResize = false
         };
         var panel = new StackPanel { Margin = new Avalonia.Thickness(16), Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = "Object Type ID:" });
-        var txtType = new TextBox { Text = "679" };
+        panel.Children.Add(new TextBlock { Text = "Object type (name or ID):" });
+        var txtType = new TextBox { Text = ObjectNames.GetName(679) };
         panel.Children.Add(txtType);
         var btnOk = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
         panel.Children.Add(btnOk);
@@ -979,8 +979,7 @@ public partial class MainWindow : Window
         int? typeId = null;
         btnOk.Click += (_, _) =>
         {
-            if (int.TryParse(txtType.Text, out int id))
-                typeId = id;
+            typeId = ObjectNames.ParseInput(txtType.Text ?? "");
             dialog.Close();
         };
 
