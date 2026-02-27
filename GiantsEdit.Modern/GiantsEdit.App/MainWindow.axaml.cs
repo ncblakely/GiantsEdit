@@ -43,12 +43,17 @@ public partial class MainWindow : Window
     // Model loading
     private readonly ObjectCatalog _objectCatalog;
     private readonly ModelManager _modelManager;
+    private readonly AppPreferences _prefs;
 
     public MainWindow()
     {
         // Load object catalog from embedded resource
         _objectCatalog = LoadEmbeddedCatalog();
         _modelManager = new ModelManager(_objectCatalog);
+        _prefs = AppPreferences.Load();
+
+        if (!string.IsNullOrEmpty(_prefs.GamePath))
+            _modelManager.SetGamePath(_prefs.GamePath);
 
         InitializeComponent();
         DataContext = _vm;
@@ -85,7 +90,7 @@ public partial class MainWindow : Window
         MenuModeTriangle.Click += (_, _) => SetMode(EditMode.TriangleEdit, 3);
         MenuModeObject.Click += (_, _) => SetMode(EditMode.ObjectEdit, 4);
         MenuResetCamera.Click += (_, _) => { Viewport.Camera.Reset(); InvalidateViewport(); };
-        MenuSetGamePath.Click += async (_, _) => await SetGamePathAsync();
+        MenuPreferences.Click += async (_, _) => await ShowPreferencesAsync();
 
         // === Terrain menu ===
         MenuStretchMove.Click += (_, _) => StatusText.Text = "Stretch/Move: not yet implemented";
@@ -893,10 +898,15 @@ public partial class MainWindow : Window
 
     private async Task OpenWorldAsync()
     {
+        IStorageFolder? startFolder = null;
+        if (!string.IsNullOrEmpty(_prefs.LastOpenFolder) && Directory.Exists(_prefs.LastOpenFolder))
+            startFolder = await StorageProvider.TryGetFolderFromPathAsync(_prefs.LastOpenFolder);
+
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Open Map",
             AllowMultiple = false,
+            SuggestedStartLocation = startFolder,
             FileTypeFilter =
             [
                 new FilePickerFileType("Map Files") { Patterns = ["*.gck", "*.bin"] },
@@ -910,6 +920,9 @@ public partial class MainWindow : Window
             var path = files[0].TryGetLocalPath();
             if (path != null)
             {
+                _prefs.LastOpenFolder = System.IO.Path.GetDirectoryName(path) ?? "";
+                _prefs.Save();
+
                 try
                 {
                     if (path.EndsWith(".gck", StringComparison.OrdinalIgnoreCase))
@@ -1457,20 +1470,20 @@ public partial class MainWindow : Window
         return ObjectCatalog.LoadFromTsv(lines);
     }
 
-    private async Task SetGamePathAsync()
+    private async Task ShowPreferencesAsync()
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Select Giants: Citizen Kabuto installation folder",
-            AllowMultiple = false
-        });
+        var dlg = new PreferencesDialog();
+        dlg.SetInitialGamePath(_prefs.GamePath);
+        await dlg.ShowDialog(this);
 
-        if (folders.Count == 0) return;
+        if (!dlg.Confirmed) return;
 
-        string path = folders[0].Path.LocalPath;
-        _modelManager.SetGamePath(path);
+        _prefs.GamePath = dlg.GamePath;
+        _prefs.Save();
+        _modelManager.SetGamePath(dlg.GamePath);
+
         StatusText.Text = _modelManager.HasGameData
-            ? $"Game path set — {path}"
+            ? $"Game path set — {dlg.GamePath}"
             : "No .gzp files found in bin/ folder";
     }
 
@@ -1481,7 +1494,7 @@ public partial class MainWindow : Window
         if (_drawRealObjects && !_modelManager.HasGameData)
         {
             // Prompt user to set game path first
-            await SetGamePathAsync();
+            await ShowPreferencesAsync();
             if (!_modelManager.HasGameData)
             {
                 _drawRealObjects = false;

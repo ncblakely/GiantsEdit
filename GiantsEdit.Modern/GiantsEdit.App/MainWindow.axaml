@@ -58,7 +58,7 @@
                 <Separator/>
                 <MenuItem Header="Reset camera" x:Name="MenuResetCamera" />
                 <Separator/>
-                <MenuItem Header="Set game path..." x:Name="MenuSetGamePath" />
+                <MenuItem Header="Preferences..." x:Name="MenuPreferences" />
             </MenuItem>
             <!-- Terrain -->
             <MenuItem Header="_Terrain">
