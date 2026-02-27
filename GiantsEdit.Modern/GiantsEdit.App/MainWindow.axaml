@@ -105,10 +105,10 @@
             <ToggleButton x:Name="BtnObject" Content="📦 Object"
                           Width="90" Margin="2,4,0,4" />
             <Separator Width="1" Background="#555" Margin="8,4" />
-            <TextBlock Text="Radius:" VerticalAlignment="Center" Foreground="#AAA" Margin="4,0"/>
+            <TextBlock Text="Size:" VerticalAlignment="Center" Foreground="#AAA" Margin="4,0"/>
             <Slider x:Name="SliderRadius" Minimum="5" Maximum="200" Value="50" Width="120"
                     VerticalAlignment="Center" />
-            <TextBlock Text="Strength:" VerticalAlignment="Center" Foreground="#AAA" Margin="8,0,4,0"/>
+            <TextBlock Text="Alpha:" VerticalAlignment="Center" Foreground="#AAA" Margin="8,0,4,0"/>
             <Slider x:Name="SliderStrength" Minimum="0.01" Maximum="1.0" Value="0.5" Width="120"
                     VerticalAlignment="Center" />
         </StackPanel>
@@ -169,28 +169,17 @@
                        Text="Ready" />
         </Panel>
 
-        <!-- Main content: TreeView left, Viewport center, Properties right -->
-        <Grid ColumnDefinitions="250,Auto,*,Auto,220">
-            <!-- Tree panel -->
-            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#333" BorderThickness="0,0,1,0">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="World Tree"
-                               Foreground="#CCC" Margin="8,4" FontWeight="Bold"/>
-                    <TreeView x:Name="WorldTree" Margin="4" />
-                </DockPanel>
-            </Border>
-
-            <GridSplitter Grid.Column="1" Width="4" Background="#333" />
-
+        <!-- Main content: Viewport center, Properties right -->
+        <Grid ColumnDefinitions="*,Auto,220">
             <!-- 3D Viewport (Panel provides hit-test surface for mouse input) -->
-            <Panel Grid.Column="2" x:Name="ViewportPanel" Background="Transparent">
+            <Panel Grid.Column="0" x:Name="ViewportPanel" Background="Transparent">
                 <ctrl:OpenGlViewport x:Name="Viewport" />
             </Panel>
 
-            <GridSplitter Grid.Column="3" Width="4" Background="#333" />
+            <GridSplitter Grid.Column="1" Width="4" Background="#333" />
 
             <!-- Property Panel -->
-            <Border Grid.Column="4" Background="#1E1E1E" BorderBrush="#333" BorderThickness="1,0,0,0">
+            <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#333" BorderThickness="1,0,0,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Properties"
                                Foreground="#CCC" Margin="8,4" FontWeight="Bold"/>

@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dlg="using:GiantsEdit.App.Dialogs"
+        x:Class="GiantsEdit.App.Dialogs.DataTreeWindow"
+        x:DataType="dlg:DataTreeWindow"
+        Title="World Objects Tree View" Width="700" Height="500"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel>
+        <!-- Status bar -->
+        <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom"
+                   Background="#2D2D30" Foreground="#999" Padding="8,4"
+                   Text="Select a node to view its properties" />
+
+        <!-- Main split: tree left, properties right -->
+        <Grid ColumnDefinitions="*,4,300">
+            <!-- Tree -->
+            <TreeView x:Name="DataTree" Grid.Column="0" Margin="4"
+                      Background="#1E1E1E" Foreground="#CCC">
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate x:DataType="dlg:DataTreeNodeVm"
+                                      ItemsSource="{Binding Children}">
+                        <TextBlock Text="{Binding Name}" />
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
+            <GridSplitter Grid.Column="1" Width="4" Background="#333" />
+
+            <!-- Properties panel -->
+            <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#333" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Properties"
+                               Foreground="#CCC" FontWeight="Bold" Margin="8,4" />
+                    <ScrollViewer>
+                        <ItemsControl x:Name="PropertiesList" Margin="4">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dlg:LeafPropertyVm">
+                                    <Grid ColumnDefinitions="120,*" Margin="0,1">
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                                   Foreground="#888" VerticalAlignment="Center"
+                                                   Margin="4,0" />
+                                        <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}"
+                                                 Foreground="#CCC" Background="#2D2D30"
+                                                 BorderBrush="#444" Padding="4,2"
+                                                 IsReadOnly="{Binding IsReadOnly}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

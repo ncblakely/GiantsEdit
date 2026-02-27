@@ -103,13 +103,13 @@ public partial class MainWindow : Window
 
         // === Map menu ===
         MenuMapNames.Click += async (_, _) => await ShowMapNamesAsync();
-        MenuMapObjTree.Click += (_, _) => StatusText.Text = "Map objects tree: not yet implemented";
+        MenuMapObjTree.Click += (_, _) => ShowWorldObjectsTree();
         MenuMissions.Click += (_, _) =>
         {
             var dlg = new MissionsDialog(_vm.Document);
             dlg.Show(this);
         };
-        MenuMissionObjTree.Click += (_, _) => StatusText.Text = "Mission objects tree: not yet implemented";
+        MenuMissionObjTree.Click += (_, _) => ShowMissionObjectsTree();
         MenuMarkerReport.Click += async (_, _) => await ShowMarkerReportAsync();
         MenuPlaceOnSurface.Click += (_, _) => { PlaceAllObjectsOnSurface(); StatusText.Text = "All objects placed on surface"; };
 
@@ -240,7 +240,6 @@ public partial class MainWindow : Window
         // Document events
         _vm.Document.WorldChanged += () =>
         {
-            RebuildTreeView();
             UploadTerrainToGpu();
             InvalidateViewport();
         };
@@ -875,11 +874,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RebuildTreeView()
-    {
-        WorldTree.ItemsSource = _vm.TreeRoots;
-    }
-
     #endregion
 
     #region File menu handlers
@@ -967,7 +961,6 @@ public partial class MainWindow : Window
     {
         _vm.Document.NewWorld(2, 2);
         _vm.TreeRoots.Clear();
-        WorldTree.ItemsSource = null;
         InvalidateViewport();
         StatusText.Text = "Map closed";
     }
@@ -1290,6 +1283,33 @@ public partial class MainWindow : Window
         var dlg = new MarkerReportDialog();
         dlg.SetMarkers(markers);
         await dlg.ShowDialog(this);
+    }
+
+    private void ShowWorldObjectsTree()
+    {
+        if (_vm.Document.WorldRoot == null)
+        {
+            StatusText.Text = "No map loaded";
+            return;
+        }
+
+        var win = new DataTreeWindow();
+        win.LoadTree(_vm.Document.WorldRoot, "Map Objects Tree View");
+        win.Show(this);
+    }
+
+    private void ShowMissionObjectsTree()
+    {
+        if (_vm.Document.Missions.Count == 0)
+        {
+            StatusText.Text = "No missions loaded — go to Missions and select one first";
+            return;
+        }
+
+        // Show the first (active) mission tree
+        var win = new DataTreeWindow();
+        win.LoadTree(_vm.Document.Missions[0], "Mission Objects Tree View");
+        win.Show(this);
     }
 
     private void PlaceAllObjectsOnSurface()
