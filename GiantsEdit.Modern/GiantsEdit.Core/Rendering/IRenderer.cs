@@ -90,7 +90,9 @@ public struct ObjectInstance
 {
     public int ModelId;
     public Vector3 Position;
-    public Vector3 Rotation; // Euler angles (radians)
+    public float DirFacing;   // degrees
+    public float TiltForward; // degrees
+    public float TiltLeft;    // degrees
     public float Scale;
     public TreeNode? SourceNode;
 }

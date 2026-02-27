@@ -64,9 +64,9 @@ public class BinMissionReader
                 obj.AddSingle("X", _r.ReadSingle());
                 obj.AddSingle("Y", _r.ReadSingle());
                 obj.AddSingle("Z", _r.ReadSingle());
-                obj.AddSingle("Angle X", _r.ReadSingle());
-                obj.AddSingle("Angle Y", _r.ReadSingle());
-                obj.AddSingle("Angle Z", _r.ReadSingle());
+                obj.AddSingle("Angle", _r.ReadSingle());
+                obj.AddSingle("Tilt Forward", _r.ReadSingle());
+                obj.AddSingle("Tilt Left", _r.ReadSingle());
                 break;
             }
             case 0x05:
@@ -316,18 +316,18 @@ public class BinMissionWriter
 
     private void WriteObject(BinaryDataWriter w, TreeNode obj)
     {
-        bool has3Angles = obj.FindChildLeaf("Angle X") != null;
+        bool hasTilt = obj.FindChildLeaf("Tilt Forward") != null;
 
-        if (has3Angles)
+        if (hasTilt)
         {
             w.WriteByte(0x04);
             w.WriteInt32(obj.GetChildLeaf("Type").Int32Value);
             w.WriteSingle(obj.GetChildLeaf("X").SingleValue);
             w.WriteSingle(obj.GetChildLeaf("Y").SingleValue);
             w.WriteSingle(obj.GetChildLeaf("Z").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Angle X").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Angle Y").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Angle Z").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("Angle").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("Tilt Forward").SingleValue);
+            w.WriteSingle(obj.GetChildLeaf("Tilt Left").SingleValue);
         }
         else
         {

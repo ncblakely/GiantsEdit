@@ -26,9 +26,9 @@ public class BinMissionRoundTripTests
         obj2.AddSingle("X", -1.0f);
         obj2.AddSingle("Y", -2.0f);
         obj2.AddSingle("Z", -3.0f);
-        obj2.AddSingle("Angle X", 0.1f);
-        obj2.AddSingle("Angle Y", 0.2f);
-        obj2.AddSingle("Angle Z", 0.3f);
+        obj2.AddSingle("Angle", 0.1f);
+        obj2.AddSingle("Tilt Forward", 0.2f);
+        obj2.AddSingle("Tilt Left", 0.3f);
 
         var writer = new BinMissionWriter();
         byte[] data = writer.Save(root);
@@ -44,7 +44,7 @@ public class BinMissionRoundTripTests
         Assert.AreEqual(0.5f, objs[0].GetChildLeaf("Angle").SingleValue);
 
         Assert.AreEqual(100, objs[1].GetChildLeaf("Type").Int32Value);
-        Assert.AreEqual(0.2f, objs[1].GetChildLeaf("Angle Y").SingleValue);
+        Assert.AreEqual(0.2f, objs[1].GetChildLeaf("Tilt Forward").SingleValue);
     }
 
     [TestMethod]

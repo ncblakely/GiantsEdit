@@ -211,16 +211,16 @@
                                 <TextBlock Foreground="#888" Text="Z:" />
                                 <TextBox x:Name="PropObjZ" />
 
-                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                    <CheckBox x:Name="ChkObj3DRotation" Content="3D Rotation" />
-                                    <TextBlock Foreground="#888" Text="Angle:" VerticalAlignment="Center" />
-                                </StackPanel>
+                                <TextBlock Foreground="#888" Text="Angle:" />
                                 <TextBox x:Name="PropObjAngle" />
-                                <StackPanel x:Name="PanelAngleYZ" IsVisible="False" Spacing="4">
-                                    <TextBlock Foreground="#888" Text="Angle Y:" />
-                                    <TextBox x:Name="PropObjAngleY" />
-                                    <TextBlock Foreground="#888" Text="Angle Z:" />
-                                    <TextBox x:Name="PropObjAngleZ" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjTilt" Content="Tilt:" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelTilt" IsVisible="False" Spacing="4">
+                                    <TextBlock Foreground="#888" Text="Tilt Forward:" />
+                                    <TextBox x:Name="PropObjTiltFwd" IsEnabled="False" />
+                                    <TextBlock Foreground="#888" Text="Tilt Left:" />
+                                    <TextBox x:Name="PropObjTiltLeft" IsEnabled="False" />
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="4">

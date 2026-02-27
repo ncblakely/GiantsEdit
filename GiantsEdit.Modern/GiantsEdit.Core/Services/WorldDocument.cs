@@ -346,23 +346,9 @@ public class WorldDocument
             float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
             float scale = obj.FindChildLeaf("Scale")?.SingleValue ?? 1f;
 
-            // Delphi reads "Angle", then "Angle X" overwrites if present.
-            // Single "Angle" = Z-axis rotation. "Angle X/Y/Z" = full 3-axis rotation.
-            float angleXDeg = 0, angleYDeg = 0, angleZDeg = 0;
-            var angleXLeaf = obj.FindChildLeaf("Angle X");
-            if (angleXLeaf != null)
-            {
-                angleXDeg = angleXLeaf.SingleValue;
-                angleYDeg = obj.FindChildLeaf("Angle Y")?.SingleValue ?? 0;
-                angleZDeg = obj.FindChildLeaf("Angle Z")?.SingleValue ?? 0;
-            }
-            else
-            {
-                angleZDeg = obj.FindChildLeaf("Angle")?.SingleValue ?? 0;
-            }
-
-            const float deg2Rad = MathF.PI / 180f;
-            var rotation = new Vector3(angleXDeg * deg2Rad, angleYDeg * deg2Rad, angleZDeg * deg2Rad);
+            float dirFacing = obj.FindChildLeaf("Angle")?.SingleValue ?? 0;
+            float tiltFwd = obj.FindChildLeaf("Tilt Forward")?.SingleValue ?? 0;
+            float tiltLeft = obj.FindChildLeaf("Tilt Left")?.SingleValue ?? 0;
 
             int modelId = typeLeaf.Int32Value;
 
@@ -382,7 +368,9 @@ public class WorldDocument
             {
                 ModelId = modelId,
                 Position = new Vector3(x, y, z),
-                Rotation = rotation,
+                DirFacing = dirFacing,
+                TiltForward = tiltFwd,
+                TiltLeft = tiltLeft,
                 Scale = scale,
                 SourceNode = obj
             });

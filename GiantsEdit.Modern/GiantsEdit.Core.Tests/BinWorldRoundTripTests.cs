@@ -66,9 +66,9 @@ public class BinWorldRoundTripTests
         obj2.AddSingle("X", -5.0f);
         obj2.AddSingle("Y", -10.0f);
         obj2.AddSingle("Z", 0.0f);
-        obj2.AddSingle("Angle X", 0.1f);
-        obj2.AddSingle("Angle Y", 0.2f);
-        obj2.AddSingle("Angle Z", 0.3f);
+        obj2.AddSingle("Angle", 0.1f);
+        obj2.AddSingle("Tilt Forward", 0.2f);
+        obj2.AddSingle("Tilt Left", 0.3f);
 
         var writer = new BinWorldWriter();
         byte[] data = writer.Save(root);
@@ -86,9 +86,9 @@ public class BinWorldRoundTripTests
         Assert.AreEqual(10.0f, nodes[0].GetChildLeaf("X").SingleValue);
         Assert.AreEqual(1.57f, nodes[0].GetChildLeaf("Angle").SingleValue);
 
-        // Second object (3-angle)
+        // Second object (with tilt)
         Assert.AreEqual(200, nodes[1].GetChildLeaf("Type").Int32Value);
-        Assert.AreEqual(0.2f, nodes[1].GetChildLeaf("Angle Y").SingleValue);
+        Assert.AreEqual(0.2f, nodes[1].GetChildLeaf("Tilt Forward").SingleValue);
     }
 
     private static DataModel.TreeNode BuildMinimalWorld()

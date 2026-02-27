@@ -287,15 +287,15 @@ public class BinWorldReader
             case 0x45: // ObjEditEnd marker (no data)
                 break;
 
-            case 0x46: // Object (3-angle)
+            case 0x46: // Object (6-float: x,y,z + dirfacing,tiltfwd,tiltleft)
                 Group("<Objects>", "Object");
                 _entry.AddInt32("Type", _r.ReadInt32());
                 _entry.AddSingle("X", _r.ReadSingle());
                 _entry.AddSingle("Y", _r.ReadSingle());
                 _entry.AddSingle("Z", _r.ReadSingle());
-                _entry.AddSingle("Angle X", _r.ReadSingle());
-                _entry.AddSingle("Angle Y", _r.ReadSingle());
-                _entry.AddSingle("Angle Z", _r.ReadSingle());
+                _entry.AddSingle("Angle", _r.ReadSingle());
+                _entry.AddSingle("Tilt Forward", _r.ReadSingle());
+                _entry.AddSingle("Tilt Left", _r.ReadSingle());
                 _lastObject = _entry;
                 break;
 

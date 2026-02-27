@@ -27,6 +27,8 @@ public partial class MainWindow : Window
     private bool _drawRealObjects;
     private Point _lastMousePos;
     private bool _isClickDown; // true on pointer-down, false after first move
+    private bool _objDragAllowed; // true when drag-to-move is permitted (requires separate press from selection)
+    private long _objPressTimestamp; // ticks when pointer was pressed for drag delay
 
     // Height editing state (matches Delphi globals)
     private float _minimumHeight = -40f;
@@ -228,7 +230,7 @@ public partial class MainWindow : Window
             PropObjTeamID.IsEnabled = ChkObjTeamID.IsChecked == true;
             ToggleOptionalInt32Leaf("TeamID", ChkObjTeamID.IsChecked == true, PropObjTeamID, 0);
         };
-        ChkObj3DRotation.IsCheckedChanged += (_, _) => Toggle3DRotation();
+        ChkObjTilt.IsCheckedChanged += (_, _) => ToggleTilt();
 
         // Document events
         _vm.Document.WorldChanged += () =>
@@ -376,6 +378,9 @@ public partial class MainWindow : Window
         _lastMousePos = e.GetPosition(ViewportPanel);
         ViewportPanel.Focus();
         _isClickDown = true;
+        _objDragAllowed = _vm.Document.SelectedObject != null
+            && _vm.Document.CurrentMode == EditMode.ObjectEdit;
+        _objPressTimestamp = Environment.TickCount64;
 
         // In editing modes, start editing on press (matches Delphi Panel1MouseDown → Panel1MouseMove)
         if (_vm.Document.CurrentMode != EditMode.Camera)
@@ -565,7 +570,9 @@ public partial class MainWindow : Window
 
             ShowObjectContextMenu();
         }
-        else if (!_isClickDown && leftButton && _vm.Document.SelectedObject != null)
+        else if (!_isClickDown && leftButton && _objDragAllowed
+                 && (Environment.TickCount64 - _objPressTimestamp) >= 100
+                 && _vm.Document.SelectedObject != null)
         {
             // Left-drag with selected object: move to terrain position
             if (terrain == null) return;
@@ -603,17 +610,19 @@ public partial class MainWindow : Window
         PropObjX.Text = (objNode.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
         PropObjY.Text = (objNode.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
         PropObjZ.Text = (objNode.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
-        PropObjAngle.Text = (objNode.FindChildLeaf("Angle")?.SingleValue ??
-                             objNode.FindChildLeaf("Angle X")?.SingleValue ?? 0).ToString("F2");
+        PropObjAngle.Text = (objNode.FindChildLeaf("Angle")?.SingleValue ?? 0).ToString("F2");
 
-        // 3D rotation (Angle X/Y/Z vs single Angle)
-        bool has3D = objNode.FindChildLeaf("Angle X") != null;
-        ChkObj3DRotation.IsChecked = has3D;
-        PanelAngleYZ.IsVisible = has3D;
-        if (has3D)
+        // Tilt (optional: Tilt Forward / Tilt Left from OpObjectRef6)
+        var tiltFwdLeaf = objNode.FindChildLeaf("Tilt Forward");
+        bool hasTilt = tiltFwdLeaf != null;
+        ChkObjTilt.IsChecked = hasTilt;
+        PanelTilt.IsVisible = hasTilt;
+        PropObjTiltFwd.IsEnabled = hasTilt;
+        PropObjTiltLeft.IsEnabled = hasTilt;
+        if (hasTilt)
         {
-            PropObjAngleY.Text = (objNode.FindChildLeaf("Angle Y")?.SingleValue ?? 0).ToString("F2");
-            PropObjAngleZ.Text = (objNode.FindChildLeaf("Angle Z")?.SingleValue ?? 0).ToString("F2");
+            PropObjTiltFwd.Text = (tiltFwdLeaf?.SingleValue ?? 0).ToString("F2");
+            PropObjTiltLeft.Text = (objNode.FindChildLeaf("Tilt Left")?.SingleValue ?? 0).ToString("F2");
         }
 
         // Scale (optional)
@@ -761,7 +770,8 @@ public partial class MainWindow : Window
         var dialog = new Window
         {
             Title = "New Object",
-            Width = 300, Height = 150,
+            Width = 300,
+            Height = 150,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false
         };
@@ -1316,16 +1326,13 @@ public partial class MainWindow : Window
         if (float.TryParse(PropObjZ.Text, out float z))
             obj.FindChildLeaf("Z")?.SetSingle(z);
         if (float.TryParse(PropObjAngle.Text, out float angle))
+            obj.FindChildLeaf("Angle")?.SetSingle(angle);
+        if (ChkObjTilt.IsChecked == true)
         {
-            var angleLeaf = obj.FindChildLeaf("Angle") ?? obj.FindChildLeaf("Angle X");
-            angleLeaf?.SetSingle(angle);
-        }
-        if (ChkObj3DRotation.IsChecked == true)
-        {
-            if (float.TryParse(PropObjAngleY.Text, out float ay))
-                obj.FindChildLeaf("Angle Y")?.SetSingle(ay);
-            if (float.TryParse(PropObjAngleZ.Text, out float az))
-                obj.FindChildLeaf("Angle Z")?.SetSingle(az);
+            if (float.TryParse(PropObjTiltFwd.Text, out float tf))
+                obj.FindChildLeaf("Tilt Forward")?.SetSingle(tf);
+            if (float.TryParse(PropObjTiltLeft.Text, out float tl))
+                obj.FindChildLeaf("Tilt Left")?.SetSingle(tl);
         }
 
         // Apply optional fields only if their checkbox is checked
@@ -1403,44 +1410,30 @@ public partial class MainWindow : Window
         InvalidateViewport();
     }
 
-    private void Toggle3DRotation()
+    private void ToggleTilt()
     {
         if (_suppressOptionalLeafToggle) return;
         var obj = _vm.Document.SelectedObject;
         if (obj == null) return;
 
-        bool enable3D = ChkObj3DRotation.IsChecked == true;
-        PanelAngleYZ.IsVisible = enable3D;
+        bool enable = ChkObjTilt.IsChecked == true;
+        PanelTilt.IsVisible = enable;
+        PropObjTiltFwd.IsEnabled = enable;
+        PropObjTiltLeft.IsEnabled = enable;
 
-        if (enable3D)
+        if (enable)
         {
-            // Convert single "Angle" → "Angle X" + "Angle Y" + "Angle Z"
-            var angleLeaf = obj.FindChildLeaf("Angle");
-            float currentAngle = angleLeaf?.SingleValue ?? 0;
-            if (angleLeaf != null) obj.RemoveLeaf(angleLeaf);
-
-            obj.AddSingle("Angle X", currentAngle);
-            obj.AddSingle("Angle Y", 0);
-            obj.AddSingle("Angle Z", 0);
-
-            PropObjAngle.Text = currentAngle.ToString("F2");
-            PropObjAngleY.Text = "0.00";
-            PropObjAngleZ.Text = "0.00";
+            obj.AddSingle("Tilt Forward", 0);
+            obj.AddSingle("Tilt Left", 0);
+            PropObjTiltFwd.Text = "0.00";
+            PropObjTiltLeft.Text = "0.00";
         }
         else
         {
-            // Convert "Angle X/Y/Z" → single "Angle"
-            var axLeaf = obj.FindChildLeaf("Angle X");
-            float currentAngle = axLeaf?.SingleValue ?? 0;
-
-            if (axLeaf != null) obj.RemoveLeaf(axLeaf);
-            var ayLeaf = obj.FindChildLeaf("Angle Y");
-            if (ayLeaf != null) obj.RemoveLeaf(ayLeaf);
-            var azLeaf = obj.FindChildLeaf("Angle Z");
-            if (azLeaf != null) obj.RemoveLeaf(azLeaf);
-
-            obj.AddSingle("Angle", currentAngle);
-            PropObjAngle.Text = currentAngle.ToString("F2");
+            var fwd = obj.FindChildLeaf("Tilt Forward");
+            if (fwd != null) obj.RemoveLeaf(fwd);
+            var left = obj.FindChildLeaf("Tilt Left");
+            if (left != null) obj.RemoveLeaf(left);
         }
 
         InvalidateViewport();

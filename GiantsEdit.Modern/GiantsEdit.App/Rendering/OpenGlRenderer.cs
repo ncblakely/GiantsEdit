@@ -204,20 +204,17 @@ public sealed class OpenGlRenderer : IRenderer
                     continue;
                 }
 
-                // Delphi DrawObject: scale is always applied when DrawRealObjects is true.
-                // For Mapobj shapes without DrawRealObjects, only translate + Z-rotate.
+                // Build model matrix
+                // For mapobj shapes without DrawRealObjects, only translate + Z-rotate (no scale/tilt).
                 Matrix4x4 model;
                 if (isRealModel || state.DrawRealObjects)
                 {
-                    model = Matrix4x4.CreateScale(obj.Scale)
-                        * Matrix4x4.CreateRotationZ(obj.Rotation.Z)
-                        * Matrix4x4.CreateRotationY(obj.Rotation.Y)
-                        * Matrix4x4.CreateRotationX(obj.Rotation.X)
-                        * Matrix4x4.CreateTranslation(obj.Position);
+                    model = BuildObjectMatrix(in obj);
                 }
                 else
                 {
-                    model = Matrix4x4.CreateRotationZ(obj.Rotation.Z)
+                    float rad = obj.DirFacing * MathF.PI / 180f;
+                    model = Matrix4x4.CreateRotationZ(rad)
                         * Matrix4x4.CreateTranslation(obj.Position);
                 }
 
@@ -358,15 +355,12 @@ public sealed class OpenGlRenderer : IRenderer
         Matrix4x4 model;
         if (state.DrawRealObjects)
         {
-            model = Matrix4x4.CreateScale(sel.Scale)
-                * Matrix4x4.CreateRotationZ(sel.Rotation.Z)
-                * Matrix4x4.CreateRotationY(sel.Rotation.Y)
-                * Matrix4x4.CreateRotationX(sel.Rotation.X)
-                * Matrix4x4.CreateTranslation(sel.Position);
+            model = BuildObjectMatrix(in sel);
         }
         else
         {
-            model = Matrix4x4.CreateRotationZ(sel.Rotation.Z)
+            float rad = sel.DirFacing * MathF.PI / 180f;
+            model = Matrix4x4.CreateRotationZ(rad)
                 * Matrix4x4.CreateTranslation(sel.Position);
         }
 
@@ -859,6 +853,35 @@ public sealed class OpenGlRenderer : IRenderer
         // which is exactly what GLSL needs for M * v (column-vector).
         float* p = (float*)&mat;
         _gl.UniformMatrix4(location, 1, false, p);
+    }
+
+    /// <summary>
+    /// Build a model matrix for a game object.
+    /// </summary>
+    private static Matrix4x4 BuildObjectMatrix(in ObjectInstance obj)
+    {
+        float deg2rad = MathF.PI / 180f;
+        float sx = MathF.Sin(-obj.TiltForward * deg2rad);
+        float cx = MathF.Cos(-obj.TiltForward * deg2rad);
+        float sy = MathF.Sin(obj.TiltLeft * deg2rad);
+        float cy = MathF.Cos(obj.TiltLeft * deg2rad);
+        float sz = MathF.Sin(obj.DirFacing * deg2rad);
+        float cz = MathF.Cos(obj.DirFacing * deg2rad);
+        float s = obj.Scale;
+
+        // Game's 3x3 rotation-scale matrix (row-major, column-vector: M * v):
+        //   [cy*cz,             -sx*sy*cz-cx*sz,    -cx*sy*cz+sx*sz]
+        //   [cy*sz,             -sx*sy*sz+cx*cz,    -cx*sy*sz-sx*cz]
+        //   [sy,                 sx*cy,               cx*cy         ]
+        //
+        // System.Numerics is row-major row-vector convention (v * M),
+        // so we store the transpose of the game matrix.
+        return new Matrix4x4(
+            cy * cz * s, cy * sz * s, sy * s, 0,
+            (-sx * sy * cz - cx * sz) * s, (-sx * sy * sz + cx * cz) * s, sx * cy * s, 0,
+            (-cx * sy * cz + sx * sz) * s, (-cx * sy * sz - sx * cz) * s, cx * cy * s, 0,
+            obj.Position.X, obj.Position.Y, obj.Position.Z, 1
+        );
     }
 
     private uint CreateShader(string vertSrc, string fragSrc)

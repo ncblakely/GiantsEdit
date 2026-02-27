@@ -248,27 +248,27 @@ public class BinWorldWriter
     {
         foreach (var obj in n.EnumerateNodes())
         {
-            // Determine 1-angle vs 3-angle
-            var angleLeaf = obj.FindChildLeaf("Angle");
-            if (angleLeaf != null)
-            {
-                _w.WriteByte(0x2A);
-                WriteLeaf(obj.GetChildLeaf("Type"));
-                WriteLeaf(obj.GetChildLeaf("X"));
-                WriteLeaf(obj.GetChildLeaf("Y"));
-                WriteLeaf(obj.GetChildLeaf("Z"));
-                WriteLeaf(angleLeaf);
-            }
-            else
+            // Determine: has tilt → opcode 0x46 (Angle + TiltFwd + TiltLeft), else 0x2A (Angle only)
+            var tiltFwd = obj.FindChildLeaf("Tilt Forward");
+            if (tiltFwd != null)
             {
                 _w.WriteByte(0x46);
                 WriteLeaf(obj.GetChildLeaf("Type"));
                 WriteLeaf(obj.GetChildLeaf("X"));
                 WriteLeaf(obj.GetChildLeaf("Y"));
                 WriteLeaf(obj.GetChildLeaf("Z"));
-                WriteLeaf(obj.GetChildLeaf("Angle X"));
-                WriteLeaf(obj.GetChildLeaf("Angle Y"));
-                WriteLeaf(obj.GetChildLeaf("Angle Z"));
+                WriteLeaf(obj.GetChildLeaf("Angle"));
+                WriteLeaf(tiltFwd);
+                WriteLeaf(obj.GetChildLeaf("Tilt Left"));
+            }
+            else
+            {
+                _w.WriteByte(0x2A);
+                WriteLeaf(obj.GetChildLeaf("Type"));
+                WriteLeaf(obj.GetChildLeaf("X"));
+                WriteLeaf(obj.GetChildLeaf("Y"));
+                WriteLeaf(obj.GetChildLeaf("Z"));
+                WriteLeaf(obj.GetChildLeaf("Angle"));
             }
 
             var scale = obj.FindChildLeaf("Scale");
