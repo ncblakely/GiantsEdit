@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore GiantsEdit.App
+
+      - name: Run tests
+        run: dotnet test GiantsEdit.Core.Tests --no-restore --verbosity normal
+
+      - name: Publish
+        run: dotnet publish GiantsEdit.App -c Release -o publish
+
+      - name: Zip release
+        run: Compress-Archive -Path publish\* -DestinationPath GiantsEdit-win-x64.zip
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            echo "TAG=${{ github.event.inputs.tag }}" >> $env:GITHUB_OUTPUT
+          } else {
+            $ref = "${{ github.ref }}" -replace '^refs/tags/', ''
+            echo "TAG=$ref" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.TAG }}
+          name: GiantsEdit ${{ steps.tag.outputs.TAG }}
+          files: GiantsEdit-win-x64.zip
+          generate_release_notes: true
