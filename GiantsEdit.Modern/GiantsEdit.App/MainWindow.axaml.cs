@@ -107,8 +107,7 @@ public partial class MainWindow : Window
         MenuPlaceOnSurface.Click += (_, _) => { PlaceAllObjectsOnSurface(); StatusText.Text = "All objects placed on surface"; };
 
         // === Special menu ===
-        MenuWeirdMatrix.Click += (_, _) => StatusText.Text = "Weird matrix: not yet implemented";
-        MenuParabolic.Click += (_, _) => StatusText.Text = "Parabolic shape: not yet implemented";
+
         MenuShowConsole.Click += (_, _) =>
         {
             var console = new ConsoleWindow();
@@ -116,10 +115,12 @@ public partial class MainWindow : Window
         };
 
         // === Help menu ===
-        MenuAbout.Click += (_, _) =>
+        MenuShowControls.Click += async (_, _) =>
         {
-            StatusText.Text = "GiantsEdit — Modern C# port of the Giants: Citizen Kabuto level editor";
+            var dlg = new EditorControlsDialog();
+            await dlg.ShowDialog(this);
         };
+
 
         // === Toolbar mode buttons (radio behavior) ===
         var modeButtons = new[] { BtnCamera, BtnHeight, BtnLight, BtnTriangle, BtnObject };
@@ -216,12 +217,12 @@ public partial class MainWindow : Window
         {
             RebuildTreeView();
             UploadTerrainToGpu();
-            RefreshViewport();
+            InvalidateViewport();
         };
         _vm.Document.TerrainChanged += () =>
         {
             UploadTerrainToGpu();
-            RefreshViewport();
+            InvalidateViewport();
         };
         _vm.Document.SelectionChanged += () =>
         {
@@ -267,6 +268,22 @@ public partial class MainWindow : Window
         LightPanel.IsVisible = mode == EditMode.LightPaint;
         TrianglePanel.IsVisible = mode == EditMode.TriangleEdit;
         StatusText.Text = $"Mode: {mode}";
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.F1: SetMode(EditMode.Camera, 0); e.Handled = true; break;
+            case Key.F2: SetMode(EditMode.HeightEdit, 1); e.Handled = true; break;
+            case Key.F3: SetMode(EditMode.LightPaint, 2); e.Handled = true; break;
+            case Key.F4: SetMode(EditMode.TriangleEdit, 3); e.Handled = true; break;
+            case Key.F5: SetMode(EditMode.ObjectEdit, 4); e.Handled = true; break;
+            case Key.F9: _viewTerrainMesh = !_viewTerrainMesh; InvalidateViewport(); e.Handled = true; break;
+            case Key.F10: _ = ToggleDrawRealObjectsAsync(); e.Handled = true; break;
+            case Key.F11: _viewObjThruTerrain = !_viewObjThruTerrain; InvalidateViewport(); e.Handled = true; break;
+        }
+        base.OnKeyDown(e);
     }
 
     private void ClampAndSyncHeightSlider()
@@ -658,8 +675,9 @@ public partial class MainWindow : Window
 
         if (menu.Items.Count > 0)
         {
-            menu.PlacementTarget = ViewportPanel;
+            ViewportPanel.ContextMenu = menu;
             menu.Open(ViewportPanel);
+            menu.Closed += (_, _) => ViewportPanel.ContextMenu = null;
         }
     }
 
@@ -744,6 +762,7 @@ public partial class MainWindow : Window
             ShowObjects = _showObjects,
             ShowTerrainMesh = _viewTerrainMesh,
             DrawRealObjects = _drawRealObjects,
+            ViewObjThruTerrain = _viewObjThruTerrain,
             Objects = _vm.Document.GetObjectInstances(),
             SplineLines = _vm.Document.GetSplineLines()
         };

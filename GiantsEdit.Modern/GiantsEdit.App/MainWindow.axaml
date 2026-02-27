@@ -46,15 +46,15 @@
                 <MenuItem Header="Sea ground color..." x:Name="MenuSeaGroundColor" />
                 <MenuItem Header="Go to location..." x:Name="MenuGoToLocation" />
                 <Separator/>
+                <MenuItem Header="View terrain mesh" x:Name="MenuViewTerrainMesh" InputGesture="F9" />
                 <MenuItem Header="Draw real objects" x:Name="MenuDrawRealObjects" InputGesture="F10" />
-                <MenuItem Header="View terrain mesh" x:Name="MenuViewTerrainMesh" />
-                <MenuItem Header="View objects through terrain" x:Name="MenuViewObjThruTerrain" />
+                <MenuItem Header="View objects through terrain" x:Name="MenuViewObjThruTerrain" InputGesture="F11" />
                 <Separator/>
-                <MenuItem Header="Camera mode" x:Name="MenuModeCamera" />
-                <MenuItem Header="Height editing mode" x:Name="MenuModeHeight" />
-                <MenuItem Header="Light editing mode" x:Name="MenuModeLight" />
-                <MenuItem Header="Triangle editing mode" x:Name="MenuModeTriangle" />
-                <MenuItem Header="Object editing mode" x:Name="MenuModeObject" />
+                <MenuItem Header="Camera mode" x:Name="MenuModeCamera" InputGesture="F1" />
+                <MenuItem Header="Height editing mode" x:Name="MenuModeHeight" InputGesture="F2" />
+                <MenuItem Header="Light editing mode" x:Name="MenuModeLight" InputGesture="F3" />
+                <MenuItem Header="Triangle editing mode" x:Name="MenuModeTriangle" InputGesture="F4" />
+                <MenuItem Header="Object editing mode" x:Name="MenuModeObject" InputGesture="F5" />
                 <Separator/>
                 <MenuItem Header="Reset camera" x:Name="MenuResetCamera" />
                 <Separator/>
@@ -84,14 +84,11 @@
             </MenuItem>
             <!-- Special -->
             <MenuItem Header="_Special">
-                <MenuItem Header="Create weird matrix" x:Name="MenuWeirdMatrix" />
-                <MenuItem Header="Create inverse parabolic shape" x:Name="MenuParabolic" />
-                <Separator/>
                 <MenuItem Header="Show console" x:Name="MenuShowConsole" />
             </MenuItem>
             <!-- Help -->
             <MenuItem Header="_Help">
-                <MenuItem Header="About..." x:Name="MenuAbout" />
+                <MenuItem Header="Show editor controls" x:Name="MenuShowControls" />
             </MenuItem>
         </Menu>
 

@@ -51,6 +51,7 @@ public class RenderState
     public bool ShowObjects { get; init; } = true;
     public bool ShowTerrainMesh { get; init; }
     public bool DrawRealObjects { get; init; }
+    public bool ViewObjThruTerrain { get; init; }
 
     // Fog
     public Vector3 FogColor { get; init; }

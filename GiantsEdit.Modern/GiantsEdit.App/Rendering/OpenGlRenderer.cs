@@ -178,16 +178,19 @@ public sealed class OpenGlRenderer : IRenderer
         // Draw objects
         if (state.ShowObjects)
         {
+            if (state.ViewObjThruTerrain)
+                _gl.Disable(EnableCap.DepthTest);
+
             _gl.UseProgram(_modelShader);
             SetUniformMatrix(_modelMvpLoc, vp);
             _gl.Disable(EnableCap.CullFace);
 
             foreach (var obj in state.Objects)
             {
-                // Try real model first, then mapobj shape
+                // Try real model when DrawRealObjects is on, otherwise use mapobj shapes
                 ModelGpuData gpuData;
                 bool isRealModel = false;
-                if (_models.TryGetValue(obj.ModelId, out gpuData))
+                if (state.DrawRealObjects && _models.TryGetValue(obj.ModelId, out gpuData))
                 {
                     isRealModel = true;
                 }
@@ -267,6 +270,9 @@ public sealed class OpenGlRenderer : IRenderer
                 }
             }
             _gl.Enable(EnableCap.CullFace);
+
+            if (state.ViewObjThruTerrain)
+                _gl.Enable(EnableCap.DepthTest);
         }
 
         // Draw spline lines
@@ -274,7 +280,8 @@ public sealed class OpenGlRenderer : IRenderer
         {
             _gl.UseProgram(_solidShader);
             SetUniformMatrix(_solidMvpLoc, vp);
-            _gl.Disable(EnableCap.DepthTest);
+            if (!state.ViewObjThruTerrain)
+                _gl.Disable(EnableCap.DepthTest);
             _gl.BindVertexArray(_lineVao);
 
             foreach (var spline in state.SplineLines)
