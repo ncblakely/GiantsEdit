@@ -1,16 +1,21 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using GiantsEdit.Core.Services;
 
 namespace GiantsEdit.App.Dialogs;
 
 public partial class PreferencesDialog : Window
 {
     public string GamePath { get; private set; } = "";
+    public ControlScheme ControlScheme { get; private set; } = ControlScheme.Default;
     public bool Confirmed { get; private set; }
 
     public PreferencesDialog()
     {
         InitializeComponent();
+
+        CmbControlScheme.ItemsSource = new[] { "Default (UE5-style)", "Classic (original)" };
+        CmbControlScheme.SelectedIndex = 0;
 
         BtnBrowse.Click += async (_, _) =>
         {
@@ -27,6 +32,7 @@ public partial class PreferencesDialog : Window
         BtnOk.Click += (_, _) =>
         {
             GamePath = TxtGamePath.Text ?? "";
+            ControlScheme = CmbControlScheme.SelectedIndex == 1 ? ControlScheme.Classic : ControlScheme.Default;
             Confirmed = true;
             Close();
         };
@@ -34,8 +40,9 @@ public partial class PreferencesDialog : Window
         BtnCancel.Click += (_, _) => Close();
     }
 
-    public void SetInitialGamePath(string path)
+    public void SetInitialValues(string gamePath, ControlScheme scheme)
     {
-        TxtGamePath.Text = path;
+        TxtGamePath.Text = gamePath;
+        CmbControlScheme.SelectedIndex = scheme == ControlScheme.Classic ? 1 : 0;
     }
 }

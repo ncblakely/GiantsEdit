@@ -99,6 +99,33 @@ public class EditorCamera
     }
 
     /// <summary>
+    /// Moves the camera along its forward direction (W/S keys).
+    /// </summary>
+    public void MoveForward(float distance)
+    {
+        _eye += _view * distance;
+        ClampToDome();
+    }
+
+    /// <summary>
+    /// Strafes the camera along its right direction (A/D keys).
+    /// </summary>
+    public void MoveRight(float distance)
+    {
+        _eye -= _right * distance;
+        ClampToDome();
+    }
+
+    /// <summary>
+    /// Moves the camera along world Z (Q/E keys).
+    /// </summary>
+    public void MoveUp(float distance)
+    {
+        _eye += Vector3.UnitZ * distance;
+        ClampToDome();
+    }
+
+    /// <summary>
     /// Returns the view matrix for this camera.
     /// Uses world-up (0,0,1) matching the original gluLookAt call.
     /// </summary>

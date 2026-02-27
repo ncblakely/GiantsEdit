@@ -45,6 +45,11 @@ public partial class MainWindow : Window
     private readonly ModelManager _modelManager;
     private readonly AppPreferences _prefs;
 
+    // WASD fly camera state (Default control scheme)
+    private readonly HashSet<Key> _keysDown = new();
+    private Avalonia.Threading.DispatcherTimer? _flyTimer;
+    private bool _rmbDown; // tracks RMB for Default scheme fly mode
+
     public MainWindow()
     {
         // Load object catalog from embedded resource
@@ -124,7 +129,7 @@ public partial class MainWindow : Window
         // === Help menu ===
         MenuShowControls.Click += async (_, _) =>
         {
-            var dlg = new EditorControlsDialog();
+            var dlg = new EditorControlsDialog(_prefs.ControlScheme);
             await dlg.ShowDialog(this);
         };
 
@@ -276,6 +281,7 @@ public partial class MainWindow : Window
         // Mouse input on viewport panel (Panel provides hit-test surface)
         ViewportPanel.PointerPressed += OnViewportPointerPressed;
         ViewportPanel.PointerMoved += OnViewportPointerMoved;
+        ViewportPanel.PointerReleased += OnViewportPointerReleased;
         ViewportPanel.PointerWheelChanged += OnViewportPointerWheel;
     }
 
@@ -322,7 +328,59 @@ public partial class MainWindow : Window
             case Key.F10: _ = ToggleDrawRealObjectsAsync(); e.Handled = true; break;
             case Key.F11: _viewObjThruTerrain = !_viewObjThruTerrain; InvalidateViewport(); e.Handled = true; break;
         }
+
+        // WASD fly key tracking (Default scheme only, requires RMB held)
+        if (_prefs.ControlScheme == ControlScheme.Default && e.Key is Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E)
+        {
+            if (!ctrl) // don't capture Ctrl+W/S
+            {
+                _keysDown.Add(e.Key);
+                StartFlyTimer();
+                e.Handled = true;
+            }
+        }
+
         base.OnKeyDown(e);
+    }
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        _keysDown.Remove(e.Key);
+        if (_keysDown.Count == 0)
+            StopFlyTimer();
+        base.OnKeyUp(e);
+    }
+
+    private void StartFlyTimer()
+    {
+        if (_flyTimer != null) return;
+        _flyTimer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        _flyTimer.Tick += OnFlyTick;
+        _flyTimer.Start();
+    }
+
+    private void StopFlyTimer()
+    {
+        _flyTimer?.Stop();
+        _flyTimer = null;
+    }
+
+    private void OnFlyTick(object? sender, EventArgs e)
+    {
+        if (!_rmbDown || _keysDown.Count == 0)
+        {
+            StopFlyTimer();
+            return;
+        }
+
+        float speed = Viewport.Camera.PanSpeed * 1.5f;
+        if (_keysDown.Contains(Key.W)) Viewport.Camera.MoveForward(speed);
+        if (_keysDown.Contains(Key.S)) Viewport.Camera.MoveForward(-speed);
+        if (_keysDown.Contains(Key.D)) Viewport.Camera.MoveRight(speed);
+        if (_keysDown.Contains(Key.A)) Viewport.Camera.MoveRight(-speed);
+        if (_keysDown.Contains(Key.E)) Viewport.Camera.MoveUp(speed);
+        if (_keysDown.Contains(Key.Q)) Viewport.Camera.MoveUp(-speed);
+        InvalidateViewport();
     }
 
     private void ClampAndSyncHeightSlider()
@@ -401,15 +459,67 @@ public partial class MainWindow : Window
             && _vm.Document.CurrentMode == EditMode.ObjectEdit;
         _objPressTimestamp = Environment.TickCount64;
 
-        // In editing modes, start editing on press (matches Delphi Panel1MouseDown → Panel1MouseMove)
-        if (_vm.Document.CurrentMode != EditMode.Camera)
-        {
-            var props = e.GetCurrentPoint(ViewportPanel).Properties;
-            if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
-                HandleEditModeInput((int)_lastMousePos.X, (int)_lastMousePos.Y, props.IsLeftButtonPressed, props.IsRightButtonPressed, e.KeyModifiers);
-        }
+        var props = e.GetCurrentPoint(ViewportPanel).Properties;
+        if (props.IsRightButtonPressed) _rmbDown = true;
+
+        if (_prefs.ControlScheme == ControlScheme.Default)
+            OnPointerPressed_Default(props, e.KeyModifiers);
+        else
+            OnPointerPressed_Classic(props, e.KeyModifiers);
 
         e.Handled = true;
+    }
+
+    private void OnPointerPressed_Default(PointerPointProperties props, KeyModifiers modifiers)
+    {
+        // Default scheme: LMB in edit modes starts editing, RMB starts camera
+        if (_vm.Document.CurrentMode != EditMode.Camera && props.IsLeftButtonPressed && !props.IsRightButtonPressed)
+            HandleEditModeInput((int)_lastMousePos.X, (int)_lastMousePos.Y, true, false, modifiers);
+    }
+
+    private void OnPointerPressed_Classic(PointerPointProperties props, KeyModifiers modifiers)
+    {
+        // Classic scheme: any button in edit modes starts editing
+        if (_vm.Document.CurrentMode != EditMode.Camera)
+        {
+            if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
+                HandleEditModeInput((int)_lastMousePos.X, (int)_lastMousePos.Y, props.IsLeftButtonPressed, props.IsRightButtonPressed, modifiers);
+        }
+    }
+
+    private void OnViewportPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        var props = e.GetCurrentPoint(ViewportPanel).Properties;
+
+        // Default scheme: quick RMB click (no drag) in Object mode → context menu
+        if (_prefs.ControlScheme == ControlScheme.Default && _isClickDown
+            && e.InitialPressMouseButton == Avalonia.Input.MouseButton.Right
+            && _vm.Document.CurrentMode == EditMode.ObjectEdit)
+        {
+            var pos = e.GetPosition(ViewportPanel);
+            var bounds = Viewport.Bounds;
+            int vpW = (int)bounds.Width, vpH = (int)bounds.Height;
+            if (vpW > 0 && vpH > 0)
+            {
+                var terrain = _vm.Document.Terrain;
+                var objects = _vm.Document.GetObjectInstances();
+                var picked = TerrainEditor.PickObject((int)pos.X, (int)pos.Y, vpW, vpH,
+                    Viewport.Camera, terrain, objects);
+                if (picked.HasValue && picked.Value.SourceNode != null)
+                    SelectObject(picked.Value.SourceNode);
+                if (terrain != null)
+                    _newObjPosition = TerrainEditor.GetWorldHitPosition((int)pos.X, (int)pos.Y, vpW, vpH,
+                        Viewport.Camera, terrain);
+                ShowObjectContextMenu();
+            }
+        }
+
+        if (!props.IsRightButtonPressed)
+        {
+            _rmbDown = false;
+            _keysDown.Clear();
+            StopFlyTimer();
+        }
     }
 
     private void OnViewportPointerMoved(object? sender, PointerEventArgs e)
@@ -423,9 +533,65 @@ public partial class MainWindow : Window
         var props = e.GetCurrentPoint(ViewportPanel).Properties;
         bool left = props.IsLeftButtonPressed;
         bool right = props.IsRightButtonPressed;
+        bool middle = props.IsMiddleButtonPressed;
 
-        // In Camera mode, or Ctrl held in any mode → camera controls
-        bool ctrlHeld = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        if (_prefs.ControlScheme == ControlScheme.Default)
+            OnPointerMoved_Default(pos, dx, dy, left, right, middle, e.KeyModifiers);
+        else
+            OnPointerMoved_Classic(pos, dx, dy, left, right, e.KeyModifiers);
+    }
+
+    private void OnPointerMoved_Default(Point pos, float dx, float dy,
+        bool left, bool right, bool middle, KeyModifiers modifiers)
+    {
+        // Default (UE5-style):
+        //   RMB drag        = rotate (mouse look)
+        //   MMB drag        = pan
+        //   LMB+RMB drag    = pan (vertical = dolly, horizontal = strafe)
+        //   LMB drag        = edit mode action or select-box (future)
+        //   Scroll           = zoom
+
+        bool isCameraAction = right || middle;
+        if (isCameraAction)
+        {
+            if (left && right)
+            {
+                // LMB+RMB: vertical = dolly, horizontal = strafe
+                Viewport.Camera.Zoom(dy);
+                Viewport.Camera.Pan(dx, 0);
+                InvalidateViewport();
+            }
+            else if (right)
+            {
+                Viewport.Camera.Rotate(dx, dy);
+                InvalidateViewport();
+            }
+            else if (middle)
+            {
+                Viewport.Camera.Pan(dx, dy);
+                InvalidateViewport();
+            }
+            return;
+        }
+
+        // LMB drag: edit mode action
+        if (left && _vm.Document.CurrentMode != EditMode.Camera)
+        {
+            HandleEditModeInput((int)pos.X, (int)pos.Y, true, false, modifiers);
+            return;
+        }
+    }
+
+    private void OnPointerMoved_Classic(Point pos, float dx, float dy,
+        bool left, bool right, KeyModifiers modifiers)
+    {
+        // Classic (original Delphi):
+        //   LMB drag        = rotate
+        //   RMB drag        = pan
+        //   LMB+RMB drag    = zoom
+        //   Ctrl + any      = camera in edit modes
+
+        bool ctrlHeld = (modifiers & KeyModifiers.Control) != 0;
         if (_vm.Document.CurrentMode == EditMode.Camera || ctrlHeld)
         {
             if (left && right)
@@ -448,7 +614,7 @@ public partial class MainWindow : Window
 
         // In editing modes, dispatch to edit handler
         if (left || right)
-            HandleEditModeInput((int)pos.X, (int)pos.Y, left, right, e.KeyModifiers);
+            HandleEditModeInput((int)pos.X, (int)pos.Y, left, right, modifiers);
     }
 
     private void OnViewportPointerWheel(object? sender, PointerWheelEventArgs e)
@@ -467,6 +633,14 @@ public partial class MainWindow : Window
         int vpW = (int)bounds.Width;
         int vpH = (int)bounds.Height;
         if (vpW <= 0 || vpH <= 0) return;
+
+        // In Default scheme, Shift+LMB acts as the secondary (right-click) action
+        bool shiftHeld = (modifiers & KeyModifiers.Shift) != 0;
+        if (_prefs.ControlScheme == ControlScheme.Default && leftButton && shiftHeld)
+        {
+            leftButton = false;
+            rightButton = true;
+        }
 
         // Object editing has its own hit detection (ray-sphere, not terrain-only)
         if (_vm.Document.CurrentMode == EditMode.ObjectEdit)
@@ -1516,12 +1690,13 @@ public partial class MainWindow : Window
     private async Task ShowPreferencesAsync()
     {
         var dlg = new PreferencesDialog();
-        dlg.SetInitialGamePath(_prefs.GamePath);
+        dlg.SetInitialValues(_prefs.GamePath, _prefs.ControlScheme);
         await dlg.ShowDialog(this);
 
         if (!dlg.Confirmed) return;
 
         _prefs.GamePath = dlg.GamePath;
+        _prefs.ControlScheme = dlg.ControlScheme;
         _prefs.Save();
         _modelManager.SetGamePath(dlg.GamePath);
 

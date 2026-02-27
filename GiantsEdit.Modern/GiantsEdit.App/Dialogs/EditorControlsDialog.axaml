@@ -2,39 +2,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="GiantsEdit.App.Dialogs.EditorControlsDialog"
         Title="Editor Controls"
-        Width="520" Height="540"
+        Width="520" Height="560"
         WindowStartupLocation="CenterOwner"
         CanResize="False">
     <ScrollViewer Margin="16">
         <StackPanel Spacing="12">
-            <TextBlock FontWeight="Bold" FontSize="16" Text="Camera Controls" />
-            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">Left drag           Rotate camera (yaw/pitch)
-Right drag          Pan camera (strafe)
-Left + Right drag   Zoom (dolly forward/back)
-Scroll wheel        Zoom (dolly forward/back)
-Ctrl + drag         Camera controls in any editing mode</TextBlock>
-
-            <Separator/>
-            <TextBlock FontWeight="Bold" FontSize="16" Text="Height Editing Mode" />
-            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">Left drag           Paint terrain to target height
-Right click         Pick height under cursor</TextBlock>
-
-            <Separator/>
-            <TextBlock FontWeight="Bold" FontSize="16" Text="Light Editing Mode" />
-            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">Left drag           Paint terrain light color
-Right click         Pick color under cursor</TextBlock>
-
-            <Separator/>
-            <TextBlock FontWeight="Bold" FontSize="16" Text="Triangle Editing Mode" />
-            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">Left drag           Paint/set triangles
-Right drag          Erase/toggle triangles</TextBlock>
-
-            <Separator/>
-            <TextBlock FontWeight="Bold" FontSize="16" Text="Object Editing Mode" />
-            <TextBlock TextWrapping="Wrap" xml:space="preserve" FontFamily="Consolas" FontSize="13">Left click          Select object
-Left drag           Move selected object on terrain
-Shift + Left drag   Adjust object Z height
-Right click         Object context menu (create/delete)</TextBlock>
+            <TextBlock x:Name="ControlsText"
+                       TextWrapping="Wrap"
+                       FontFamily="Consolas" FontSize="13"
+                       xml:space="preserve" />
 
             <Separator/>
             <TextBlock FontWeight="Bold" FontSize="16" Text="Menu Shortcuts" />

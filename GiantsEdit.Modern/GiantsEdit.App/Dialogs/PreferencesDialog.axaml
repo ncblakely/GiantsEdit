@@ -1,16 +1,19 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="GiantsEdit.App.Dialogs.PreferencesDialog"
-        Title="Preferences" Width="500" Height="180"
+        Title="Preferences" Width="500" Height="230"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
     <StackPanel Margin="16" Spacing="12">
         <TextBlock Text="Preferences" FontSize="14" FontWeight="Bold" />
 
-        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
-            <TextBlock Grid.Column="0" Text="Game path:" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" x:Name="TxtGamePath" IsReadOnly="True" />
-            <Button Grid.Column="2" x:Name="BtnBrowse" Content="Browse..." Margin="8,0,0,0" />
+        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Game path:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtGamePath" IsReadOnly="True" />
+            <Button Grid.Row="0" Grid.Column="2" x:Name="BtnBrowse" Content="Browse..." Margin="8,0,0,0" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Control scheme:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CmbControlScheme" />
         </Grid>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">

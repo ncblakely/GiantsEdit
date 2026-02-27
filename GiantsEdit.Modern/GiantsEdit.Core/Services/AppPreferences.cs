@@ -1,6 +1,18 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GiantsEdit.Core.Services;
+
+/// <summary>
+/// Camera/input control scheme.
+/// </summary>
+public enum ControlScheme
+{
+    /// <summary>UE5-style: RMB+drag=look, MMB=pan, scroll=zoom, RMB+WASD=fly.</summary>
+    Default,
+    /// <summary>Original Delphi editor: LMB=rotate, RMB=pan, LMB+RMB=zoom.</summary>
+    Classic
+}
 
 /// <summary>
 /// Persists user preferences to ~/GiantsEdit/preferences.json.
@@ -14,6 +26,9 @@ public class AppPreferences
 
     public string GamePath { get; set; } = "";
     public string LastOpenFolder { get; set; } = "";
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ControlScheme ControlScheme { get; set; } = ControlScheme.Default;
 
     public void Save()
     {
