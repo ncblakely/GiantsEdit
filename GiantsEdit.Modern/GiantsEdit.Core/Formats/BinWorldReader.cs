@@ -394,8 +394,10 @@ public class BinWorldReader
                 break;
 
             case 0x44: // ObjEditStart
+                Hint("ObjEditStart");
                 break;
             case 0x45: // ObjEditEnd
+                Hint("ObjEditEnd");
                 break;
 
             case 0x46: // ObjectRef6

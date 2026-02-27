@@ -83,7 +83,7 @@ public class BinaryDataWriter
     /// </summary>
     public void WriteLString0(string s)
     {
-        WriteByte((byte)s.Length);
+        WriteByte((byte)(s.Length + 1)); // length includes null terminator
         WriteString0(s);
     }
 

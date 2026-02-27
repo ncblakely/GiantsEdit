@@ -30,15 +30,26 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Properties"
                                FontWeight="Bold" Margin="8,4" />
+                    <!-- Add/Remove buttons for list nodes -->
+                    <StackPanel x:Name="ListEditPanel" DockPanel.Dock="Bottom"
+                                Orientation="Horizontal" Margin="4"
+                                IsVisible="False">
+                        <Button x:Name="BtnAddEntry" Content="Add" Padding="12,4" />
+                    </StackPanel>
                     <ScrollViewer>
                         <ItemsControl x:Name="PropertiesList" Margin="4">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="dlg:LeafPropertyVm">
-                                    <Grid ColumnDefinitions="120,*" Margin="0,1">
-                                        <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                    <Grid ColumnDefinitions="Auto,120,*" Margin="0,1">
+                                        <Button Grid.Column="0" Content="✕" FontSize="10"
+                                                Padding="4,2" Margin="0,0,4,0"
+                                                MinWidth="0" MinHeight="0"
+                                                IsVisible="{Binding CanDelete}"
+                                                Command="{Binding DeleteCommand}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}"
                                                    VerticalAlignment="Center"
                                                    Margin="4,0" />
-                                        <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}"
+                                        <TextBox Grid.Column="2" Text="{Binding Value, Mode=TwoWay}"
                                                  Padding="4,2"
                                                  IsReadOnly="{Binding IsReadOnly}" />
                                     </Grid>

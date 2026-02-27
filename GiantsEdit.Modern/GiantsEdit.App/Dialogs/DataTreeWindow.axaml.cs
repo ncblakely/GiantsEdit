@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using GiantsEdit.Core.DataModel;
 
 namespace GiantsEdit.App.Dialogs;
@@ -8,10 +9,23 @@ namespace GiantsEdit.App.Dialogs;
 public partial class DataTreeWindow : Window
 {
     private TreeNode? _rootNode;
+    private TreeNode? _selectedNode;
+
+    /// <summary>
+    /// Max include file entries — each is a 32-byte fixed string in the binary format.
+    /// </summary>
+    private const int MaxIncludeFiles = 32;
+
+    /// <summary>
+    /// Nodes whose leaves can be added/removed via the list edit panel.
+    /// </summary>
+    private static readonly HashSet<string> EditableListNodes = ["[includefiles]"];
 
     public DataTreeWindow()
     {
         InitializeComponent();
+
+        BtnAddEntry.Click += (_, _) => AddIncludeFile();
     }
 
     public void LoadTree(TreeNode root, string title)
@@ -33,19 +47,62 @@ public partial class DataTreeWindow : Window
         {
             if (DataTree.SelectedItem is DataTreeNodeVm vm)
             {
+                _selectedNode = vm.Model;
                 ShowProperties(vm.Model);
                 StatusText.Text = vm.Name;
+                ListEditPanel.IsVisible = EditableListNodes.Contains(vm.Model.Name);
             }
         };
     }
 
     private void ShowProperties(TreeNode node)
     {
+        bool editable = EditableListNodes.Contains(node.Name);
         var props = new ObservableCollection<LeafPropertyVm>();
         foreach (var leaf in node.EnumerateLeaves())
-            props.Add(new LeafPropertyVm(leaf));
+        {
+            var vm = new LeafPropertyVm(leaf, editable);
+            if (editable)
+            {
+                vm.DeleteRequested += () =>
+                {
+                    node.RemoveLeaf(leaf);
+                    ShowProperties(node);
+                    StatusText.Text = $"Removed: {leaf.StringValue}";
+                };
+            }
+            props.Add(vm);
+        }
         PropertiesList.ItemsSource = props;
     }
+
+    private async void AddIncludeFile()
+    {
+        if (_selectedNode == null || _selectedNode.Name != "[includefiles]") return;
+
+        int currentCount = _selectedNode.LeafCount;
+        if (currentCount >= MaxIncludeFiles)
+        {
+            StatusText.Text = $"Cannot add more than {MaxIncludeFiles} include files";
+            return;
+        }
+
+        var dlg = new InputDialog("Add Include File", "Include file name (without .bin extension):");
+        var result = await dlg.ShowDialog<string?>(this);
+
+        if (!string.IsNullOrWhiteSpace(result))
+        {
+            if (result.Length > 31)
+            {
+                StatusText.Text = "Name too long (max 31 characters)";
+                return;
+            }
+            _selectedNode.AddString("Name", result);
+            ShowProperties(_selectedNode);
+            StatusText.Text = $"Added include file: {result}";
+        }
+    }
+
 }
 
 /// <summary>
@@ -53,7 +110,7 @@ public partial class DataTreeWindow : Window
 /// </summary>
 public class DataTreeNodeVm
 {
-    private static readonly HashSet<string> HiddenSections = ["[sfx]", "[objdefs]"];
+    private static readonly HashSet<string> HiddenSections = ["[sfx]", "[objdefs]", "ObjEditStart", "ObjEditEnd"];
 
     public DataTreeNodeVm(TreeNode node)
     {
@@ -79,7 +136,7 @@ public partial class LeafPropertyVm : ObservableObject
 {
     private readonly TreeLeaf _leaf;
 
-    public LeafPropertyVm(TreeLeaf leaf)
+    public LeafPropertyVm(TreeLeaf leaf, bool canDelete = false)
     {
         _leaf = leaf;
         Name = leaf.Name;
@@ -93,6 +150,8 @@ public partial class LeafPropertyVm : ObservableObject
             _ => "?"
         };
         IsReadOnly = leaf.PropertyType == PropertyType.Void;
+        CanDelete = canDelete;
+        DeleteCommand = new RelayCommand(() => DeleteRequested?.Invoke());
     }
 
     public string Name { get; }
@@ -101,6 +160,10 @@ public partial class LeafPropertyVm : ObservableObject
     private string _value = "";
 
     public bool IsReadOnly { get; }
+    public bool CanDelete { get; }
+    public IRelayCommand DeleteCommand { get; }
+
+    public event Action? DeleteRequested;
 
     /// <summary>
     /// Applies the edited value back to the underlying leaf.
