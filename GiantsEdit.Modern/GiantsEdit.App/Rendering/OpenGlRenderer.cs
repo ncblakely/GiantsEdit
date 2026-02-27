@@ -168,9 +168,10 @@ public sealed class OpenGlRenderer : IRenderer
             {
                 // Try real model first, then mapobj shape
                 ModelGpuData gpuData;
+                bool isRealModel = false;
                 if (_models.TryGetValue(obj.ModelId, out gpuData))
                 {
-                    // Real model (GBS) — use as-is
+                    isRealModel = true;
                 }
                 else if (_mapObjsLoaded && _mapObjWrap.TryGetValue(obj.ModelId, out int shapeIdx)
                          && _mapObjShapes.TryGetValue(shapeIdx, out gpuData))
@@ -182,11 +183,22 @@ public sealed class OpenGlRenderer : IRenderer
                     continue;
                 }
 
-                var model = Matrix4x4.CreateScale(obj.Scale)
-                    * Matrix4x4.CreateRotationZ(obj.Rotation.Z)
-                    * Matrix4x4.CreateRotationY(obj.Rotation.Y)
-                    * Matrix4x4.CreateRotationX(obj.Rotation.X)
-                    * Matrix4x4.CreateTranslation(obj.Position);
+                // Delphi DrawObject only applies scale when DrawRealObjects is true.
+                // For Mapobj shapes, only translate + Z-rotate.
+                Matrix4x4 model;
+                if (isRealModel)
+                {
+                    model = Matrix4x4.CreateScale(obj.Scale)
+                        * Matrix4x4.CreateRotationZ(obj.Rotation.Z)
+                        * Matrix4x4.CreateRotationY(obj.Rotation.Y)
+                        * Matrix4x4.CreateRotationX(obj.Rotation.X)
+                        * Matrix4x4.CreateTranslation(obj.Position);
+                }
+                else
+                {
+                    model = Matrix4x4.CreateRotationZ(obj.Rotation.Z)
+                        * Matrix4x4.CreateTranslation(obj.Position);
+                }
 
                 SetUniformMatrix(_modelModelLoc, model);
                 _gl.BindVertexArray(gpuData.Vao);

@@ -61,9 +61,10 @@ public class OpenGlViewport : OpenGlControlBase
         _renderer = new OpenGlRenderer();
         _renderer.SetGlContext(_gl);
 
+        var scaling = VisualRoot?.RenderScaling ?? 1.0;
         var bounds = Bounds;
-        int w = Math.Max(1, (int)bounds.Width);
-        int h = Math.Max(1, (int)bounds.Height);
+        int w = Math.Max(1, (int)(bounds.Width * scaling));
+        int h = Math.Max(1, (int)(bounds.Height * scaling));
         _renderer.Init(w, h);
         _initialized = true;
     }
@@ -86,9 +87,11 @@ public class OpenGlViewport : OpenGlControlBase
         // Bind Avalonia's framebuffer — required for correct rendering
         _gl.BindFramebuffer(FramebufferTarget.Framebuffer, (uint)fb);
 
+        // Use physical pixel dimensions for GL viewport (framebuffer is at physical size)
+        var scaling = VisualRoot?.RenderScaling ?? 1.0;
         var bounds = Bounds;
-        int w = Math.Max(1, (int)bounds.Width);
-        int h = Math.Max(1, (int)bounds.Height);
+        int w = Math.Max(1, (int)(bounds.Width * scaling));
+        int h = Math.Max(1, (int)(bounds.Height * scaling));
         _renderer.Resize(w, h);
 
         // Process pending terrain upload on the GL thread
@@ -114,7 +117,7 @@ public class OpenGlViewport : OpenGlControlBase
         var state = CurrentRenderState ?? new RenderState
         {
             ViewMatrix = Camera.GetViewMatrix(),
-            ProjectionMatrix = Camera.GetProjectionMatrix((float)w / h),
+            ProjectionMatrix = Camera.GetProjectionMatrix((float)bounds.Width / (float)Math.Max(1, bounds.Height)),
             CameraPosition = Camera.Position
         };
 

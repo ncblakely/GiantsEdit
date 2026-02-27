@@ -34,6 +34,7 @@ public class WorldDocument
     private TreeNode? _worldRoot;
     private TerrainData? _terrain;
     private readonly List<TreeNode> _missions = [];
+    private readonly List<(string Name, byte[] Data)> _otherGckFiles = [];
 
     public TreeNode? WorldRoot => _worldRoot;
     public TerrainData? Terrain => _terrain;
@@ -49,6 +50,11 @@ public class WorldDocument
     public bool IsModified { get; private set; }
     public string? FilePath { get; private set; }
     public string? TerrainPath { get; private set; }
+
+    // GCK internal entry names (preserved across load/save)
+    public string GckBinEntryName { get; set; } = "w_default.bin";
+    public string GckGtiEntryName { get; set; } = "default.gti";
+    public string GckGmmEntryName { get; set; } = "default.gmm";
 
     // Map metadata (matches Delphi 'map' record)
     public string MapBinName { get; set; } = string.Empty;
@@ -136,6 +142,10 @@ public class WorldDocument
         string? gtiEntry = entries.FirstOrDefault(e =>
             e.EndsWith(".gti", StringComparison.OrdinalIgnoreCase));
 
+        // Find the *.gmm entry
+        string? gmmEntry = entries.FirstOrDefault(e =>
+            e.EndsWith(".gmm", StringComparison.OrdinalIgnoreCase));
+
         if (binEntry != null)
         {
             byte[]? binData = GzpArchive.ExtractFile(gckPath, binEntry);
@@ -144,6 +154,7 @@ public class WorldDocument
                 var reader = new BinWorldReader();
                 _worldRoot = reader.Load(binData);
             }
+            GckBinEntryName = binEntry;
         }
 
         if (gtiEntry != null)
@@ -153,6 +164,21 @@ public class WorldDocument
             {
                 LoadTerrainFromBytes(gtiData);
             }
+            GckGtiEntryName = gtiEntry;
+        }
+
+        if (gmmEntry != null)
+            GckGmmEntryName = gmmEntry;
+
+        // Preserve any extra files (e.g. .abx) for round-trip saving
+        _otherGckFiles.Clear();
+        foreach (var entry in entries)
+        {
+            if (entry == binEntry || entry == gtiEntry || entry == gmmEntry)
+                continue;
+            byte[]? data = GzpArchive.ExtractFile(gckPath, entry);
+            if (data != null)
+                _otherGckFiles.Add((entry, data));
         }
 
         FilePath = gckPath;
@@ -164,7 +190,8 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Saves the current world to a .bin file.
+    /// Saves the current world. If the path is .gck, saves as a GCK archive
+    /// (ZIP containing w_*.bin + *.gti + *.gmm). Otherwise saves raw .bin.
     /// </summary>
     public void SaveWorld(string? path = null)
     {
@@ -172,11 +199,74 @@ public class WorldDocument
         path ??= FilePath;
         if (path == null) return;
 
-        var writer = new BinWorldWriter();
-        byte[] data = writer.Save(_worldRoot);
-        File.WriteAllBytes(path, data);
+        if (path.EndsWith(".gck", StringComparison.OrdinalIgnoreCase))
+        {
+            SaveGck(path);
+        }
+        else
+        {
+            var writer = new BinWorldWriter();
+            byte[] data = writer.Save(_worldRoot);
+            File.WriteAllBytes(path, data);
+        }
+
         FilePath = path;
         IsModified = false;
+    }
+
+    /// <summary>
+    /// Saves the world as a .gck archive matching the original Delphi SaveMap behavior.
+    /// </summary>
+    private void SaveGck(string gckPath)
+    {
+        var files = new List<(string EntryName, byte[] Data)>();
+
+        // Add GTI terrain data
+        if (_terrain != null)
+        {
+            byte[] gtiData = GtiFormat.Save(_terrain);
+            files.Add((GckGtiEntryName, gtiData));
+        }
+
+        // Add BIN world data
+        if (_worldRoot != null)
+        {
+            var writer = new BinWorldWriter();
+            byte[] binData = writer.Save(_worldRoot);
+            files.Add((GckBinEntryName, binData));
+        }
+
+        // Build GMM metadata
+        string gmmText = BuildGmmText();
+        files.Add((GckGmmEntryName, System.Text.Encoding.ASCII.GetBytes(gmmText)));
+
+        // Preserve any extra files from the original archive
+        foreach (var (name, data) in _otherGckFiles)
+            files.Add((name, data));
+
+        GzpArchive.Create(gckPath, files);
+    }
+
+    /// <summary>
+    /// Builds the GMM metadata text matching the original Delphi format.
+    /// </summary>
+    private string BuildGmmText()
+    {
+        var sb = new System.Text.StringBuilder();
+
+        if (!string.IsNullOrEmpty(GckBinEntryName))
+        {
+            sb.AppendLine($"Modinfo_BinName={GckBinEntryName}");
+            sb.AppendLine($"Modinfo_BinType={MapType}");
+        }
+
+        if (!string.IsNullOrEmpty(UserMessage))
+            sb.AppendLine($"Modinfo_UserMessage={UserMessage}");
+
+        if (Shareable)
+            sb.AppendLine("Modinfo_Shareable=1");
+
+        return sb.ToString();
     }
 
     /// <summary>

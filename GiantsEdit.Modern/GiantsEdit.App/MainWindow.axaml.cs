@@ -838,8 +838,11 @@ public partial class MainWindow : Window
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Save Map As",
-            DefaultExtension = "bin",
-            FileTypeChoices = [new FilePickerFileType("World Files") { Patterns = ["*.bin"] }]
+            DefaultExtension = "gck",
+            FileTypeChoices =
+            [
+                new FilePickerFileType("GCK Map Archive") { Patterns = ["*.gck"] }
+            ]
         });
 
         if (file != null)
