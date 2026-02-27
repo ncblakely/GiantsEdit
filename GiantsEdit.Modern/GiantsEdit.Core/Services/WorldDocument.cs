@@ -60,7 +60,6 @@ public class WorldDocument
     public string MapBinName { get; set; } = string.Empty;
     public string UserMessage { get; set; } = string.Empty;
     public int MapType { get; set; } = -1;
-    public bool Shareable { get; set; }
 
     public event Action? WorldChanged;
     public event Action? SelectionChanged;
@@ -262,9 +261,6 @@ public class WorldDocument
 
         if (!string.IsNullOrEmpty(UserMessage))
             sb.AppendLine($"Modinfo_UserMessage={UserMessage}");
-
-        if (Shareable)
-            sb.AppendLine("Modinfo_Shareable=1");
 
         return sb.ToString();
     }
@@ -599,20 +595,18 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Extracts map metadata (user message, map type, shareable) from the world tree.
+    /// Extracts map metadata (user message, map type) from the world tree.
     /// The Delphi code reads these from special leaf nodes during BIN loading.
     /// </summary>
     private void ExtractMapMetadata()
     {
         if (_worldRoot == null) return;
 
-        // Look for GmmData node which contains user message, map type, shareable
         var gmmData = _worldRoot.FindChildNode("GmmData");
         if (gmmData != null)
         {
             UserMessage = gmmData.FindChildLeaf("UserMessage")?.StringValue ?? string.Empty;
             MapType = gmmData.FindChildLeaf("MapType")?.Int32Value ?? -1;
-            Shareable = (gmmData.FindChildLeaf("Shareable")?.Int32Value ?? 0) != 0;
         }
     }
 

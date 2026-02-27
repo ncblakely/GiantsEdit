@@ -1454,18 +1454,13 @@ public partial class MainWindow : Window
         dlg.SetValues(
             _vm.Document.MapBinName,
             _vm.Document.UserMessage,
-            _vm.Document.MapType,
-            _vm.Document.Shareable);
+            _vm.Document.MapType);
         await dlg.ShowDialog(this);
 
-        if (dlg.Confirmed)
-        {
-            _vm.Document.MapBinName = dlg.BinFileName;
-            _vm.Document.UserMessage = dlg.Message;
-            _vm.Document.MapType = dlg.MapType;
-            _vm.Document.Shareable = dlg.Shareable;
-            StatusText.Text = $"Map name set to: {dlg.BinFileName}";
-        }
+        _vm.Document.MapBinName = dlg.BinFileName;
+        _vm.Document.UserMessage = dlg.Message;
+        _vm.Document.MapType = dlg.MapType;
+        StatusText.Text = $"Map name set to: {dlg.BinFileName}";
     }
 
     private async Task ShowMarkerReportAsync()

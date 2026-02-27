@@ -5,21 +5,17 @@ namespace GiantsEdit.App.Dialogs;
 
 public partial class MapNamesDialog : Window
 {
-    public bool Confirmed { get; private set; }
-
     // Results
     public string MapName { get; private set; } = string.Empty;
     public string Message { get; private set; } = string.Empty;
     public int MapType { get; private set; }
-    public bool Shareable { get; private set; }
     public string BinFileName { get; private set; } = string.Empty;
 
     public MapNamesDialog()
     {
         InitializeComponent();
 
-        BtnOk.Click += OnOk;
-        BtnCancel.Click += (_, _) => Close();
+        BtnClose.Click += OnClose;
         BtnHelp.Click += OnHelp;
 
         RbSingle.IsCheckedChanged += (_, _) => { if (RbSingle.IsChecked == true) UpdateFlags(); };
@@ -33,12 +29,14 @@ public partial class MapNamesDialog : Window
         };
         TxtCustomType.TextChanged += (_, _) => { if (RbCustom.IsChecked == true) UpdateFlags(); };
         TxtMapName.TextChanged += (_, _) => UpdateFileName();
+
+        Closing += (_, _) => ApplyValues();
     }
 
     /// <summary>
     /// Initialize the dialog with existing values from the document.
     /// </summary>
-    public void SetValues(string binName, string message, int mapType, bool shareable)
+    public void SetValues(string binName, string message, int mapType)
     {
         // Extract the map name from the bin filename
         string name = binName;
@@ -60,8 +58,6 @@ public partial class MapNamesDialog : Window
         Message = message;
         string displayMsg = message.Replace("\\n", "\n").Replace("\\\\", "\\");
         TxtMessage.Text = displayMsg;
-
-        ChkShareable.IsChecked = shareable;
 
         switch (mapType)
         {
@@ -155,15 +151,16 @@ public partial class MapNamesDialog : Window
         };
     }
 
-    private void OnOk(object? sender, RoutedEventArgs e)
+    private void OnClose(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void ApplyValues()
     {
         string name = TxtMapName.Text ?? "";
-        if (string.IsNullOrWhiteSpace(name))
-            return;
-
         MapName = name;
         MapType = GetSelectedMapType();
-        Shareable = ChkShareable.IsChecked == true;
 
         int idx = GetTypeIndex();
         BinFileName = idx switch
@@ -177,9 +174,6 @@ public partial class MapNamesDialog : Window
         // Encode newlines back to \n escapes
         string raw = TxtMessage.Text ?? "";
         Message = raw.Replace("\\", "\\\\").Replace("\r\n", "\\n").Replace("\n", "\\n");
-
-        Confirmed = true;
-        Close();
     }
 
     private async void OnHelp(object? sender, RoutedEventArgs e)
@@ -211,9 +205,6 @@ public partial class MapNamesDialog : Window
                         16 => no meccs vs meccs allowed
                         32 => no reaper vs reaper allowed
                         64 => no hosting, joining only
-
-                        Map shareable:
-                        When not checked this prevents other users from downloading the map.
                         """,
                     TextWrapping = Avalonia.Media.TextWrapping.Wrap,
                     Margin = new Avalonia.Thickness(16)
