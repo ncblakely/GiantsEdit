@@ -1,4 +1,4 @@
-using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Services;
 
@@ -7,11 +7,14 @@ namespace GiantsEdit.Core.Tests;
 [TestClass]
 public class GckRoundTripIntegrationTests
 {
-    private const string TestGckFile = "TestData/W_M_Mecc_L1.gck";
+    private const string TestDataDir = "TestData";
 
-    private static (byte[] originalBin, byte[] originalGti, string binEntry, string gtiEntry) ExtractOriginals()
+    private static IEnumerable<string> GetAllGckFiles()
+        => Directory.GetFiles(TestDataDir, "*.gck").OrderBy(f => f);
+
+    private static (byte[] bin, byte[] gti) ExtractOriginals(string gckPath)
     {
-        var entries = GzpArchive.ListEntries(TestGckFile);
+        var entries = GzpArchive.ListEntries(gckPath);
 
         string binEntry = entries.First(e =>
             Path.GetFileName(e).StartsWith("w_", StringComparison.OrdinalIgnoreCase) &&
@@ -19,145 +22,181 @@ public class GckRoundTripIntegrationTests
         string gtiEntry = entries.First(e =>
             e.EndsWith(".gti", StringComparison.OrdinalIgnoreCase));
 
-        byte[] originalBin = GzpArchive.ExtractFile(TestGckFile, binEntry)!;
-        byte[] originalGti = GzpArchive.ExtractFile(TestGckFile, gtiEntry)!;
-
-        return (originalBin, originalGti, binEntry, gtiEntry);
+        return (GzpArchive.ExtractFile(gckPath, binEntry)!, GzpArchive.ExtractFile(gckPath, gtiEntry)!);
     }
 
     [TestMethod]
-    public void LoadSave_RealMap_BinSectionsAreIdentical()
+    public void LoadSave_AllMaps_BinRoundTrip()
     {
-        if (!File.Exists(TestGckFile))
-            Assert.Inconclusive($"Test data not found: {TestGckFile}");
+        var gckFiles = GetAllGckFiles().ToList();
+        if (gckFiles.Count == 0)
+            Assert.Inconclusive("No .gck test files found.");
 
-        var (originalBin, _, _, _) = ExtractOriginals();
+        var failures = new ConcurrentBag<string>();
 
-        var doc = new WorldDocument();
-        doc.LoadGck(TestGckFile);
-
-        var writer = new BinWorldWriter();
-        byte[] savedBin = writer.Save(doc.WorldRoot!);
-
-        // Dump for debugging
-        string tempDir = Path.Combine(Path.GetTempPath(), "giantstest");
-        Directory.CreateDirectory(tempDir);
-        File.WriteAllBytes(Path.Combine(tempDir, "original.bin"), originalBin);
-        File.WriteAllBytes(Path.Combine(tempDir, "saved.bin"), savedBin);
-
-        Assert.AreEqual(originalBin.Length, savedBin.Length, "BIN file sizes must match");
-
-        // Compare header pointers
-        int[] origPtrs = ReadPointers(originalBin);
-        int[] savedPtrs = ReadPointers(savedBin);
-        CollectionAssert.AreEqual(origPtrs, savedPtrs, "Section pointers must match");
-
-        // Compare each non-main-data section byte-for-byte (sections 1-6)
-        string[] sectionNames = ["main_data", "textures", "sfx", "objdefs", "fx", "scenerios", "includefiles"];
-        for (int i = 1; i <= 6; i++)
+        Parallel.ForEach(gckFiles, gckPath =>
         {
-            var origSection = ExtractSection(originalBin, origPtrs, i);
-            var savedSection = ExtractSection(savedBin, savedPtrs, i);
-            Assert.IsTrue(origSection.SequenceEqual(savedSection),
-                $"Section {i} ({sectionNames[i]}) differs: orig={origSection.Length} bytes, saved={savedSection.Length} bytes");
+            string mapName = Path.GetFileNameWithoutExtension(gckPath);
+            try
+            {
+                // Load → Save → Reload → Compare trees
+                var doc = new WorldDocument();
+                doc.LoadGck(gckPath);
+
+                var writer = new BinWorldWriter();
+                byte[] savedBin = writer.Save(doc.WorldRoot!);
+
+                var reader = new BinWorldReader();
+                var reloadedTree = reader.Load(savedBin);
+                Assert.IsNotNull(reloadedTree, $"{mapName}: Saved BIN failed to reload");
+
+                var errors = CompareTreeNodes(doc.WorldRoot!, reloadedTree, "");
+                if (errors.Count > 0)
+                    failures.Add($"{mapName}: {string.Join("; ", errors.Take(10))}");
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{mapName}: EXCEPTION — {ex.GetType().Name}: {ex.Message}");
+            }
+        });
+
+        if (!failures.IsEmpty)
+            Assert.Fail($"BIN round-trip failed for {failures.Count}/{gckFiles.Count} maps:\n\n"
+                + string.Join("\n\n", failures.OrderBy(f => f)));
+    }
+
+    [TestMethod]
+    public void LoadSave_AllMaps_GtiRoundTrip()
+    {
+        var gckFiles = GetAllGckFiles().ToList();
+        if (gckFiles.Count == 0)
+            Assert.Inconclusive("No .gck test files found.");
+
+        var failures = new ConcurrentBag<string>();
+
+        Parallel.ForEach(gckFiles, gckPath =>
+        {
+            string mapName = Path.GetFileNameWithoutExtension(gckPath);
+            try
+            {
+                var (_, originalGti) = ExtractOriginals(gckPath);
+
+                var doc = new WorldDocument();
+                doc.LoadGck(gckPath);
+
+                byte[] savedGti = GtiFormat.Save(doc.Terrain!);
+
+                var errors = CompareGti(originalGti, savedGti);
+                if (errors.Count > 0)
+                    failures.Add($"{mapName}: {string.Join("; ", errors)}");
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{mapName}: EXCEPTION — {ex.GetType().Name}: {ex.Message}");
+            }
+        });
+
+        if (!failures.IsEmpty)
+            Assert.Fail($"GTI round-trip failed for {failures.Count}/{gckFiles.Count} maps:\n\n"
+                + string.Join("\n\n", failures.OrderBy(f => f)));
+    }
+
+    private static List<string> CompareTreeNodes(DataModel.TreeNode orig, DataModel.TreeNode saved, string path)
+    {
+        var errors = new List<string>();
+        string nodePath = string.IsNullOrEmpty(path) ? orig.Name : $"{path}/{orig.Name}";
+
+        if (orig.Name != saved.Name)
+        {
+            errors.Add($"Node name mismatch at '{path}': '{orig.Name}' vs '{saved.Name}'");
+            return errors;
         }
 
-        // Verify main data block has same size
-        int origBlockLen = BinaryPrimitives.ReadInt32LittleEndian(originalBin.AsSpan(origPtrs[0]));
-        int savedBlockLen = BinaryPrimitives.ReadInt32LittleEndian(savedBin.AsSpan(savedPtrs[0]));
-        Assert.AreEqual(origBlockLen, savedBlockLen, "Main data block length must match");
+        // Compare leaves
+        var origLeaves = orig.EnumerateLeaves().ToList();
+        var savedLeaves = saved.EnumerateLeaves().ToList();
+        if (origLeaves.Count != savedLeaves.Count)
+        {
+            errors.Add($"Leaf count at '{nodePath}': {origLeaves.Count} vs {savedLeaves.Count}");
+        }
+        else
+        {
+            for (int i = 0; i < origLeaves.Count; i++)
+            {
+                var ol = origLeaves[i];
+                var sl = savedLeaves[i];
+                if (ol.Name != sl.Name)
+                    errors.Add($"Leaf name at '{nodePath}[{i}]': '{ol.Name}' vs '{sl.Name}'");
+                else if (ol.PropertyType != sl.PropertyType)
+                    errors.Add($"Leaf type at '{nodePath}/{ol.Name}': {ol.PropertyType} vs {sl.PropertyType}");
+                else if (ol.RawInt32 != sl.RawInt32 && ol.PropertyType != DataModel.PropertyType.String)
+                    errors.Add($"Leaf value at '{nodePath}/{ol.Name}': {ol.RawInt32} vs {sl.RawInt32}");
+                else if (ol.PropertyType == DataModel.PropertyType.String && ol.StringValue != sl.StringValue)
+                    errors.Add($"Leaf string at '{nodePath}/{ol.Name}': '{ol.StringValue}' vs '{sl.StringValue}'");
+            }
+        }
+
+        // Compare child nodes
+        var origNodes = orig.EnumerateNodes().ToList();
+        var savedNodes = saved.EnumerateNodes().ToList();
+        if (origNodes.Count != savedNodes.Count)
+        {
+            errors.Add($"Child node count at '{nodePath}': {origNodes.Count} vs {savedNodes.Count}");
+        }
+        else
+        {
+            for (int i = 0; i < origNodes.Count; i++)
+                errors.AddRange(CompareTreeNodes(origNodes[i], savedNodes[i], nodePath));
+        }
+
+        return errors;
     }
 
-    [TestMethod]
-    public void LoadSave_RealMap_GtiHeaderAndDataMatch()
+    private static List<string> CompareGti(byte[] originalGtiBytes, byte[] savedGtiBytes)
     {
-        if (!File.Exists(TestGckFile))
-            Assert.Inconclusive($"Test data not found: {TestGckFile}");
+        var errors = new List<string>();
 
-        var (_, originalGti, _, _) = ExtractOriginals();
+        var orig = GtiFormat.Load(originalGtiBytes);
+        var saved = GtiFormat.Load(savedGtiBytes);
 
-        var doc = new WorldDocument();
-        doc.LoadGck(TestGckFile);
+        if (orig.Header.Width != saved.Header.Width) errors.Add($"Width: {orig.Header.Width}→{saved.Header.Width}");
+        if (orig.Header.Height != saved.Header.Height) errors.Add($"Height: {orig.Header.Height}→{saved.Header.Height}");
+        if (orig.Header.Stretch != saved.Header.Stretch) errors.Add($"Stretch mismatch");
+        if (orig.TextureName != saved.TextureName) errors.Add($"TextureName: '{orig.TextureName}'→'{saved.TextureName}'");
 
-        byte[] savedGti = GtiFormat.Save(doc.Terrain!);
+        if (errors.Count > 0) return errors;
 
-        // Load both files to compare decoded terrain data
-        var origTerrain = GtiFormat.Load(originalGti);
-        var savedTerrain = GtiFormat.Load(savedGti);
-
-        // Headers should match (except possibly RLE-derived size)
-        Assert.AreEqual(origTerrain.Header.SignatureField, savedTerrain.Header.SignatureField, "Signature");
-        Assert.AreEqual(origTerrain.Header.Width, savedTerrain.Header.Width, "Width");
-        Assert.AreEqual(origTerrain.Header.Height, savedTerrain.Header.Height, "Height");
-        Assert.AreEqual(origTerrain.Header.Stretch, savedTerrain.Header.Stretch, "Stretch");
-        Assert.AreEqual(origTerrain.Header.XOffset, savedTerrain.Header.XOffset, "XOffset");
-        Assert.AreEqual(origTerrain.Header.YOffset, savedTerrain.Header.YOffset, "YOffset");
-        Assert.AreEqual(origTerrain.TextureName, savedTerrain.TextureName, "TextureName");
-
-        // Compare decoded terrain arrays
-        int cellCount = origTerrain.Width * origTerrain.Height;
-
-        // Build active mask to only compare cells that matter
-        int w = origTerrain.Width;
-        int h = origTerrain.Height;
+        int w = orig.Width, h = orig.Height;
         bool IsActive(byte triType) => (triType & 7) is >= 1 and <= 7;
 
-        int heightDiffs = 0;
-        int triDiffs = 0;
-        int lightDiffs = 0;
-        int activeCells = 0;
+        int heightDiffs = 0, triDiffs = 0, lightDiffs = 0, activeCells = 0;
 
         for (int y = 0; y < h; y++)
         {
             for (int x = 0; x < w; x++)
             {
                 int ci = y * w + x;
-                bool active = false;
-
-                // Check if this cell is active (used by any neighboring triangle)
-                if (IsActive(origTerrain.Triangles[ci])) active = true;
-                if (x > 0 && IsActive(origTerrain.Triangles[ci - 1])) active = true;
-                if (y > 0 && IsActive(origTerrain.Triangles[(y - 1) * w + x])) active = true;
-                if (x > 0 && y > 0 && IsActive(origTerrain.Triangles[(y - 1) * w + x - 1])) active = true;
+                bool active = IsActive(orig.Triangles[ci]);
+                if (x > 0) active |= IsActive(orig.Triangles[ci - 1]);
+                if (y > 0) active |= IsActive(orig.Triangles[(y - 1) * w + x]);
+                if (x > 0 && y > 0) active |= IsActive(orig.Triangles[(y - 1) * w + x - 1]);
 
                 if (!active) continue;
                 activeCells++;
 
-                if (origTerrain.Heights[ci] != savedTerrain.Heights[ci]) heightDiffs++;
-                if (origTerrain.Triangles[ci] != savedTerrain.Triangles[ci]) triDiffs++;
-                if (origTerrain.LightMap[ci * 3] != savedTerrain.LightMap[ci * 3] ||
-                    origTerrain.LightMap[ci * 3 + 1] != savedTerrain.LightMap[ci * 3 + 1] ||
-                    origTerrain.LightMap[ci * 3 + 2] != savedTerrain.LightMap[ci * 3 + 2]) lightDiffs++;
+                if (orig.Heights[ci] != saved.Heights[ci]) heightDiffs++;
+                if (orig.Triangles[ci] != saved.Triangles[ci]) triDiffs++;
+                if (orig.LightMap[ci * 3] != saved.LightMap[ci * 3] ||
+                    orig.LightMap[ci * 3 + 1] != saved.LightMap[ci * 3 + 1] ||
+                    orig.LightMap[ci * 3 + 2] != saved.LightMap[ci * 3 + 2]) lightDiffs++;
             }
         }
 
-        var errors = new List<string>();
-        if (heightDiffs > 0) errors.Add($"Height differences: {heightDiffs}/{activeCells} active cells");
-        if (triDiffs > 0) errors.Add($"Triangle differences: {triDiffs}/{activeCells} active cells");
-        if (lightDiffs > 0) errors.Add($"Lightmap differences: {lightDiffs}/{activeCells} active cells");
+        if (heightDiffs > 0) errors.Add($"Heights: {heightDiffs}/{activeCells} active cells differ");
+        if (triDiffs > 0) errors.Add($"Triangles: {triDiffs}/{activeCells} active cells differ");
+        if (lightDiffs > 0) errors.Add($"Lightmap: {lightDiffs}/{activeCells} active cells differ");
 
-        if (errors.Count > 0)
-            Assert.Fail($"GTI terrain data differs after round-trip:\n{string.Join("\n", errors)}");
+        return errors;
     }
 
-    private static int[] ReadPointers(byte[] data)
-    {
-        int[] ptrs = new int[7];
-        for (int i = 0; i < 7; i++)
-            ptrs[i] = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(4 + i * 4));
-        return ptrs;
-    }
-
-    private static ReadOnlySpan<byte> ExtractSection(byte[] data, int[] ptrs, int sectionIndex)
-    {
-        int start = ptrs[sectionIndex];
-        // Find the next section start after this one
-        int end = data.Length;
-        foreach (int p in ptrs)
-        {
-            if (p > start && p < end)
-                end = p;
-        }
-        return data.AsSpan(start, end - start);
-    }
 }

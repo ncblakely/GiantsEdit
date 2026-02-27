@@ -729,14 +729,6 @@ public class BinWorldWriter
         WriteLeaf(n.GetChildLeaf("DiffuseG"));
         WriteLeaf(n.GetChildLeaf("DiffuseB"));
         WriteLeaf(n.GetChildLeaf("DiffuseA"));
-        WriteLeaf(n.GetChildLeaf("AmbientR"));
-        WriteLeaf(n.GetChildLeaf("AmbientG"));
-        WriteLeaf(n.GetChildLeaf("AmbientB"));
-        WriteLeaf(n.GetChildLeaf("AmbientA"));
-        WriteLeaf(n.GetChildLeaf("SpecularR"));
-        WriteLeaf(n.GetChildLeaf("SpecularG"));
-        WriteLeaf(n.GetChildLeaf("SpecularB"));
-        WriteLeaf(n.GetChildLeaf("SpecularA"));
         WriteLeaf(n.GetChildLeaf("Power"));
     }
 

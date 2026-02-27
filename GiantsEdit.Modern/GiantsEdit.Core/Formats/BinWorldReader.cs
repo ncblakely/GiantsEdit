@@ -26,6 +26,9 @@ public class BinWorldReader
     private TreeNode _entry = null!;
     private TreeNode _lastObject = null!;
 
+    /// <summary>Optional trace log — populated when non-null.</summary>
+    public List<string>? TraceLog { get; set; }
+
     /// <summary>
     /// Loads a world .bin file into a tree structure.
     /// </summary>
@@ -60,15 +63,18 @@ public class BinWorldReader
         // Read chunks until $FF
         while (_r.HasMore)
         {
+            int chunkPos = _r.Position;
             byte b = _r.ReadByte();
             if (b == 0xFF) break;
             try
             {
                 ReadChunk(b);
+                TraceLog?.Add($"0x{b:X2} @ {chunkPos} → {_r.Position}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BinWorldReader] Error in chunk 0x{b:X2} at pos {_r.Position}: {ex.Message}");
+                TraceLog?.Add($"0x{b:X2} @ {chunkPos} ERROR: {ex.Message}");
+                Debug.WriteLine($"[BinWorldReader] Error in chunk 0x{b:X2} at pos {chunkPos}: {ex.Message}");
                 break;
             }
         }
@@ -703,20 +709,12 @@ public class BinWorldReader
                 _entry.AddInt32("RenderFog", _r.ReadInt32());
                 break;
 
-            case 0x90: // WaterMaterial
+            case 0x90: // WaterMaterial (DiffuseRGBA + Power = 5 floats)
                 Hint("WaterMaterial");
                 _entry.AddSingle("DiffuseR", _r.ReadSingle());
                 _entry.AddSingle("DiffuseG", _r.ReadSingle());
                 _entry.AddSingle("DiffuseB", _r.ReadSingle());
                 _entry.AddSingle("DiffuseA", _r.ReadSingle());
-                _entry.AddSingle("AmbientR", _r.ReadSingle());
-                _entry.AddSingle("AmbientG", _r.ReadSingle());
-                _entry.AddSingle("AmbientB", _r.ReadSingle());
-                _entry.AddSingle("AmbientA", _r.ReadSingle());
-                _entry.AddSingle("SpecularR", _r.ReadSingle());
-                _entry.AddSingle("SpecularG", _r.ReadSingle());
-                _entry.AddSingle("SpecularB", _r.ReadSingle());
-                _entry.AddSingle("SpecularA", _r.ReadSingle());
                 _entry.AddSingle("Power", _r.ReadSingle());
                 break;
 
