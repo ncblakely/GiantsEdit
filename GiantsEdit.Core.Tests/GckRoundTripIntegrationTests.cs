@@ -14,7 +14,7 @@ public class GckRoundTripIntegrationTests
 
     private static (byte[] bin, byte[] gti) ExtractOriginals(string gckPath)
     {
-        var entries = GzpArchive.ListEntries(gckPath);
+        var entries = GckArchive.ListEntries(gckPath);
 
         string binEntry = entries.First(e =>
             Path.GetFileName(e).StartsWith("w_", StringComparison.OrdinalIgnoreCase) &&
@@ -22,7 +22,7 @@ public class GckRoundTripIntegrationTests
         string gtiEntry = entries.First(e =>
             e.EndsWith(".gti", StringComparison.OrdinalIgnoreCase));
 
-        return (GzpArchive.ExtractFile(gckPath, binEntry)!, GzpArchive.ExtractFile(gckPath, gtiEntry)!);
+        return (GckArchive.ExtractFile(gckPath, binEntry)!, GckArchive.ExtractFile(gckPath, gtiEntry)!);
     }
 
     [TestMethod]

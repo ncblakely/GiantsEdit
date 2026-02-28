@@ -244,6 +244,35 @@ public partial class MainWindow : Window
             }
         };
 
+        // Property panel — herd type dropdown (reuses same ObjectNames list)
+        LstHerdTypes.ItemsSource = allObjNames;
+        BtnHerdTypeDropdown.Click += (_, _) =>
+        {
+            TxtHerdTypeSearch.Text = "";
+            LstHerdTypes.ItemsSource = allObjNames;
+            HerdTypePopup.IsOpen = !HerdTypePopup.IsOpen;
+            if (HerdTypePopup.IsOpen)
+                TxtHerdTypeSearch.Focus();
+        };
+        TxtHerdTypeSearch.TextChanged += (_, _) =>
+        {
+            var filter = TxtHerdTypeSearch.Text;
+            if (string.IsNullOrEmpty(filter))
+            {
+                LstHerdTypes.ItemsSource = allObjNames;
+                return;
+            }
+            LstHerdTypes.ItemsSource = ObjectNames.Search(filter);
+        };
+        LstHerdTypes.SelectionChanged += (_, _) =>
+        {
+            if (LstHerdTypes.SelectedItem is string selected)
+            {
+                PropHerdType.Text = selected;
+                HerdTypePopup.IsOpen = false;
+            }
+        };
+
         BtnApplyProps.Click += (_, _) => ApplyObjectProperties();
         BtnDeleteObj.Click += (_, _) =>
         {
@@ -272,6 +301,38 @@ public partial class MainWindow : Window
         ChkObjTilt.IsCheckedChanged += (_, _) => ToggleTilt();
         ChkObjLightColor.IsCheckedChanged += (_, _) => ToggleLightColor();
         ChkObjOData.IsCheckedChanged += (_, _) => ToggleOData();
+        ChkObjHerdMarkers.IsCheckedChanged += (_, _) => ToggleHerdMarkers();
+        ChkObjHerdType.IsCheckedChanged += (_, _) =>
+        {
+            PropHerdType.IsEnabled = ChkObjHerdType.IsChecked == true;
+            if (_suppressOptionalLeafToggle) return;
+            var o = _vm.Document.SelectedObject;
+            if (o == null) return;
+            if (ChkObjHerdType.IsChecked == true)
+            {
+                o.AddInt32("HerdType", 0);
+                PropHerdType.Text = ObjectNames.GetDisplayName(0);
+            }
+            else
+            {
+                var leaf = o.FindChildLeaf("HerdType");
+                if (leaf != null) o.RemoveLeaf(leaf);
+            }
+            InvalidateViewport();
+        };
+        ChkObjHerdCount.IsCheckedChanged += (_, _) => ToggleHerdCount();
+        ChkObjSplineKeyTime.IsCheckedChanged += (_, _) =>
+        {
+            PropSplineKeyTime.IsEnabled = ChkObjSplineKeyTime.IsChecked == true;
+            ToggleOptionalInt32Leaf("KeyTime", ChkObjSplineKeyTime.IsChecked == true, PropSplineKeyTime, 0);
+        };
+        ChkObjSplinePath3D.IsCheckedChanged += (_, _) => ToggleSplinePath3D();
+        ChkObjSplineScale.IsCheckedChanged += (_, _) => ToggleSplineScale();
+        ChkObjSplineStartId.IsCheckedChanged += (_, _) =>
+        {
+            PropSplineStartId.IsEnabled = ChkObjSplineStartId.IsChecked == true;
+            ToggleOptionalByteLeaf("StartId", ChkObjSplineStartId.IsChecked == true, PropSplineStartId, 0);
+        };
 
         // Document events
         _vm.Document.WorldChanged += () =>
@@ -895,6 +956,58 @@ public partial class MainWindow : Window
             PropOData2.Text = (objNode.FindChildLeaf("OData2")?.SingleValue ?? 0).ToString("F4");
             PropOData3.Text = (objNode.FindChildLeaf("OData3")?.SingleValue ?? 0).ToString("F4");
         }
+
+        // Herd markers (optional)
+        var numMarkers = objNode.FindChildLeaf("NumMarkers");
+        ChkObjHerdMarkers.IsChecked = numMarkers != null;
+        PanelHerdMarkers.IsVisible = numMarkers != null;
+        if (numMarkers != null)
+        {
+            PropHerdNum.Text = numMarkers.Int32Value.ToString();
+            PropHerdMarkerType.Text = (objNode.FindChildLeaf("MarkerType")?.Int32Value ?? 0).ToString();
+            PropHerdShowRadius.Text = (objNode.FindChildLeaf("ShowRadius")?.Int32Value ?? 0).ToString();
+        }
+
+        // Herd type (optional — object type ID)
+        var herdType = objNode.FindChildLeaf("HerdType");
+        ChkObjHerdType.IsChecked = herdType != null;
+        PropHerdType.IsEnabled = herdType != null;
+        PropHerdType.Text = herdType != null ? ObjectNames.GetDisplayName(herdType.Int32Value) : "";
+
+        // Herd count (optional)
+        var teamCount = objNode.FindChildLeaf("TeamCount");
+        ChkObjHerdCount.IsChecked = teamCount != null;
+        PanelHerdCount.IsVisible = teamCount != null;
+        if (teamCount != null)
+        {
+            PropTeamCount.Text = teamCount.ByteValue.ToString();
+        }
+
+        // Spline key time (optional)
+        var keyTime = objNode.FindChildLeaf("KeyTime");
+        ChkObjSplineKeyTime.IsChecked = keyTime != null;
+        PropSplineKeyTime.IsEnabled = keyTime != null;
+        PropSplineKeyTime.Text = (keyTime?.Int32Value ?? 0).ToString();
+
+        // Spline path 3D (optional, marker node)
+        var path3D = objNode.FindChildNode("SplinePath3D");
+        ChkObjSplinePath3D.IsChecked = path3D != null;
+
+        // Spline scale (optional)
+        var inScale = objNode.FindChildLeaf("InScale");
+        ChkObjSplineScale.IsChecked = inScale != null;
+        PanelSplineScale.IsVisible = inScale != null;
+        if (inScale != null)
+        {
+            PropSplineScaleIn.Text = inScale.SingleValue.ToString("F4");
+            PropSplineScaleOut.Text = (objNode.FindChildLeaf("OutScale")?.SingleValue ?? 0).ToString("F4");
+        }
+
+        // Spline start ID (optional)
+        var startId = objNode.FindChildLeaf("StartId");
+        ChkObjSplineStartId.IsChecked = startId != null;
+        PropSplineStartId.IsEnabled = startId != null;
+        PropSplineStartId.Text = (startId?.ByteValue ?? 0).ToString();
 
         PropHeader.Text = $"Object: {PropObjType.Text}";
         _suppressOptionalLeafToggle = false;
@@ -1728,6 +1841,71 @@ public partial class MainWindow : Window
                 obj.FindChildLeaf("OData3")?.SetSingle(o3);
         }
 
+        // Apply Herd markers
+        if (ChkObjHerdMarkers.IsChecked == true)
+        {
+            if (int.TryParse(PropHerdNum.Text, out int nm))
+            {
+                var leaf = obj.FindChildLeaf("NumMarkers");
+                if (leaf != null) leaf.Int32Value = nm;
+            }
+            if (int.TryParse(PropHerdMarkerType.Text, out int mt))
+            {
+                var leaf = obj.FindChildLeaf("MarkerType");
+                if (leaf != null) leaf.Int32Value = mt;
+            }
+            if (int.TryParse(PropHerdShowRadius.Text, out int sr))
+            {
+                var leaf = obj.FindChildLeaf("ShowRadius");
+                if (leaf != null) leaf.Int32Value = sr;
+            }
+        }
+
+        // Apply Herd type (object type ID)
+        if (ChkObjHerdType.IsChecked == true)
+        {
+            var parsedHerd = ObjectNames.ParseInput(PropHerdType.Text ?? "");
+            if (parsedHerd.HasValue)
+            {
+                var leaf = obj.FindChildLeaf("HerdType");
+                if (leaf != null) leaf.Int32Value = parsedHerd.Value;
+                PropHerdType.Text = ObjectNames.GetDisplayName(parsedHerd.Value);
+            }
+        }
+
+        // Apply Herd count
+        if (ChkObjHerdCount.IsChecked == true)
+        {
+            if (byte.TryParse(PropTeamCount.Text, out byte tc))
+            {
+                var leaf = obj.FindChildLeaf("TeamCount");
+                if (leaf != null) leaf.ByteValue = tc;
+            }
+        }
+
+        // Apply Spline key time
+        if (ChkObjSplineKeyTime.IsChecked == true && int.TryParse(PropSplineKeyTime.Text, out int kt))
+        {
+            var leaf = obj.FindChildLeaf("KeyTime");
+            if (leaf != null) leaf.Int32Value = kt;
+        }
+
+        // Apply Spline scale
+        if (ChkObjSplineScale.IsChecked == true)
+        {
+            if (float.TryParse(PropSplineScaleIn.Text, out float si))
+                obj.FindChildLeaf("InScale")?.SetSingle(si);
+            if (float.TryParse(PropSplineScaleOut.Text, out float so))
+                obj.FindChildLeaf("OutScale")?.SetSingle(so);
+        }
+
+        // Apply Spline start ID
+        if (ChkObjSplineStartId.IsChecked == true && byte.TryParse(PropSplineStartId.Text, out byte sid))
+        {
+            var leaf = obj.FindChildLeaf("StartId");
+            if (leaf != null) leaf.ByteValue = sid;
+        }
+
         if (typeChanged && _drawRealObjects)
         {
             var objects = _vm.Document.GetObjectInstances();
@@ -1942,6 +2120,111 @@ public partial class MainWindow : Window
         else
         {
             foreach (var n in new[] { "OData1", "OData2", "OData3" })
+            {
+                var leaf = obj.FindChildLeaf(n);
+                if (leaf != null) obj.RemoveLeaf(leaf);
+            }
+        }
+
+        InvalidateViewport();
+    }
+
+    private void ToggleHerdMarkers()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        bool enable = ChkObjHerdMarkers.IsChecked == true;
+        PanelHerdMarkers.IsVisible = enable;
+
+        if (enable)
+        {
+            obj.AddInt32("NumMarkers", 0);
+            obj.AddInt32("MarkerType", 0);
+            obj.AddInt32("ShowRadius", 0);
+            PropHerdNum.Text = "0";
+            PropHerdMarkerType.Text = "0";
+            PropHerdShowRadius.Text = "0";
+        }
+        else
+        {
+            foreach (var n in new[] { "NumMarkers", "MarkerType", "ShowRadius" })
+            {
+                var leaf = obj.FindChildLeaf(n);
+                if (leaf != null) obj.RemoveLeaf(leaf);
+            }
+        }
+
+        InvalidateViewport();
+    }
+
+    private void ToggleHerdCount()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        bool enable = ChkObjHerdCount.IsChecked == true;
+        PanelHerdCount.IsVisible = enable;
+
+        if (enable)
+        {
+            obj.AddByte("TeamCount", 0);
+            obj.AddByte("ShowPath", 0);
+            PropTeamCount.Text = "0";
+        }
+        else
+        {
+            foreach (var n in new[] { "TeamCount", "ShowPath" })
+            {
+                var leaf = obj.FindChildLeaf(n);
+                if (leaf != null) obj.RemoveLeaf(leaf);
+            }
+        }
+
+        InvalidateViewport();
+    }
+
+    private void ToggleSplinePath3D()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        if (ChkObjSplinePath3D.IsChecked == true)
+        {
+            if (obj.FindChildNode("SplinePath3D") == null)
+                obj.AddNode("SplinePath3D");
+        }
+        else
+        {
+            var node = obj.FindChildNode("SplinePath3D");
+            if (node != null) obj.RemoveNode(node);
+        }
+
+        InvalidateViewport();
+    }
+
+    private void ToggleSplineScale()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        bool enable = ChkObjSplineScale.IsChecked == true;
+        PanelSplineScale.IsVisible = enable;
+
+        if (enable)
+        {
+            obj.AddSingle("InScale", 1);
+            obj.AddSingle("OutScale", 1);
+            PropSplineScaleIn.Text = "1.0000";
+            PropSplineScaleOut.Text = "1.0000";
+        }
+        else
+        {
+            foreach (var n in new[] { "InScale", "OutScale" })
             {
                 var leaf = obj.FindChildLeaf(n);
                 if (leaf != null) obj.RemoveLeaf(leaf);

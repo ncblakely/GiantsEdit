@@ -1,105 +1,112 @@
-using System.IO.Compression;
+using System.Text;
 
 namespace GiantsEdit.Core.Formats;
 
 /// <summary>
-/// Reads and writes GZP archives (standard ZIP format) used by Giants: Citizen Kabuto.
-/// The game engine uses .gzp extension but the format is standard ZIP/deflate.
+/// Reads the native GZP archive format used by Giants: Citizen Kabuto.
+/// This is NOT standard ZIP — it has a custom header (magic $6608F101)
+/// and uses LZ77 compression.
 /// </summary>
 public static class GzpArchive
 {
-    /// <summary>
-    /// Lists all entries in a GZP archive.
-    /// </summary>
-    public static IReadOnlyList<string> ListEntries(string path)
-    {
-        using var archive = ZipFile.OpenRead(path);
-        return archive.Entries.Select(e => e.FullName).ToList();
-    }
+    private const uint GzpMagic = 0x6608F101;
 
     /// <summary>
-    /// Extracts a single file from the archive by name.
-    /// Returns null if not found.
+    /// Builds an index of all files in a GZP archive.
     /// </summary>
-    public static byte[]? ExtractFile(string archivePath, string entryName)
+    public static Dictionary<string, GzpArchiveEntry> BuildIndex(string gzpPath)
     {
-        using var archive = ZipFile.OpenRead(archivePath);
-        var entry = archive.Entries.FirstOrDefault(e =>
-            e.FullName.Equals(entryName, StringComparison.OrdinalIgnoreCase));
+        var entries = new Dictionary<string, GzpArchiveEntry>(StringComparer.OrdinalIgnoreCase);
 
-        if (entry == null) return null;
+        using var fs = File.OpenRead(gzpPath);
+        using var br = new BinaryReader(fs);
 
-        using var stream = entry.Open();
-        using var ms = new MemoryStream();
-        stream.CopyTo(ms);
-        return ms.ToArray();
-    }
+        uint magic = br.ReadUInt32();
+        if (magic != GzpMagic)
+            return entries;
 
-    /// <summary>
-    /// Extracts a single file from an in-memory archive.
-    /// </summary>
-    public static byte[]? ExtractFile(byte[] archiveData, string entryName)
-    {
-        using var ms = new MemoryStream(archiveData);
-        using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
-        var entry = archive.Entries.FirstOrDefault(e =>
-            e.FullName.Equals(entryName, StringComparison.OrdinalIgnoreCase));
+        int indexOffset = br.ReadInt32();
+        fs.Seek(indexOffset, SeekOrigin.Begin);
 
-        if (entry == null) return null;
+        int _indexUnknown = br.ReadInt32();
+        int entryCount = br.ReadInt32();
 
-        using var stream = entry.Open();
-        using var output = new MemoryStream();
-        stream.CopyTo(output);
-        return output.ToArray();
-    }
-
-    /// <summary>
-    /// Extracts all files from a GZP archive to a directory.
-    /// </summary>
-    public static void ExtractAll(string archivePath, string outputDir)
-    {
-        ZipFile.ExtractToDirectory(archivePath, outputDir, overwriteFiles: true);
-    }
-
-    /// <summary>
-    /// Creates a GZP archive from a list of files.
-    /// </summary>
-    /// <param name="outputPath">Path for the output .gzp file.</param>
-    /// <param name="files">Pairs of (entryName, fileData).</param>
-    public static void Create(string outputPath, IEnumerable<(string EntryName, byte[] Data)> files)
-    {
-        using var fs = File.Create(outputPath);
-        using var archive = new ZipArchive(fs, ZipArchiveMode.Create);
-        foreach (var (name, data) in files)
+        for (int i = 0; i < entryCount; i++)
         {
-            var entry = archive.CreateEntry(name, CompressionLevel.Optimal);
-            using var stream = entry.Open();
-            stream.Write(data);
+            int size = br.ReadInt32();
+            int sizeUncompressed = br.ReadInt32();
+            int _u1 = br.ReadInt32();
+            int start = br.ReadInt32();
+            byte compr = br.ReadByte();
+            byte nameLength = br.ReadByte();
+
+            byte[] nameBytes = br.ReadBytes(nameLength);
+            // Name is null-terminated, trim the null
+            int nullIdx = Array.IndexOf(nameBytes, (byte)0);
+            string name = Encoding.ASCII.GetString(nameBytes, 0, nullIdx >= 0 ? nullIdx : nameLength);
+
+            if (!entries.ContainsKey(name))
+            {
+                entries[name] = new GzpArchiveEntry
+                {
+                    Name = name,
+                    SourcePath = gzpPath,
+                    DataOffset = start + 16, // skip 16-byte per-file header
+                    CompressedSize = size - 16,
+                    UncompressedSize = sizeUncompressed,
+                    IsCompressed = (compr & 3) == 1
+                };
+            }
         }
+
+        return entries;
     }
 
     /// <summary>
-    /// Creates a GZP archive from a directory.
+    /// Extracts a file from a GZP archive using a pre-built entry.
     /// </summary>
-    public static void CreateFromDirectory(string sourceDir, string outputPath)
+    public static byte[] ExtractEntry(GzpArchiveEntry entry)
     {
-        ZipFile.CreateFromDirectory(sourceDir, outputPath, CompressionLevel.Optimal, includeBaseDirectory: false);
+        using var fs = File.OpenRead(entry.SourcePath);
+        fs.Seek(entry.DataOffset, SeekOrigin.Begin);
+        byte[] data = new byte[entry.CompressedSize];
+        fs.ReadExactly(data);
+
+        if (entry.IsCompressed)
+            return GbsDecompressor.Decompress(data, 0, data.Length, entry.UncompressedSize);
+
+        return data;
     }
 
     /// <summary>
-    /// Adds or replaces a file within an existing GZP archive.
+    /// Scans all .gzp files in a directory and builds a unified file index.
+    /// Files in earlier archives take precedence (first found wins).
     /// </summary>
-    public static void AddOrReplaceFile(string archivePath, string entryName, byte[] data)
+    public static Dictionary<string, GzpArchiveEntry> BuildIndexFromDirectory(string binPath)
     {
-        using var archive = ZipFile.Open(archivePath, ZipArchiveMode.Update);
+        var combined = new Dictionary<string, GzpArchiveEntry>(StringComparer.OrdinalIgnoreCase);
 
-        // Remove existing entry if present
-        var existing = archive.Entries.FirstOrDefault(e =>
-            e.FullName.Equals(entryName, StringComparison.OrdinalIgnoreCase));
-        existing?.Delete();
+        if (!Directory.Exists(binPath)) return combined;
 
-        var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-        using var stream = entry.Open();
-        stream.Write(data);
+        foreach (var gzpFile in Directory.GetFiles(binPath, "*.gzp"))
+        {
+            var entries = BuildIndex(gzpFile);
+            foreach (var (name, entry) in entries)
+            {
+                combined.TryAdd(name, entry);
+            }
+        }
+
+        return combined;
     }
+}
+
+public class GzpArchiveEntry
+{
+    public required string Name { get; init; }
+    public required string SourcePath { get; init; }
+    public required long DataOffset { get; init; }
+    public required int CompressedSize { get; init; }
+    public required int UncompressedSize { get; init; }
+    public required bool IsCompressed { get; init; }
 }

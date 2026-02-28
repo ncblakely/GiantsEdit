@@ -273,6 +273,75 @@
                                     </StackPanel>
                                 </StackPanel>
 
+                                <!-- Spline properties -->
+                                <Separator Margin="0,4" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjHerdMarkers" Content="Herd markers" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelHerdMarkers" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Num:" Width="30" />
+                                        <TextBox x:Name="PropHerdNum" Width="50" />
+                                        <TextBlock Text="Type:" Width="32" />
+                                        <TextBox x:Name="PropHerdMarkerType" Width="50" />
+                                        <TextBlock Text="Radius:" Width="42" />
+                                        <TextBox x:Name="PropHerdShowRadius" Width="50" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjHerdType" Content="Herd type:" />
+                                </StackPanel>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBox x:Name="PropHerdType" Grid.Column="0" IsEnabled="False" />
+                                    <Button x:Name="BtnHerdTypeDropdown" Grid.Column="1"
+                                            Content="▼" Width="28" Padding="4,0"
+                                            VerticalAlignment="Stretch" />
+                                </Grid>
+                                <Popup x:Name="HerdTypePopup" PlacementTarget="{Binding #PropHerdType}"
+                                       Placement="Bottom" MaxHeight="300" Width="280">
+                                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                            BorderThickness="1" CornerRadius="4" Padding="4">
+                                        <StackPanel Spacing="4">
+                                            <TextBox x:Name="TxtHerdTypeSearch" Watermark="Search..." />
+                                            <ListBox x:Name="LstHerdTypes" MaxHeight="240" />
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjHerdCount" Content="Herd count:" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelHerdCount" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Count:" Width="38" />
+                                        <TextBox x:Name="PropTeamCount" Width="50" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Margin="0,4" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjSplineKeyTime" Content="Spline key time:" />
+                                    <TextBox x:Name="PropSplineKeyTime" Width="70" IsEnabled="False" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjSplinePath3D" Content="Spline path 3D" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjSplineScale" Content="Spline scale:" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelSplineScale" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="In:" Width="20" />
+                                        <TextBox x:Name="PropSplineScaleIn" Width="70" />
+                                        <TextBlock Text="Out:" Width="24" />
+                                        <TextBox x:Name="PropSplineScaleOut" Width="70" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjSplineStartId" Content="Spline start ID:" />
+                                    <TextBox x:Name="PropSplineStartId" Width="70" IsEnabled="False" />
+                                </StackPanel>
+
                                 <Button x:Name="BtnApplyProps" Content="Apply" HorizontalAlignment="Stretch" />
                                 <Button x:Name="BtnDeleteObj" Content="Delete Object"
                                         HorizontalAlignment="Stretch" Foreground="OrangeRed" />

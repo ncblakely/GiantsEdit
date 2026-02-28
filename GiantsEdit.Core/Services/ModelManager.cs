@@ -11,7 +11,7 @@ namespace GiantsEdit.Core.Services;
 public class ModelManager
 {
     private readonly ObjectCatalog _catalog;
-    private Dictionary<string, GzpEntry> _gzpIndex = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, GzpArchiveEntry> _gzpIndex = new(StringComparer.OrdinalIgnoreCase);
     private string _overridePath = string.Empty;
 
     // Cache: object type ID → (parsed model, uploaded renderer ID)
@@ -32,7 +32,7 @@ public class ModelManager
     {
         string binPath = Path.Combine(giantsFolder, "bin");
         _overridePath = Path.Combine(binPath, "override");
-        _gzpIndex = GzpNativeReader.BuildIndexFromDirectory(binPath);
+        _gzpIndex = GzpArchive.BuildIndexFromDirectory(binPath);
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public class ModelManager
         {
             try
             {
-                return GzpNativeReader.ExtractEntry(entry);
+                return GzpArchive.ExtractEntry(entry);
             }
             catch
             {

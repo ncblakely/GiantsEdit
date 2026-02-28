@@ -130,7 +130,7 @@ public class WorldDocument
     /// </summary>
     public void LoadGck(string gckPath)
     {
-        var entries = GzpArchive.ListEntries(gckPath);
+        var entries = GckArchive.ListEntries(gckPath);
 
         // Find the w_*.bin entry
         string? binEntry = entries.FirstOrDefault(e =>
@@ -147,7 +147,7 @@ public class WorldDocument
 
         if (binEntry != null)
         {
-            byte[]? binData = GzpArchive.ExtractFile(gckPath, binEntry);
+            byte[]? binData = GckArchive.ExtractFile(gckPath, binEntry);
             if (binData != null)
             {
                 var reader = new BinWorldReader();
@@ -158,7 +158,7 @@ public class WorldDocument
 
         if (gtiEntry != null)
         {
-            byte[]? gtiData = GzpArchive.ExtractFile(gckPath, gtiEntry);
+            byte[]? gtiData = GckArchive.ExtractFile(gckPath, gtiEntry);
             if (gtiData != null)
             {
                 LoadTerrainFromBytes(gtiData);
@@ -175,7 +175,7 @@ public class WorldDocument
         {
             if (entry == binEntry || entry == gtiEntry || entry == gmmEntry)
                 continue;
-            byte[]? data = GzpArchive.ExtractFile(gckPath, entry);
+            byte[]? data = GckArchive.ExtractFile(gckPath, entry);
             if (data != null)
                 _otherGckFiles.Add((entry, data));
         }
@@ -243,7 +243,7 @@ public class WorldDocument
         foreach (var (name, data) in _otherGckFiles)
             files.Add((name, data));
 
-        GzpArchive.Create(gckPath, files);
+        GckArchive.Create(gckPath, files);
     }
 
     /// <summary>
