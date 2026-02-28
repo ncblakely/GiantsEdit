@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private bool _showObjects = true;
     private bool _viewTerrainMesh;
     private bool _viewObjThruTerrain;
-    private bool _drawRealObjects;
+    private bool _drawRealObjects = true;
     private Point _lastMousePos;
     private bool _isClickDown; // true on pointer-down, false after first move
     private bool _objDragAllowed; // true when drag-to-move is permitted (requires separate press from selection)
@@ -275,6 +275,11 @@ public partial class MainWindow : Window
         _vm.Document.WorldChanged += () =>
         {
             UploadTerrainToGpu();
+            if (_drawRealObjects && _modelManager.HasGameData)
+            {
+                var objects = _vm.Document.GetObjectInstances();
+                Viewport.QueueGlAction(renderer => _modelManager.PreloadModels(objects, renderer));
+            }
             InvalidateViewport();
         };
         _vm.Document.TerrainChanged += () =>

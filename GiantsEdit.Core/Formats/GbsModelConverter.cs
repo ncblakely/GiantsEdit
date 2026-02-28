@@ -13,6 +13,11 @@ public static class GbsModelConverter
 {
     public static ModelRenderData ToRenderData(GbsModel model)
     {
+        // The GBS optionsflags determine whether the model has vertex normals
+        // and thus uses material diffuse for lighting. Without normals,
+        // only baked vertex colors are used.
+        bool hasNormals = model.HasNormals;
+
         // Count total triangles across all parts
         int totalTris = 0;
         foreach (var part in model.Parts)
@@ -34,10 +39,10 @@ public static class GbsModelConverter
         {
             int partIndexStart = idxIdx;
 
-            // Extract diffuse color components (RGBA packed as uint)
-            float diffR = (part.Diffuse & 0xFF) / 255f;
-            float diffG = ((part.Diffuse >> 8) & 0xFF) / 255f;
-            float diffB = ((part.Diffuse >> 16) & 0xFF) / 255f;
+            // Extract diffuse color components (only used when model has normals/lighting)
+            float diffR = hasNormals ? (part.Diffuse & 0xFF) / 255f : 0f;
+            float diffG = hasNormals ? ((part.Diffuse >> 8) & 0xFF) / 255f : 0f;
+            float diffB = hasNormals ? ((part.Diffuse >> 16) & 0xFF) / 255f : 0f;
 
             foreach (var tri in part.Triangles)
             {
@@ -52,7 +57,7 @@ public static class GbsModelConverter
                     float u = model.PointUVs[l][0];
                     float v = model.PointUVs[l][1];
 
-                    // Color = vertex color + diffuse (clamped to 0..1 like Delphi)
+                    // Vertex color + diffuse (diffuse is zero for unlit models)
                     float cr = model.PointColors[l * 3 + 0] / 255f + diffR;
                     float cg = model.PointColors[l * 3 + 1] / 255f + diffG;
                     float cb = model.PointColors[l * 3 + 2] / 255f + diffB;

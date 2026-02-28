@@ -35,7 +35,26 @@ public class GbsMaterial
 public class GbsModel
 {
     public int Magic;
-    public int FormatVersion; // u1 in Delphi (7 = extended format)
+    /// <summary>
+    /// Flags read from the GBS file header.
+    /// Determines which data sections are present and whether normals/lighting apply.
+    /// </summary>
+    public int OptionsFlags;
+
+    public const int HasNormalsFlag = 0x0001;
+    public const int HasUVsFlag = 0x0002;
+    public const int HasRGBsFlag = 0x0004;
+    public const int CalcNormalsFlag = 0x0008;
+
+    /// <summary>
+    /// True if the file contains normal definition data (ndefs block present).
+    /// </summary>
+    public bool HasNormalData => (OptionsFlags & HasNormalsFlag) != 0;
+
+    /// <summary>
+    /// True if the model uses vertex normals for lighting (either stored or computed at runtime).
+    /// </summary>
+    public bool HasNormals => (OptionsFlags & (HasNormalsFlag | CalcNormalsFlag)) != 0;
 
     /// <summary>Base vertex positions (X, Y, Z).</summary>
     public Vector3[] BasePoints = [];
@@ -85,7 +104,7 @@ public static class GbsModelLoader
         int pos = 0;
 
         model.Magic = ReadInt32(data, ref pos);
-        model.FormatVersion = ReadInt32(data, ref pos);
+        model.OptionsFlags = ReadInt32(data, ref pos);
         int basePointCount = ReadInt32(data, ref pos);
 
         // Read base points (12 bytes each: 3 floats)
@@ -98,8 +117,8 @@ public static class GbsModelLoader
             model.BasePoints[i] = new Vector3(x, y, z);
         }
 
-        // Extended format: vertex refs
-        if (model.FormatVersion == 7)
+        // Normal definitions (only present when GBXFlagNormals is set in the file)
+        if (model.HasNormalData)
         {
             model.TexPos = ReadInt32(data, ref pos);
             model.VertexRefCount = ReadInt32(data, ref pos);
@@ -116,7 +135,8 @@ public static class GbsModelLoader
         for (int i = 0; i < pc; i++)
             model.PointIndices1[i] = ReadUInt16(data, ref pos);
 
-        if (model.FormatVersion == 7)
+        // Normal indices (only present in file when GBXFlagNormals is set)
+        if (model.HasNormalData)
         {
             model.PointIndices2 = new ushort[pc];
             for (int i = 0; i < pc; i++)
