@@ -165,6 +165,11 @@ public class ModelManager
             int id = renderer.UploadModel(renderData, typeId);
             _rendererIds[typeId] = id;
             _modelCache[typeId] = model;
+
+            // Compute bounding sphere radius from AABB
+            var extent = renderData.BoundsMax - renderData.BoundsMin;
+            _boundingRadii[typeId] = extent.Length() / 2f;
+
             return id;
         }
         catch
@@ -189,6 +194,17 @@ public class ModelManager
         }
     }
 
+    // Cache: type ID → bounding sphere radius
+    private readonly Dictionary<int, float> _boundingRadii = [];
+
+    /// <summary>
+    /// Gets the bounding sphere radius for a model type, or 0 if unknown.
+    /// </summary>
+    public float GetBoundingRadius(int typeId)
+    {
+        return _boundingRadii.TryGetValue(typeId, out float r) ? r : 0f;
+    }
+
     /// <summary>
     /// Clears the model cache (e.g. when changing game path).
     /// </summary>
@@ -197,5 +213,6 @@ public class ModelManager
         _modelCache.Clear();
         _rendererIds.Clear();
         _failedIds.Clear();
+        _boundingRadii.Clear();
     }
 }

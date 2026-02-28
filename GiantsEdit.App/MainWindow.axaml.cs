@@ -537,7 +537,7 @@ public partial class MainWindow : Window
             if (vpW > 0 && vpH > 0)
             {
                 var terrain = _vm.Document.Terrain;
-                var objects = _vm.Document.GetObjectInstances();
+                var objects = GetObjectInstancesForPicking();
                 var picked = TerrainEditor.PickObject((int)pos.X, (int)pos.Y, vpW, vpH,
                     Viewport.Camera, terrain, objects);
                 if (picked.HasValue && picked.Value.SourceNode != null)
@@ -763,7 +763,7 @@ public partial class MainWindow : Window
         bool leftButton, bool rightButton, KeyModifiers modifiers)
     {
         var terrain = _vm.Document.Terrain;
-        var objects = _vm.Document.GetObjectInstances();
+        var objects = GetObjectInstancesForPicking();
 
         if (_isClickDown && leftButton)
         {
@@ -1846,4 +1846,26 @@ public partial class MainWindow : Window
     }
 
     #endregion
+
+    /// <summary>
+    /// Gets object instances with bounding radii populated from loaded models when in real objects mode.
+    /// </summary>
+    private List<ObjectInstance> GetObjectInstancesForPicking()
+    {
+        var objects = _vm.Document.GetObjectInstances();
+        if (_drawRealObjects && _modelManager.HasGameData)
+        {
+            for (int i = 0; i < objects.Count; i++)
+            {
+                var obj = objects[i];
+                float r = _modelManager.GetBoundingRadius(obj.ModelId);
+                if (r > 0)
+                {
+                    obj.HitRadius = r;
+                    objects[i] = obj;
+                }
+            }
+        }
+        return objects;
+    }
 }

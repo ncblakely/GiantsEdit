@@ -725,11 +725,14 @@ public static class TerrainEditor
 
         foreach (var obj in objects)
         {
-            // Ray-sphere intersection: sphere centered at obj.Position, radius = hitRadius
+            // Use per-object bounding radius if available, otherwise fall back to default
+            float r = obj.HitRadius > 0 ? obj.HitRadius * obj.Scale : hitRadius;
+
+            // Ray-sphere intersection: sphere centered at obj.Position, radius = r
             Vector3 oc = eye - obj.Position;
             float a = Vector3.Dot(ray, ray);
             float b = 2f * Vector3.Dot(oc, ray);
-            float c = Vector3.Dot(oc, oc) - hitRadius * hitRadius;
+            float c = Vector3.Dot(oc, oc) - r * r;
             float discriminant = b * b - 4f * a * c;
 
             if (discriminant < 0) continue;

@@ -120,6 +120,8 @@ public struct ObjectInstance
     public float TiltLeft;    // degrees
     public float Scale;
     public TreeNode? SourceNode;
+    /// <summary>Bounding sphere radius for picking (0 = use default).</summary>
+    public float HitRadius;
 }
 
 /// <summary>
