@@ -10,6 +10,9 @@ namespace GiantsEdit.Core.Rendering;
 /// </summary>
 public static class TerrainEditor
 {
+    private const float RayEpsilon = 1e-10f;
+    private const int GaussianBrushRange = 3;
+    private const float GaussianSigmaDivisor = 2f;
     /// <summary>
     /// Result of a terrain ray hit. GridX/GridY are fractional grid coordinates.
     /// </summary>
@@ -136,7 +139,7 @@ public static class TerrainEditor
 
         float vx = x - camX, vy = y - camY, vz = z00 - camZ;
         float denom = rayX * ox + rayY * oy + rayZ * oz;
-        if (MathF.Abs(denom) < 1e-10f) return default;
+        if (MathF.Abs(denom) < RayEpsilon) return default;
 
         float r = (vx * ox + vy * oy + vz * oz) / denom;
         float s = camX + r * rayX - x;
@@ -162,7 +165,7 @@ public static class TerrainEditor
 
         float vx = x - camX, vy = y - camY, vz = z00 - camZ;
         float denom = rayX * ox + rayY * oy + rayZ * oz;
-        if (MathF.Abs(denom) < 1e-10f) return default;
+        if (MathF.Abs(denom) < RayEpsilon) return default;
 
         float r = (vx * ox + vy * oy + vz * oz) / denom;
         float s = camX + r * rayX - x;
@@ -188,7 +191,7 @@ public static class TerrainEditor
 
         float vx = x - camX, vy = y - camY, vz = z00 - camZ;
         float denom = rayX * ox + rayY * oy + rayZ * oz;
-        if (MathF.Abs(denom) < 1e-10f) return default;
+        if (MathF.Abs(denom) < RayEpsilon) return default;
 
         float r = (vx * ox + vy * oy + vz * oz) / denom;
         float s = camX + r * rayX - x;
@@ -214,7 +217,7 @@ public static class TerrainEditor
 
         float vx = (x + 1) - camX, vy = y - camY, vz = z10 - camZ;
         float denom = rayX * ox + rayY * oy + rayZ * oz;
-        if (MathF.Abs(denom) < 1e-10f) return default;
+        if (MathF.Abs(denom) < RayEpsilon) return default;
 
         float r = (vx * ox + vy * oy + vz * oz) / denom;
         float s = camX + r * rayX - x;
@@ -259,8 +262,9 @@ public static class TerrainEditor
         else
         {
             // Gaussian brush
-            int range = (int)MathF.Round(brushRadius * 3);
-            float invSigmaSq = 1f / (brushRadius / 2f * (brushRadius / 2f));
+            int range = (int)MathF.Round(brushRadius * GaussianBrushRange);
+            float sigma = brushRadius / GaussianSigmaDivisor;
+            float invSigmaSq = 1f / (sigma * sigma);
 
             for (int dy = -range; dy <= range; dy++)
             {
@@ -364,8 +368,9 @@ public static class TerrainEditor
         }
         else
         {
-            int range = (int)MathF.Round(brushRadius * 3);
-            float invSigmaSq = 1f / (brushRadius / 2f * (brushRadius / 2f));
+            int range = (int)MathF.Round(brushRadius * GaussianBrushRange);
+            float sigma = brushRadius / GaussianSigmaDivisor;
+            float invSigmaSq = 1f / (sigma * sigma);
 
             for (int dy = -range; dy <= range; dy++)
             {

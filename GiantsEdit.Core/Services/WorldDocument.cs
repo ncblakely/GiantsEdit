@@ -31,6 +31,18 @@ public enum TriangleSubMode
 /// </summary>
 public class WorldDocument
 {
+    // Object type IDs
+    private const int MarkerTypeId = 679;
+    private const int LightTypeId = 1004;
+    private const int SplineTypeId = 1052;
+    private const int SplineType2Id = 1162;
+
+    // Spline group ranges
+    private const int SplineGroup1Start = 0;
+    private const int SplineGroup1End = 255;
+    private const int SplineGroup2Start = 256;
+    private const int SplineGroup2End = 511;
+
     private TreeNode? _worldRoot;
     private TerrainData? _terrain;
     private readonly List<TreeNode> _missions = [];
@@ -88,7 +100,7 @@ public class WorldDocument
         IsModified = false;
 
         // Try to load terrain if referenced in the world data
-        var fileStart = _worldRoot?.FindChildNode("[FileStart]");
+        var fileStart = _worldRoot?.FindChildNode(BinFormatConstants.SectionFileStart);
         var gtiLeaf = fileStart?.FindChildLeaf("GtiName");
         if (gtiLeaf != null)
         {
@@ -302,20 +314,20 @@ public class WorldDocument
     public void NewWorld(int terrainWidth, int terrainHeight, string textureName = "")
     {
         _worldRoot = new TreeNode("Map data");
-        var fs = _worldRoot.AddNode("[FileStart]");
+        var fs = _worldRoot.AddNode(BinFormatConstants.SectionFileStart);
         fs.AddString("Box", "newmap");
         fs.AddString("GtiName", "newmap.gti");
 
         _worldRoot.AddNode("Tiling");
         _worldRoot.AddNode("Fog");
         _worldRoot.AddNode("WaterFog");
-        _worldRoot.AddNode("[textures]");
-        _worldRoot.AddNode("[sfx]");
+        _worldRoot.AddNode(BinFormatConstants.SectionTextures);
+        _worldRoot.AddNode(BinFormatConstants.SectionSfx);
         _worldRoot.AddNode("[unknown]");
-        _worldRoot.AddNode("[fx]");
-        _worldRoot.AddNode("[scenerios]");
-        _worldRoot.AddNode("[includefiles]");
-        _worldRoot.AddNode("<Objects>");
+        _worldRoot.AddNode(BinFormatConstants.SectionFx);
+        _worldRoot.AddNode(BinFormatConstants.SectionScenerios);
+        _worldRoot.AddNode(BinFormatConstants.SectionIncludeFiles);
+        _worldRoot.AddNode(BinFormatConstants.GroupObjects);
 
         _terrain = GtiFormat.CreateNew(terrainWidth, terrainHeight, textureName);
 
@@ -332,7 +344,7 @@ public class WorldDocument
     public List<ObjectInstance> GetObjectInstances()
     {
         var result = new List<ObjectInstance>();
-        var objNode = _worldRoot?.FindChildNode("<Objects>");
+        var objNode = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
         if (objNode == null) return result;
 
         foreach (var obj in objNode.EnumerateNodes())
@@ -354,7 +366,7 @@ public class WorldDocument
             int modelId = typeLeaf.Int32Value;
 
             // Remap type 679 markers by AIMode to special shapes (matches Delphi Draww)
-            if (modelId == 679)
+            if (modelId == MarkerTypeId)
             {
                 int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
                 modelId = aiMode switch
@@ -366,7 +378,7 @@ public class WorldDocument
                     27 => -5,
                     22 => -6,
                     23 => -7,
-                    _ => 679
+                    _ => MarkerTypeId
                 };
             }
 
@@ -393,7 +405,7 @@ public class WorldDocument
     public List<DirectionalLight> GetDirectionalLights()
     {
         var result = new List<DirectionalLight>();
-        var objNode = _worldRoot?.FindChildNode("<Objects>");
+        var objNode = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
         if (objNode == null) return result;
 
         foreach (var obj in objNode.EnumerateNodes())
@@ -401,7 +413,7 @@ public class WorldDocument
             if (obj.Name != "Object") continue;
 
             int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
-            if (typeId != 1004) continue;
+            if (typeId != LightTypeId) continue;
 
             int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
 
@@ -475,16 +487,16 @@ public class WorldDocument
 
         void CollectFrom(TreeNode? root)
         {
-            var objContainer = root?.FindChildNode("<Objects>");
+            var objContainer = root?.FindChildNode(BinFormatConstants.GroupObjects);
             if (objContainer == null) return;
 
             foreach (var obj in objContainer.EnumerateNodes())
             {
                 if (obj.Name != "Object") continue;
                 int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
-                if (typeId != 1052 && typeId != 1162) continue;
+                if (typeId != SplineTypeId && typeId != SplineType2Id) continue;
 
-                int groupBase = typeId == 1052 ? 0 : 256;
+                int groupBase = typeId == SplineTypeId ? SplineGroup1Start : SplineGroup2Start;
                 int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
                 int groupId = groupBase + aiMode;
                 int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
@@ -507,8 +519,8 @@ public class WorldDocument
         var result = new List<SplineLine>();
 
         // Build line segments for each color group
-        BuildSplineGroup(splinePoints, 0, 255, new Vector3(1f, 1f, 1f), result);       // Type 1052: white
-        BuildSplineGroup(splinePoints, 256, 511, new Vector3(1f, 0.75f, 0.5f), result); // Type 1162: orange
+        BuildSplineGroup(splinePoints, SplineGroup1Start, SplineGroup1End, new Vector3(1f, 1f, 1f), result);
+        BuildSplineGroup(splinePoints, SplineGroup2Start, SplineGroup2End, new Vector3(1f, 0.75f, 0.5f), result);
 
         return result;
     }
@@ -581,7 +593,7 @@ public class WorldDocument
     /// </summary>
     public (string? Name, float Wrap) GetTerrainTexture(string kind)
     {
-        var texNode = _worldRoot?.FindChildNode("<Textures>")
+        var texNode = _worldRoot?.FindChildNode(BinFormatConstants.GroupTextures)
             ?.FindChildNode(kind);
         if (texNode == null) return (null, 100f);
 
@@ -595,7 +607,7 @@ public class WorldDocument
     /// </summary>
     public string? GetDomeTextureName()
     {
-        var texNode = _worldRoot?.FindChildNode("<Textures>");
+        var texNode = _worldRoot?.FindChildNode(BinFormatConstants.GroupTextures);
         return texNode?.FindChildLeaf("DomeTex")?.StringValue;
     }
 
@@ -706,7 +718,7 @@ public class WorldDocument
     /// </summary>
     public TreeNode? AddObject(int typeId, float x, float y, float z, float angle = 0f)
     {
-        var objContainer = _worldRoot?.FindChildNode("<Objects>");
+        var objContainer = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
         if (objContainer == null) return null;
 
         var obj = objContainer.AddNode("Object");
@@ -728,7 +740,7 @@ public class WorldDocument
     {
         if (SelectedObject == null || _worldRoot == null) return;
 
-        var objContainer = _worldRoot.FindChildNode("<Objects>");
+        var objContainer = _worldRoot.FindChildNode(BinFormatConstants.GroupObjects);
         objContainer?.RemoveNode(SelectedObject);
         SelectedObject = null;
         IsModified = true;
@@ -783,7 +795,7 @@ public class WorldDocument
         {
             if (node.Name != "Object") continue;
             int type = node.FindChildLeaf("Type")?.Int32Value ?? 0;
-            if (type != 679) continue;
+            if (type != MarkerTypeId) continue;
 
             int aiMode = node.FindChildLeaf("AIMode")?.ByteValue ?? -1;
             int teamId = node.FindChildLeaf("TeamID")?.Int32Value ?? -1;
@@ -800,7 +812,7 @@ public class WorldDocument
     {
         name ??= $"wm_defaultmission_{RandomChars(4)}";
         var mission = new TreeNode(name);
-        mission.AddNode("<Objects>");
+        mission.AddNode(BinFormatConstants.GroupObjects);
         var options = mission.AddNode("<Options>");
         options.AddInt32("NoJetpack", 0);
         options.AddInt32("NoNitro", 0);
