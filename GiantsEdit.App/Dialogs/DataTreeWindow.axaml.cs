@@ -12,6 +12,11 @@ public partial class DataTreeWindow : Window
     private TreeNode? _selectedNode;
 
     /// <summary>
+    /// Fired when a node is selected in the tree view.
+    /// </summary>
+    public event Action<TreeNode>? NodeSelected;
+
+    /// <summary>
     /// Max include file entries — each is a 32-byte fixed string in the binary format.
     /// </summary>
     private const int MaxIncludeFiles = 32;
@@ -53,6 +58,7 @@ public partial class DataTreeWindow : Window
                 ShowProperties(vm.Model);
                 StatusText.Text = vm.Name;
                 ListEditPanel.IsVisible = EditableListNodes.Contains(vm.Model.Name);
+                NodeSelected?.Invoke(vm.Model);
             }
         };
     }

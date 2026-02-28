@@ -1564,6 +1564,15 @@ public partial class MainWindow : Window
 
         var win = new DataTreeWindow();
         win.LoadTree(_vm.Document.WorldRoot, "Map Objects Tree View");
+        win.NodeSelected += node =>
+        {
+            // If in object editing mode and an Object node is selected, select it in the viewport
+            if (_vm.Document.CurrentMode == EditMode.ObjectEdit && node.Name == "Object")
+            {
+                SelectObject(node);
+                InvalidateViewport();
+            }
+        };
         win.Closed += (_, _) => UploadTerrainToGpu();
         win.Show(this);
     }
