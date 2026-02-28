@@ -243,6 +243,36 @@
                                 </StackPanel>
                                 <TextBox x:Name="PropObjTeamID" IsEnabled="False" />
 
+                                <!-- More properties: Light Color, OData -->
+                                <Separator Margin="0,4" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjLightColor" Content="Light Color" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelLightColor" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="R:" Width="16" />
+                                        <TextBox x:Name="PropLightR" Width="70" />
+                                        <TextBlock Text="G:" Width="16" />
+                                        <TextBox x:Name="PropLightG" Width="70" />
+                                        <TextBlock Text="B:" Width="16" />
+                                        <TextBox x:Name="PropLightB" Width="70" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjOData" Content="Special (OData)" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelOData" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="1:" Width="16" />
+                                        <TextBox x:Name="PropOData1" Width="70" />
+                                        <TextBlock Text="2:" Width="16" />
+                                        <TextBox x:Name="PropOData2" Width="70" />
+                                        <TextBlock Text="3:" Width="16" />
+                                        <TextBox x:Name="PropOData3" Width="70" />
+                                    </StackPanel>
+                                </StackPanel>
+
                                 <Button x:Name="BtnApplyProps" Content="Apply" HorizontalAlignment="Stretch" />
                                 <Button x:Name="BtnDeleteObj" Content="Delete Object"
                                         HorizontalAlignment="Stretch" Foreground="OrangeRed" />

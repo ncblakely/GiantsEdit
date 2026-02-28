@@ -270,6 +270,8 @@ public partial class MainWindow : Window
             ToggleOptionalInt32Leaf("TeamID", ChkObjTeamID.IsChecked == true, PropObjTeamID, 0);
         };
         ChkObjTilt.IsCheckedChanged += (_, _) => ToggleTilt();
+        ChkObjLightColor.IsCheckedChanged += (_, _) => ToggleLightColor();
+        ChkObjOData.IsCheckedChanged += (_, _) => ToggleOData();
 
         // Document events
         _vm.Document.WorldChanged += () =>
@@ -871,6 +873,28 @@ public partial class MainWindow : Window
         ChkObjTeamID.IsChecked = teamLeaf != null;
         PropObjTeamID.IsEnabled = teamLeaf != null;
         PropObjTeamID.Text = (teamLeaf?.Int32Value ?? 0).ToString();
+
+        // Light Color (optional)
+        var lightR = objNode.FindChildLeaf("LightColorR");
+        ChkObjLightColor.IsChecked = lightR != null;
+        PanelLightColor.IsVisible = lightR != null;
+        if (lightR != null)
+        {
+            PropLightR.Text = (lightR.SingleValue).ToString("F4");
+            PropLightG.Text = (objNode.FindChildLeaf("LightColorG")?.SingleValue ?? 0).ToString("F4");
+            PropLightB.Text = (objNode.FindChildLeaf("LightColorB")?.SingleValue ?? 0).ToString("F4");
+        }
+
+        // OData (optional)
+        var odata1 = objNode.FindChildLeaf("OData1");
+        ChkObjOData.IsChecked = odata1 != null;
+        PanelOData.IsVisible = odata1 != null;
+        if (odata1 != null)
+        {
+            PropOData1.Text = (odata1.SingleValue).ToString("F4");
+            PropOData2.Text = (objNode.FindChildLeaf("OData2")?.SingleValue ?? 0).ToString("F4");
+            PropOData3.Text = (objNode.FindChildLeaf("OData3")?.SingleValue ?? 0).ToString("F4");
+        }
 
         PropHeader.Text = $"Object: {PropObjType.Text}";
         _suppressOptionalLeafToggle = false;
@@ -1682,6 +1706,28 @@ public partial class MainWindow : Window
             if (leaf != null) leaf.Int32Value = teamId;
         }
 
+        // Apply Light Color
+        if (ChkObjLightColor.IsChecked == true)
+        {
+            if (float.TryParse(PropLightR.Text, out float lr))
+                obj.FindChildLeaf("LightColorR")?.SetSingle(lr);
+            if (float.TryParse(PropLightG.Text, out float lg))
+                obj.FindChildLeaf("LightColorG")?.SetSingle(lg);
+            if (float.TryParse(PropLightB.Text, out float lb))
+                obj.FindChildLeaf("LightColorB")?.SetSingle(lb);
+        }
+
+        // Apply OData
+        if (ChkObjOData.IsChecked == true)
+        {
+            if (float.TryParse(PropOData1.Text, out float o1))
+                obj.FindChildLeaf("OData1")?.SetSingle(o1);
+            if (float.TryParse(PropOData2.Text, out float o2))
+                obj.FindChildLeaf("OData2")?.SetSingle(o2);
+            if (float.TryParse(PropOData3.Text, out float o3))
+                obj.FindChildLeaf("OData3")?.SetSingle(o3);
+        }
+
         if (typeChanged && _drawRealObjects)
         {
             var objects = _vm.Document.GetObjectInstances();
@@ -1840,6 +1886,66 @@ public partial class MainWindow : Window
             {
                 _modelManager.PreloadModels(objects, renderer);
             });
+        }
+
+        InvalidateViewport();
+    }
+
+    private void ToggleLightColor()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        bool enable = ChkObjLightColor.IsChecked == true;
+        PanelLightColor.IsVisible = enable;
+
+        if (enable)
+        {
+            obj.AddSingle("LightColorR", 0);
+            obj.AddSingle("LightColorG", 0);
+            obj.AddSingle("LightColorB", 0);
+            PropLightR.Text = "0.0000";
+            PropLightG.Text = "0.0000";
+            PropLightB.Text = "0.0000";
+        }
+        else
+        {
+            foreach (var n in new[] { "LightColorR", "LightColorG", "LightColorB" })
+            {
+                var leaf = obj.FindChildLeaf(n);
+                if (leaf != null) obj.RemoveLeaf(leaf);
+            }
+        }
+
+        InvalidateViewport();
+    }
+
+    private void ToggleOData()
+    {
+        if (_suppressOptionalLeafToggle) return;
+        var obj = _vm.Document.SelectedObject;
+        if (obj == null) return;
+
+        bool enable = ChkObjOData.IsChecked == true;
+        PanelOData.IsVisible = enable;
+
+        if (enable)
+        {
+            obj.AddSingle("OData1", 0);
+            obj.AddSingle("OData2", 0);
+            obj.AddSingle("OData3", 0);
+            PropOData1.Text = "0.0000";
+            PropOData2.Text = "0.0000";
+            PropOData3.Text = "0.0000";
+        }
+        else
+        {
+            foreach (var n in new[] { "OData1", "OData2", "OData3" })
+            {
+                var leaf = obj.FindChildLeaf(n);
+                if (leaf != null) obj.RemoveLeaf(leaf);
+            }
         }
 
         InvalidateViewport();
