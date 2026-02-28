@@ -80,6 +80,18 @@ public sealed class OpenGlRenderer : IRenderer
     private int _modelModelLoc;
     private int _modelHasTexLoc;
     private int _modelTexLoc;
+    private int _modelHasNormLoc;
+    private int _modelLightCountLoc;
+    private int[] _modelLightDirLocs = new int[4];
+    private int[] _modelLightColorLocs = new int[4];
+    private int _modelSceneAmbientLoc;
+    private int _modelMatAmbientLoc;
+    private int _modelMatDiffuseLoc;
+    private int _modelMatEmissiveLoc;
+    private int _modelMatSpecularLoc;
+    private int _modelMatPowerLoc;
+    private int _modelCameraPosLoc;
+    private int _modelColorScaleLoc;
 
     private readonly Dictionary<int, ModelGpuData> _models = new();
     private int _nextModelId;
@@ -88,6 +100,7 @@ public sealed class OpenGlRenderer : IRenderer
     private readonly Dictionary<int, ModelGpuData> _mapObjShapes = new();
     private readonly Dictionary<int, int> _mapObjWrap = new();
     private bool _mapObjsLoaded;
+    private bool _debugDumped1050;
 
     // Spline lines (dynamic, rebuilt each frame)
     private uint _lineVao;
@@ -144,6 +157,21 @@ public sealed class OpenGlRenderer : IRenderer
         _modelModelLoc = _gl.GetUniformLocation(_modelShader, "uModel");
         _modelHasTexLoc = _gl.GetUniformLocation(_modelShader, "uHasTex");
         _modelTexLoc = _gl.GetUniformLocation(_modelShader, "uTex");
+        _modelHasNormLoc = _gl.GetUniformLocation(_modelShader, "uHasNormals");
+        _modelLightCountLoc = _gl.GetUniformLocation(_modelShader, "uLightCount");
+        _modelSceneAmbientLoc = _gl.GetUniformLocation(_modelShader, "uSceneAmbient");
+        _modelMatAmbientLoc = _gl.GetUniformLocation(_modelShader, "uMatAmbient");
+        _modelMatDiffuseLoc = _gl.GetUniformLocation(_modelShader, "uMatDiffuse");
+        _modelMatEmissiveLoc = _gl.GetUniformLocation(_modelShader, "uMatEmissive");
+        _modelMatSpecularLoc = _gl.GetUniformLocation(_modelShader, "uMatSpecular");
+        _modelMatPowerLoc = _gl.GetUniformLocation(_modelShader, "uMatPower");
+        _modelCameraPosLoc = _gl.GetUniformLocation(_modelShader, "uCameraPos");
+        _modelColorScaleLoc = _gl.GetUniformLocation(_modelShader, "uColorScale");
+        for (int i = 0; i < 4; i++)
+        {
+            _modelLightDirLocs[i] = _gl.GetUniformLocation(_modelShader, $"uLightDir[{i}]");
+            _modelLightColorLocs[i] = _gl.GetUniformLocation(_modelShader, $"uLightColor[{i}]");
+        }
 
         BuildDome(10240f);
         BuildSea(10240f);
@@ -280,6 +308,20 @@ public sealed class OpenGlRenderer : IRenderer
                 }
 
                 _gl.ActiveTexture(TextureUnit.Texture0);
+
+                // Update sun direction for terrain bump mapping from actual map lights
+                if (_terrainHasNormals)
+                {
+                    foreach (var light in state.Lights)
+                    {
+                        if (light.IsSun)
+                        {
+                            var d = light.Direction;
+                            _gl.Uniform3(_terrainSunDirLoc, d.X, d.Y, d.Z);
+                            break;
+                        }
+                    }
+                }
             }
 
             _gl.BindVertexArray(_terrainVao);
@@ -309,6 +351,22 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.UseProgram(_modelShader);
             SetUniformMatrix(_modelMvpLoc, vp);
             _gl.Disable(EnableCap.CullFace);
+
+            // Set up directional lights and scene ambient
+            // Game: GFC_DirectionalLights.Ambient = worldAmbientColor + sum(light->Ambient)
+            int lightCount = Math.Min(state.Lights.Count, 4);
+            _gl.Uniform1(_modelLightCountLoc, lightCount);
+            Vector3 sceneAmbient = state.WorldAmbientColor;
+            for (int i = 0; i < lightCount; i++)
+            {
+                var light = state.Lights[i];
+                _gl.Uniform3(_modelLightDirLocs[i], light.Direction.X, light.Direction.Y, light.Direction.Z);
+                _gl.Uniform3(_modelLightColorLocs[i], light.Color.X, light.Color.Y, light.Color.Z);
+                sceneAmbient += light.Color;
+            }
+            sceneAmbient = Vector3.Min(sceneAmbient, Vector3.One);
+            _gl.Uniform3(_modelSceneAmbientLoc, sceneAmbient.X, sceneAmbient.Y, sceneAmbient.Z);
+            _gl.Uniform3(_modelCameraPosLoc, state.CameraPosition.X, state.CameraPosition.Y, state.CameraPosition.Z);
 
             foreach (var obj in state.Objects)
             {
@@ -344,6 +402,7 @@ public sealed class OpenGlRenderer : IRenderer
                 }
 
                 SetUniformMatrix(_modelModelLoc, model);
+                _gl.Uniform1(_modelHasNormLoc, gpuData.HasNormals ? 1 : 0);
                 _gl.BindVertexArray(gpuData.Vao);
 
                 if (gpuData.Parts != null && gpuData.Parts.Length > 0)
@@ -354,6 +413,15 @@ public sealed class OpenGlRenderer : IRenderer
 
                     foreach (var part in gpuData.Parts)
                     {
+                        // Set per-part material properties for lighting
+                        _gl.Uniform3(_modelMatAmbientLoc, part.MaterialAmbient.X, part.MaterialAmbient.Y, part.MaterialAmbient.Z);
+                        _gl.Uniform3(_modelMatDiffuseLoc, part.MaterialDiffuse.X, part.MaterialDiffuse.Y, part.MaterialDiffuse.Z);
+                        _gl.Uniform3(_modelMatEmissiveLoc, part.MaterialEmissive.X, part.MaterialEmissive.Y, part.MaterialEmissive.Z);
+                        _gl.Uniform3(_modelMatSpecularLoc, part.MaterialSpecular.X, part.MaterialSpecular.Y, part.MaterialSpecular.Z);
+                        _gl.Uniform1(_modelMatPowerLoc, part.SpecularPower);
+                        // If blend is disabled, apply white constant (texture only)
+                        _gl.Uniform1(_modelColorScaleLoc, part.Blend > 0f ? 4.0f : 0.0f);
+
                         if (part.TextureId != 0)
                         {
                             _gl.BindTexture(TextureTarget.Texture2D, part.TextureId);
@@ -730,6 +798,7 @@ public sealed class OpenGlRenderer : IRenderer
         gpuData.IndexCount = model.IndexCount;
         gpuData.BoundsMin = model.BoundsMin;
         gpuData.BoundsMax = model.BoundsMax;
+        gpuData.HasNormals = model.HasNormals;
 
         // Upload textures for each part
         if (model.Parts.Count > 0)
@@ -742,7 +811,13 @@ public sealed class OpenGlRenderer : IRenderer
                 {
                     IndexOffset = part.IndexOffset,
                     IndexCount = part.IndexCount,
-                    HasAlpha = false
+                    HasAlpha = false,
+                    MaterialAmbient = part.MaterialAmbient,
+                    MaterialDiffuse = part.MaterialDiffuse,
+                    MaterialEmissive = part.MaterialEmissive,
+                    MaterialSpecular = part.MaterialSpecular,
+                    SpecularPower = part.SpecularPower,
+                    Blend = part.Blend
                 };
 
                 if (part.TextureImage is { } img)
@@ -1364,10 +1439,15 @@ public sealed class OpenGlRenderer : IRenderer
         uniform mat4 uModel;
         out vec3 vColor;
         out vec2 vUV;
+        out vec3 vNormal;
+        out vec3 vWorldPos;
         void main() {
             gl_Position = uMVP * uModel * vec4(aPos, 1.0);
             vColor = aColor;
             vUV = aUV;
+            // Transform normal to world space (using model matrix upper-3x3)
+            vNormal = mat3(uModel) * aNormal;
+            vWorldPos = (uModel * vec4(aPos, 1.0)).xyz;
         }
         """;
 
@@ -1376,15 +1456,61 @@ public sealed class OpenGlRenderer : IRenderer
         precision mediump float;
         in vec3 vColor;
         in vec2 vUV;
+        in vec3 vNormal;
+        in vec3 vWorldPos;
         uniform int uHasTex;
         uniform sampler2D uTex;
+        uniform int uHasNormals;
+        uniform int uLightCount;
+        uniform vec3 uLightDir[4];
+        uniform vec3 uLightColor[4];
+        uniform vec3 uSceneAmbient;
+        uniform vec3 uMatAmbient;
+        uniform vec3 uMatDiffuse;
+        uniform vec3 uMatEmissive;
+        uniform vec3 uMatSpecular;
+        uniform float uMatPower;
+        uniform vec3 uCameraPos;
+        uniform float uColorScale;
         out vec4 FragColor;
         void main() {
+            vec3 texColor = vec3(1.0);
+            float alpha = 1.0;
             if (uHasTex == 1) {
-                vec4 texColor = texture(uTex, vUV);
-                FragColor = vec4(vColor * texColor.rgb, texColor.a);
+                vec4 t = texture(uTex, vUV);
+                texColor = t.rgb;
+                alpha = t.a;
+            }
+
+            if (uHasNormals == 1 && uLightCount > 0) {
+                vec3 N = normalize(vNormal);
+                vec3 lightDiffuse = vec3(0.0);
+                vec3 lightSpecular = vec3(0.0);
+                vec3 V = normalize(uCameraPos - vWorldPos);
+                for (int i = 0; i < 4; i++) {
+                    if (i >= uLightCount) break;
+                    vec3 L = normalize(uLightDir[i]);
+                    float NdotL = max(0.0, dot(N, L));
+                    lightDiffuse += uLightColor[i] * NdotL;
+                    if (uMatPower > 0.0) {
+                        vec3 H = normalize(V + L);
+                        float NdotH = max(0.0, dot(H, N));
+                        lightSpecular += uLightColor[i] * pow(NdotH, uMatPower);
+                    }
+                }
+                vec3 specular = clamp(uMatSpecular * lightSpecular, 0.0, 1.0);
+                vec3 finalColor;
+                if (uColorScale > 0.0) {
+                    vec3 ambient = uMatAmbient * uSceneAmbient;
+                    vec3 diffuse = uMatDiffuse * lightDiffuse;
+                    vec3 lighting = clamp(ambient + diffuse + uMatEmissive, 0.0, 1.0);
+                    finalColor = texColor * lighting * uColorScale + specular;
+                } else {
+                    finalColor = texColor + specular;
+                }
+                FragColor = vec4(finalColor, alpha);
             } else {
-                FragColor = vec4(vColor, 1.0);
+                FragColor = vec4(texColor * vColor, alpha);
             }
         }
         """;
@@ -1397,6 +1523,7 @@ public sealed class OpenGlRenderer : IRenderer
         public int IndexCount;
         public ModelPartGpu[]? Parts;
         public Vector3 BoundsMin, BoundsMax;
+        public bool HasNormals;
     }
 
     private struct ModelPartGpu
@@ -1405,5 +1532,11 @@ public sealed class OpenGlRenderer : IRenderer
         public int IndexCount;
         public uint TextureId; // 0 = no texture
         public bool HasAlpha;
+        public Vector3 MaterialAmbient;
+        public Vector3 MaterialDiffuse;
+        public Vector3 MaterialEmissive;
+        public Vector3 MaterialSpecular;
+        public float SpecularPower;
+        public float Blend;
     }
 }

@@ -47,7 +47,7 @@ public class GbsModel
     public const int CalcNormalsFlag = 0x0008;
 
     /// <summary>
-    /// True if the file contains normal definition data (ndefs block present).
+    /// True if the file contains normal definition data (normal defs block present).
     /// </summary>
     public bool HasNormalData => (OptionsFlags & HasNormalsFlag) != 0;
 

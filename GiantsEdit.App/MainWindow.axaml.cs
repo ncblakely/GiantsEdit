@@ -1052,7 +1052,9 @@ public partial class MainWindow : Window
             ViewObjThruTerrain = _viewObjThruTerrain,
             SelectedObjectNode = _vm.Document.SelectedObject,
             Objects = _vm.Document.GetObjectInstances(),
-            SplineLines = _vm.Document.GetSplineLines()
+            SplineLines = _vm.Document.GetSplineLines(),
+            Lights = _vm.Document.GetDirectionalLights(),
+            WorldAmbientColor = _vm.Document.GetWorldAmbientColor()
         };
     }
 

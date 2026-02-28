@@ -76,6 +76,25 @@ public class RenderState
 
     /// <summary>Spline line segments connecting waypoint objects.</summary>
     public List<SplineLine> SplineLines { get; init; } = [];
+
+    /// <summary>Directional lights extracted from the map (type 1004 objects).</summary>
+    public List<DirectionalLight> Lights { get; init; } = [];
+
+    /// <summary>World ambient color from BIN data (opcode 0x8B).</summary>
+    public Vector3 WorldAmbientColor { get; init; }
+}
+
+/// <summary>
+/// A directional light derived from a map light object (type 1004).
+/// </summary>
+public struct DirectionalLight
+{
+    /// <summary>Normalized direction the light shines.</summary>
+    public Vector3 Direction;
+    /// <summary>Diffuse light color (RGB 0-1).</summary>
+    public Vector3 Color;
+    /// <summary>True if this is the sun light (AIMode 1).</summary>
+    public bool IsSun;
 }
 
 /// <summary>
@@ -161,6 +180,9 @@ public class ModelRenderData
     public Vector3 BoundsMin { get; set; }
     /// <summary>Axis-aligned bounding box maximum corner.</summary>
     public Vector3 BoundsMax { get; set; }
+
+    /// <summary>Whether this model has vertex normals and should be affected by lighting.</summary>
+    public bool HasNormals { get; init; }
 }
 
 /// <summary>
@@ -172,6 +194,19 @@ public class ModelPartData
     public int IndexCount { get; init; }
     public string TextureName { get; init; } = string.Empty;
     public bool HasAlpha { get; init; }
+
+    /// <summary>Material ambient color (from GBS subobject).</summary>
+    public Vector3 MaterialAmbient { get; init; }
+    /// <summary>Material diffuse color (from GBS subobject).</summary>
+    public Vector3 MaterialDiffuse { get; init; }
+    /// <summary>Material emissive color (from GBS subobject).</summary>
+    public Vector3 MaterialEmissive { get; init; }
+    /// <summary>Material specular color (from GBS subobject).</summary>
+    public Vector3 MaterialSpecular { get; init; }
+    /// <summary>Specular power/shininess (from GBS subobject).</summary>
+    public float SpecularPower { get; init; }
+    /// <summary>Vertex color blend factor (from GBS subobject). 0 = no vertex colors.</summary>
+    public float Blend { get; init; }
 
     /// <summary>Loaded texture image (set by ModelManager before upload).</summary>
     public Formats.TgaImage? TextureImage { get; set; }

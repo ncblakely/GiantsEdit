@@ -376,6 +376,84 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Extracts directional lights from type 1004 (Light) objects.
+    /// Light direction is derived from the object's rotation (Y-axis of transform, negated).
+    /// AIMode 1 = sun, others = world lights.
+    /// </summary>
+    public List<DirectionalLight> GetDirectionalLights()
+    {
+        var result = new List<DirectionalLight>();
+        var objNode = _worldRoot?.FindChildNode("<Objects>");
+        if (objNode == null) return result;
+
+        foreach (var obj in objNode.EnumerateNodes())
+        {
+            if (obj.Name != "Object") continue;
+
+            int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+            if (typeId != 1004) continue;
+
+            int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+
+            float dirFacing = obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
+            float tiltFwd = obj.FindChildLeaf("TiltForward")?.SingleValue ?? 0;
+            float tiltLeft = obj.FindChildLeaf("TiltLeft")?.SingleValue ?? 0;
+
+            // Build rotation matrix same as BuildObjectMatrix to extract Y-axis
+            // Angles are in degrees, convert to radians; negate TiltForward to match game convention
+            const float deg2rad = MathF.PI / 180f;
+            float cz = MathF.Cos(dirFacing * deg2rad), sz = MathF.Sin(dirFacing * deg2rad);
+            float sx = MathF.Sin(-tiltFwd * deg2rad), cx = MathF.Cos(-tiltFwd * deg2rad);
+            float cy = MathF.Cos(tiltLeft * deg2rad), sy = MathF.Sin(tiltLeft * deg2rad);
+
+            // Second column of game's rotation matrix (column-vector convention)
+            float m12 = -sx * sy * cz - cx * sz;
+            float m22 = -sx * sy * sz + cx * cz;
+            float m32 = sx * cy;
+
+            // Light direction = second column of rotation matrix
+            // Shader negates this to get the "toward light" vector
+            var dir = Vector3.Normalize(new Vector3(m12, m22, m32));
+            if (float.IsNaN(dir.X)) dir = new Vector3(0, 0, -1);
+
+            // Light color from LightColor RGB properties
+            float r = obj.FindChildLeaf("LightColorR")?.SingleValue ?? 1f;
+            float g = obj.FindChildLeaf("LightColorG")?.SingleValue ?? 1f;
+            float b = obj.FindChildLeaf("LightColorB")?.SingleValue ?? 1f;
+
+            result.Add(new DirectionalLight
+            {
+                Direction = dir,
+                Color = new Vector3(
+                    MathF.Min(r, 1f),
+                    MathF.Min(g, 1f),
+                    MathF.Min(b, 1f)),
+                IsSun = aiMode == 1
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Extracts the world ambient color from the BIN data (opcode 0x8B).
+    /// This contributes to scene ambient lighting alongside per-light ambient values.
+    /// </summary>
+    public Vector3 GetWorldAmbientColor()
+    {
+        var node = _worldRoot?.FindChildNode("AmbientColor");
+        if (node == null) return Vector3.Zero;
+
+        float r = node.FindChildLeaf("R")?.SingleValue ?? 0f;
+        float g = node.FindChildLeaf("G")?.SingleValue ?? 0f;
+        float b = node.FindChildLeaf("B")?.SingleValue ?? 0f;
+        return new Vector3(
+            MathF.Min(r, 1f),
+            MathF.Min(g, 1f),
+            MathF.Min(b, 1f));
+    }
+
+    /// <summary>
     /// Builds spline line segments from waypoint objects (types 1052 and 1162).
     /// Matches the Delphi Draww spline logic: objects are grouped by (type base + AIMode),
     /// ordered by TeamID, and consecutive valid points are connected with lines.
