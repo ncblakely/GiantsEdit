@@ -5,11 +5,13 @@ namespace GiantsEdit.App.Dialogs;
 
 public partial class ObjectSelectionDialog : Window
 {
-    private readonly ObjectCatalog _catalog;
+    private readonly ObjectCatalog? _catalog;
     private List<ObjectCatalogEntry> _allEntries = [];
 
     public int? SelectedTypeId { get; private set; }
     public bool Confirmed { get; private set; }
+
+    public ObjectSelectionDialog() => InitializeComponent();
 
     public ObjectSelectionDialog(ObjectCatalog catalog)
     {

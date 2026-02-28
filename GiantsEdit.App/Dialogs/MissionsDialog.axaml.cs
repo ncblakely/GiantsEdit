@@ -5,12 +5,14 @@ namespace GiantsEdit.App.Dialogs;
 
 public partial class MissionsDialog : Window
 {
-    private readonly WorldDocument _doc;
+    private readonly WorldDocument? _doc;
+
+    public MissionsDialog() => InitializeComponent();
 
     public MissionsDialog(WorldDocument doc)
     {
         InitializeComponent();
-        _doc = doc;
+        _doc = doc ?? throw new ArgumentNullException(nameof(doc));
 
         BtnNew.Click += (_, _) => AddMission();
         BtnDelete.Click += (_, _) => DeleteMission();
@@ -22,7 +24,7 @@ public partial class MissionsDialog : Window
     private void RefreshList()
     {
         var items = new List<string> { "- none -" };
-        foreach (var m in _doc.Missions)
+        foreach (var m in _doc!.Missions)
             items.Add(m.Name);
         MissionList.ItemsSource = items;
         MissionList.SelectedIndex = 0;
@@ -30,7 +32,7 @@ public partial class MissionsDialog : Window
 
     private void AddMission()
     {
-        _doc.AddMission();
+        _doc!.AddMission();
         RefreshList();
         MissionList.SelectedIndex = MissionList.ItemCount - 1;
     }
@@ -39,7 +41,7 @@ public partial class MissionsDialog : Window
     {
         int idx = MissionList.SelectedIndex;
         if (idx < 1) return; // Can't delete "- none -"
-        _doc.RemoveMission(idx - 1);
+        _doc!.RemoveMission(idx - 1);
         RefreshList();
     }
 }

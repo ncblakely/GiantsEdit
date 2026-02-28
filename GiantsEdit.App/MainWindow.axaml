@@ -7,7 +7,8 @@
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
         x:Class="GiantsEdit.App.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="GiantsEdit" Width="1280" Height="720">
+        Title="GiantsEdit" Width="1280" Height="720"
+        FontSize="12">
 
     <DockPanel>
         <!-- Menu Bar -->
@@ -196,7 +197,8 @@
                                             VerticalAlignment="Stretch" />
                                 </Grid>
                                 <Popup x:Name="ObjTypePopup" PlacementTarget="{Binding #PropObjType}"
-                                       Placement="Bottom" MaxHeight="300" Width="280">
+                                       Placement="Bottom" MaxHeight="300" Width="280"
+                                       IsLightDismissEnabled="True">
                                     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                             BorderThickness="1" CornerRadius="4" Padding="4">
