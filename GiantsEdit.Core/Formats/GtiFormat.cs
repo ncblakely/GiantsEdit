@@ -284,6 +284,8 @@ public static class GtiFormat
     /// </summary>
     public static TerrainData CreateNew(int width, int height, string textureName = "")
     {
+        const float stretch = 40.0f;
+
         var terrain = new TerrainData
         {
             Header = new GtiHeader
@@ -291,7 +293,11 @@ public static class GtiFormat
                 SignatureField = GtiHeader.Signature,
                 Width = width,
                 Height = height,
-                Stretch = 1.0f,
+                Stretch = stretch,
+                XOffset = width * stretch * -0.5f,
+                YOffset = height * stretch * -0.5f,
+                MinHeight = -40f,
+                MaxHeight = 1000f,
                 U1 = 0.5f,
                 U2 = 0.5f,
                 U3 = 1.25e-4f,
