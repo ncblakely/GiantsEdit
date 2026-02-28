@@ -1912,6 +1912,11 @@ public partial class MainWindow : Window
             Viewport.QueueGlAction(renderer => _modelManager.PreloadModels(objects, renderer));
         }
 
+        // Light objects (1004) affect terrain shading — rebuild render data
+        int currentType = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+        if (currentType == 1004)
+            UploadTerrainToGpu();
+
         InvalidateViewport();
         StatusText.Text = "Object properties applied";
     }
