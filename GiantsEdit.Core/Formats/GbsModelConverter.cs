@@ -136,10 +136,15 @@ public static class GbsModelConverter
                     float u = model.PointUVs[l][0];
                     float v = model.PointUVs[l][1];
 
-                    // Vertex color (raw, without material diffuse — lighting uses material separately)
+                    // Vertex color: models without the RGBs flag or with zero vertex colors
+                    // on unlit (no normals) models default to white so the texture is visible.
                     float cr = model.PointColors[l * 3 + 0] / 255f;
                     float cg = model.PointColors[l * 3 + 1] / 255f;
                     float cb = model.PointColors[l * 3 + 2] / 255f;
+                    if (!model.HasRGBs || (!hasNormals && cr == 0f && cg == 0f && cb == 0f))
+                    {
+                        cr = cg = cb = 1f;
+                    }
 
                     // Select normal based on model type
                     Vector3 normal;

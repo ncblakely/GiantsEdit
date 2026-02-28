@@ -56,6 +56,11 @@ public class GbsModel
     /// </summary>
     public bool HasNormals => (OptionsFlags & (HasNormalsFlag | CalcNormalsFlag)) != 0;
 
+    /// <summary>
+    /// True if the file contains per-vertex RGB color data.
+    /// </summary>
+    public bool HasRGBs => (OptionsFlags & HasRGBsFlag) != 0;
+
     /// <summary>Base vertex positions (X, Y, Z).</summary>
     public Vector3[] BasePoints = [];
 
@@ -154,8 +159,11 @@ public static class GbsModelLoader
 
         // Vertex colors (3 bytes per point: RGB)
         model.PointColors = new byte[pc * 3];
-        Buffer.BlockCopy(data, pos, model.PointColors, 0, pc * 3);
-        pos += pc * 3;
+        if (model.HasRGBs)
+        {
+            Buffer.BlockCopy(data, pos, model.PointColors, 0, pc * 3);
+            pos += pc * 3;
+        }
 
         // Ref1 array (20 bytes per entry: 5 ints)
         int ref1Count = ReadInt32(data, ref pos);
