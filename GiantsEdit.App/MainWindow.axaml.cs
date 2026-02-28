@@ -214,7 +214,36 @@ public partial class MainWindow : Window
         RbTriDiagOpt.IsCheckedChanged += (_, _) => { if (RbTriDiagOpt.IsChecked == true) _vm.Document.TriangleMode = TriangleSubMode.DiagOptimize; };
         RbTriCornerOpt.IsCheckedChanged += (_, _) => { if (RbTriCornerOpt.IsChecked == true) _vm.Document.TriangleMode = TriangleSubMode.OptCorner; };
 
-        // Property panel
+        // Property panel — object type dropdown
+        var allObjNames = ObjectNames.GetAllDisplayNames();
+        LstObjTypes.ItemsSource = allObjNames;
+        BtnObjTypeDropdown.Click += (_, _) =>
+        {
+            TxtObjTypeSearch.Text = "";
+            LstObjTypes.ItemsSource = allObjNames;
+            ObjTypePopup.IsOpen = !ObjTypePopup.IsOpen;
+            if (ObjTypePopup.IsOpen)
+                TxtObjTypeSearch.Focus();
+        };
+        TxtObjTypeSearch.TextChanged += (_, _) =>
+        {
+            var filter = TxtObjTypeSearch.Text;
+            if (string.IsNullOrEmpty(filter))
+            {
+                LstObjTypes.ItemsSource = allObjNames;
+                return;
+            }
+            LstObjTypes.ItemsSource = ObjectNames.Search(filter);
+        };
+        LstObjTypes.SelectionChanged += (_, _) =>
+        {
+            if (LstObjTypes.SelectedItem is string selected)
+            {
+                PropObjType.Text = selected;
+                ObjTypePopup.IsOpen = false;
+            }
+        };
+
         BtnApplyProps.Click += (_, _) => ApplyObjectProperties();
         BtnDeleteObj.Click += (_, _) =>
         {
@@ -329,10 +358,11 @@ public partial class MainWindow : Window
             case Key.F11: _viewObjThruTerrain = !_viewObjThruTerrain; InvalidateViewport(); e.Handled = true; break;
         }
 
-        // WASD fly key tracking (Default scheme only, requires RMB held)
+        // WASD fly key tracking (Default scheme only, requires RMB held, not when typing in text fields)
         if (_prefs.ControlScheme == ControlScheme.Default && e.Key is Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E)
         {
-            if (!ctrl) // don't capture Ctrl+W/S
+            bool isTextInput = FocusManager?.GetFocusedElement() is TextBox;
+            if (!ctrl && !isTextInput)
             {
                 _keysDown.Add(e.Key);
                 StartFlyTimer();
@@ -1543,6 +1573,21 @@ public partial class MainWindow : Window
         var obj = _vm.Document.SelectedObject;
         if (obj == null) return;
 
+        // Apply object type (accepts name, ID, or "Name (ID)" format)
+        var parsedType = ObjectNames.ParseInput(PropObjType.Text ?? "");
+        bool typeChanged = false;
+        if (parsedType.HasValue)
+        {
+            var typeLeaf = obj.FindChildLeaf("Type");
+            if (typeLeaf != null && typeLeaf.Int32Value != parsedType.Value)
+            {
+                typeLeaf.Int32Value = parsedType.Value;
+                typeChanged = true;
+            }
+            PropObjType.Text = ObjectNames.GetDisplayName(parsedType.Value);
+            PropHeader.Text = $"Object: {PropObjType.Text}";
+        }
+
         if (float.TryParse(PropObjX.Text, out float x))
             obj.FindChildLeaf("X")?.SetSingle(x);
         if (float.TryParse(PropObjY.Text, out float y))
@@ -1571,6 +1616,12 @@ public partial class MainWindow : Window
         {
             var leaf = obj.FindChildLeaf("TeamID");
             if (leaf != null) leaf.Int32Value = teamId;
+        }
+
+        if (typeChanged && _drawRealObjects)
+        {
+            var objects = _vm.Document.GetObjectInstances();
+            Viewport.QueueGlAction(renderer => _modelManager.PreloadModels(objects, renderer));
         }
 
         InvalidateViewport();

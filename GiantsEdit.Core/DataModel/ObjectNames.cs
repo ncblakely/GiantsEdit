@@ -1151,7 +1151,7 @@ public static class ObjectNames
         IdToName.TryGetValue(id, out var name) ? $"{name} ({id})" : id.ToString();
 
     /// <summary>
-    /// Parses user input that may be a name or an integer ID.
+    /// Parses user input that may be a name, integer ID, or display format "Name (ID)".
     /// Returns the resolved integer ID, or null if unrecognized.
     /// </summary>
     public static int? ParseInput(string input)
@@ -1160,6 +1160,38 @@ public static class ObjectNames
         input = input.Trim();
         if (int.TryParse(input, out int id)) return id;
         if (NameToId.TryGetValue(input, out int namedId)) return namedId;
+
+        // Handle display format: "Name (123)"
+        int parenStart = input.LastIndexOf('(');
+        int parenEnd = input.LastIndexOf(')');
+        if (parenStart >= 0 && parenEnd > parenStart
+            && int.TryParse(input.AsSpan(parenStart + 1, parenEnd - parenStart - 1), out int displayId))
+            return displayId;
+
         return null;
+    }
+
+    /// <summary>Returns all display names ("Name (ID)") sorted by name.</summary>
+    public static IReadOnlyList<string> GetAllDisplayNames()
+    {
+        return IdToName
+            .OrderBy(kvp => kvp.Value, StringComparer.OrdinalIgnoreCase)
+            .Select(kvp => $"{kvp.Value} ({kvp.Key})")
+            .ToList();
+    }
+
+    /// <summary>Returns display names that contain the filter text (case-insensitive).</summary>
+    public static IReadOnlyList<string> Search(string filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+            return GetAllDisplayNames();
+
+        filter = filter.Trim();
+        return IdToName
+            .Where(kvp => kvp.Value.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                       || kvp.Key.ToString().Contains(filter, StringComparison.Ordinal))
+            .OrderBy(kvp => kvp.Value, StringComparer.OrdinalIgnoreCase)
+            .Select(kvp => $"{kvp.Value} ({kvp.Key})")
+            .ToList();
     }
 }

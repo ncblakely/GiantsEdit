@@ -184,12 +184,28 @@
                     <TextBlock DockPanel.Dock="Top" Text="Properties"
                                Margin="8,4" FontWeight="Bold"/>
                     <ScrollViewer>
-                        <StackPanel x:Name="PropertyPanel" Margin="8" Spacing="6">
+                        <StackPanel x:Name="PropertyPanel" Margin="8,8,14,8" Spacing="6">
                             <TextBlock x:Name="PropHeader" Text="No selection" />
 
                             <StackPanel x:Name="ObjPropsPanel" IsVisible="False" Spacing="4">
                                 <TextBlock Text="Type:" />
-                                <TextBox x:Name="PropObjType" IsReadOnly="True" />
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBox x:Name="PropObjType" Grid.Column="0" />
+                                    <Button x:Name="BtnObjTypeDropdown" Grid.Column="1"
+                                            Content="▼" Width="28" Padding="4,0"
+                                            VerticalAlignment="Stretch" />
+                                </Grid>
+                                <Popup x:Name="ObjTypePopup" PlacementTarget="{Binding #PropObjType}"
+                                       Placement="Bottom" MaxHeight="300" Width="280">
+                                    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                            BorderThickness="1" CornerRadius="4" Padding="4">
+                                        <StackPanel Spacing="4">
+                                            <TextBox x:Name="TxtObjTypeSearch" Watermark="Search..." />
+                                            <ListBox x:Name="LstObjTypes" MaxHeight="240" />
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
 
                                 <TextBlock Text="X:" />
                                 <TextBox x:Name="PropObjX" />
