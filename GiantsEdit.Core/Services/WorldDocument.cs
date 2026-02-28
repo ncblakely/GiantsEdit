@@ -466,6 +466,21 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Extracts terrain texture names and wrap values from the world tree.
+    /// Returns (name, wrap) tuples for ground, slope, and wall textures.
+    /// </summary>
+    public (string? Name, float Wrap) GetTerrainTexture(string kind)
+    {
+        var texNode = _worldRoot?.FindChildNode("<Textures>")
+            ?.FindChildNode(kind);
+        if (texNode == null) return (null, 100f);
+
+        string? name = texNode.FindChildLeaf("Name")?.StringValue;
+        float wrap = texNode.FindChildLeaf("Wrap")?.SingleValue ?? 100f;
+        return (name, wrap);
+    }
+
+    /// <summary>
     /// Modifies terrain height at the given world coordinate using the current brush.
     /// </summary>
     public void PaintHeight(float worldX, float worldY, float heightDelta)

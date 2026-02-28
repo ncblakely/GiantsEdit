@@ -1067,8 +1067,38 @@ public partial class MainWindow : Window
     private void UploadTerrainToGpu()
     {
         var terrainData = _vm.Document.BuildTerrainRenderData();
-        if (terrainData != null)
-            Viewport.QueueTerrainUpload(terrainData);
+        if (terrainData == null) return;
+
+        if (_modelManager.HasGameData)
+        {
+            var texInfo = new TerrainTextureInfo();
+            LoadTerrainTexture("GroundTexture", v => { texInfo.GroundImage = v.img; texInfo.GroundWrap = v.wrap; });
+            LoadTerrainTexture("SlopeTexture", v => { texInfo.SlopeImage = v.img; texInfo.SlopeWrap = v.wrap; });
+            LoadTerrainTexture("WallTexture", v => { texInfo.WallImage = v.img; texInfo.WallWrap = v.wrap; });
+
+            if (texInfo.GroundImage != null || texInfo.SlopeImage != null || texInfo.WallImage != null)
+                terrainData.Textures = texInfo;
+        }
+
+        Viewport.QueueTerrainUpload(terrainData);
+    }
+
+    private void LoadTerrainTexture(string kind, Action<(TgaImage? img, float wrap)> setter)
+    {
+        var (name, wrap) = _vm.Document.GetTerrainTexture(kind);
+        if (string.IsNullOrEmpty(name)) return;
+
+        byte[]? data = _modelManager.LoadGameFile(name + ".tga");
+        if (data == null || data.Length < 18) return;
+
+        try
+        {
+            setter((TgaLoader.Load(data), wrap));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[LoadTerrainTexture] Failed to load {name}: {ex.Message}");
+        }
     }
 
     private void LoadMapObjectShapes()
@@ -1515,6 +1545,7 @@ public partial class MainWindow : Window
 
         var win = new DataTreeWindow();
         win.LoadTree(_vm.Document.WorldRoot, "Map Objects Tree View");
+        win.Closed += (_, _) => UploadTerrainToGpu();
         win.Show(this);
     }
 

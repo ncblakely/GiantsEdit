@@ -3,7 +3,7 @@
         xmlns:dlg="using:GiantsEdit.App.Dialogs"
         x:Class="GiantsEdit.App.Dialogs.DataTreeWindow"
         x:DataType="dlg:DataTreeWindow"
-        Title="World Objects Tree View" Width="700" Height="500"
+        Title="World Objects Tree View" Width="700" Height="550"
         WindowStartupLocation="CenterOwner">
     <DockPanel>
         <!-- Status bar -->

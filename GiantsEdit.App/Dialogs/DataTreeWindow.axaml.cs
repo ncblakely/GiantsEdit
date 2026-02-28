@@ -26,6 +26,7 @@ public partial class DataTreeWindow : Window
         InitializeComponent();
 
         BtnAddEntry.Click += (_, _) => AddIncludeFile();
+        Closing += (_, _) => ApplyCurrentProperties();
     }
 
     public void LoadTree(TreeNode root, string title)
@@ -45,6 +46,7 @@ public partial class DataTreeWindow : Window
 
         DataTree.SelectionChanged += (_, _) =>
         {
+            ApplyCurrentProperties();
             if (DataTree.SelectedItem is DataTreeNodeVm vm)
             {
                 _selectedNode = vm.Model;
@@ -53,6 +55,15 @@ public partial class DataTreeWindow : Window
                 ListEditPanel.IsVisible = EditableListNodes.Contains(vm.Model.Name);
             }
         };
+    }
+
+    private void ApplyCurrentProperties()
+    {
+        if (PropertiesList.ItemsSource is ObservableCollection<LeafPropertyVm> props)
+        {
+            foreach (var p in props)
+                p.Apply();
+        }
     }
 
     private void ShowProperties(TreeNode node)

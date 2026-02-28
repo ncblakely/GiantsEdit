@@ -116,6 +116,22 @@ public class TerrainRenderData
     public required uint[] Indices { get; init; }
     public int VertexCount { get; init; }
     public int IndexCount { get; init; }
+
+    /// <summary>Terrain texture images and tiling values (null if no game data).</summary>
+    public TerrainTextureInfo? Textures { get; set; }
+}
+
+/// <summary>
+/// Texture information for terrain rendering: ground, slope, and wall textures with tiling.
+/// </summary>
+public class TerrainTextureInfo
+{
+    public Formats.TgaImage? GroundImage { get; set; }
+    public float GroundWrap { get; set; } = 100f;
+    public Formats.TgaImage? SlopeImage { get; set; }
+    public float SlopeWrap { get; set; } = 100f;
+    public Formats.TgaImage? WallImage { get; set; }
+    public float WallWrap { get; set; } = 100f;
 }
 
 /// <summary>

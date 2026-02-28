@@ -32,6 +32,10 @@ public sealed class OpenGlRenderer : IRenderer
     private int _terrainIndexCount;
     private uint _terrainLineEbo;
     private int _terrainLineIndexCount;
+    private uint _terrainTexGround;
+    private uint _terrainTexSlope;
+    private uint _terrainTexWall;
+    private bool _terrainHasTextures;
 
     // Dome
     private uint _domeVao;
@@ -51,6 +55,13 @@ public sealed class OpenGlRenderer : IRenderer
 
     // Uniform locations
     private int _terrainMvpLoc;
+    private int _terrainHasTexLoc;
+    private int _terrainGroundTexLoc;
+    private int _terrainSlopeTexLoc;
+    private int _terrainWallTexLoc;
+    private int _terrainGroundWrapLoc;
+    private int _terrainSlopeWrapLoc;
+    private int _terrainWallWrapLoc;
     private int _solidMvpLoc;
     private int _solidColorLoc;
     private int _modelMvpLoc;
@@ -96,6 +107,13 @@ public sealed class OpenGlRenderer : IRenderer
 
         _terrainShader = CreateShader(TerrainVertSrc, TerrainFragSrc);
         _terrainMvpLoc = _gl.GetUniformLocation(_terrainShader, "uMVP");
+        _terrainHasTexLoc = _gl.GetUniformLocation(_terrainShader, "uHasTex");
+        _terrainGroundTexLoc = _gl.GetUniformLocation(_terrainShader, "uGroundTex");
+        _terrainSlopeTexLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeTex");
+        _terrainWallTexLoc = _gl.GetUniformLocation(_terrainShader, "uWallTex");
+        _terrainGroundWrapLoc = _gl.GetUniformLocation(_terrainShader, "uGroundWrap");
+        _terrainSlopeWrapLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeWrap");
+        _terrainWallWrapLoc = _gl.GetUniformLocation(_terrainShader, "uWallWrap");
 
         _solidShader = CreateShader(SolidVertSrc, SolidFragSrc);
         _solidMvpLoc = _gl.GetUniformLocation(_solidShader, "uMVP");
@@ -206,11 +224,32 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.Disable(EnableCap.CullFace);
             _gl.UseProgram(_terrainShader);
             SetUniformMatrix(_terrainMvpLoc, vp);
+
+            // Bind terrain textures if available
+            _gl.Uniform1(_terrainHasTexLoc, _terrainHasTextures ? 1 : 0);
+            if (_terrainHasTextures)
+            {
+                _gl.ActiveTexture(TextureUnit.Texture0);
+                _gl.BindTexture(TextureTarget.Texture2D, _terrainTexGround);
+                _gl.Uniform1(_terrainGroundTexLoc, 0);
+
+                _gl.ActiveTexture(TextureUnit.Texture1);
+                _gl.BindTexture(TextureTarget.Texture2D, _terrainTexSlope);
+                _gl.Uniform1(_terrainSlopeTexLoc, 1);
+
+                _gl.ActiveTexture(TextureUnit.Texture2);
+                _gl.BindTexture(TextureTarget.Texture2D, _terrainTexWall);
+                _gl.Uniform1(_terrainWallTexLoc, 2);
+
+                _gl.ActiveTexture(TextureUnit.Texture0);
+            }
+
             _gl.BindVertexArray(_terrainVao);
 
             if (state.ShowTerrainMesh)
             {
-                // Wireframe overlay: draw edges as lines
+                // Wireframe: disable textures, use vertex colors only
+                _gl.Uniform1(_terrainHasTexLoc, 0);
                 _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainLineEbo);
                 _gl.DrawElements(PrimitiveType.Lines, (uint)_terrainLineIndexCount, DrawElementsType.UnsignedInt, null);
                 _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainEbo);
@@ -525,6 +564,69 @@ public sealed class OpenGlRenderer : IRenderer
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _terrainEbo);
 
         _gl.BindVertexArray(0);
+
+        // Upload terrain textures
+        DeleteTerrainTextures();
+        _terrainHasTextures = false;
+
+        if (terrain.Textures is { } tex)
+        {
+            _terrainTexGround = UploadTerrainTex(tex.GroundImage);
+            _terrainTexSlope = UploadTerrainTex(tex.SlopeImage ?? tex.GroundImage);
+            _terrainTexWall = UploadTerrainTex(tex.WallImage ?? tex.SlopeImage ?? tex.GroundImage);
+
+            if (_terrainTexGround != 0)
+            {
+                _terrainHasTextures = true;
+
+                _gl.UseProgram(_terrainShader);
+                _gl.Uniform1(_terrainGroundWrapLoc, tex.GroundWrap);
+                _gl.Uniform1(_terrainSlopeWrapLoc, tex.SlopeWrap);
+                _gl.Uniform1(_terrainWallWrapLoc, tex.WallWrap);
+            }
+        }
+    }
+
+    private unsafe uint UploadTerrainTex(TgaImage? img)
+    {
+        if (img == null) return 0;
+
+        uint tex = _gl.GenTexture();
+        _gl.BindTexture(TextureTarget.Texture2D, tex);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
+
+        var format = img.Channels switch
+        {
+            1 => InternalFormat.R8,
+            3 => InternalFormat.Rgb,
+            4 => InternalFormat.Rgba,
+            _ => InternalFormat.Rgb
+        };
+        var pixelFormat = img.Channels switch
+        {
+            1 => PixelFormat.Red,
+            3 => PixelFormat.Rgb,
+            4 => PixelFormat.Rgba,
+            _ => PixelFormat.Rgb
+        };
+
+        fixed (byte* px = img.Pixels)
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, format,
+                (uint)img.Width, (uint)img.Height, 0,
+                pixelFormat, PixelType.UnsignedByte, px);
+
+        _gl.GenerateMipmap(TextureTarget.Texture2D);
+        return tex;
+    }
+
+    private void DeleteTerrainTextures()
+    {
+        if (_terrainTexGround != 0) { _gl.DeleteTexture(_terrainTexGround); _terrainTexGround = 0; }
+        if (_terrainTexSlope != 0) { _gl.DeleteTexture(_terrainTexSlope); _terrainTexSlope = 0; }
+        if (_terrainTexWall != 0) { _gl.DeleteTexture(_terrainTexWall); _terrainTexWall = 0; }
     }
 
     public unsafe int UploadModel(ModelRenderData model, int modelId = -1)
@@ -772,6 +874,7 @@ public sealed class OpenGlRenderer : IRenderer
         if (_terrainVboPos != 0) _gl.DeleteBuffer(_terrainVboPos);
         if (_terrainVboColor != 0) _gl.DeleteBuffer(_terrainVboColor);
         if (_terrainEbo != 0) _gl.DeleteBuffer(_terrainEbo);
+        DeleteTerrainTextures();
 
         if (_domeVao != 0) _gl.DeleteVertexArray(_domeVao);
         if (_domeVbo != 0) _gl.DeleteBuffer(_domeVbo);
@@ -1013,9 +1116,11 @@ public sealed class OpenGlRenderer : IRenderer
         layout(location = 1) in vec4 aColor;
         uniform mat4 uMVP;
         out vec4 vColor;
+        out vec3 vWorldPos;
         void main() {
             gl_Position = uMVP * vec4(aPos, 1.0);
             vColor = aColor;
+            vWorldPos = aPos;
         }
         """;
 
@@ -1023,9 +1128,45 @@ public sealed class OpenGlRenderer : IRenderer
         #version 300 es
         precision mediump float;
         in vec4 vColor;
+        in vec3 vWorldPos;
+        uniform int uHasTex;
+        uniform sampler2D uGroundTex;
+        uniform sampler2D uSlopeTex;
+        uniform sampler2D uWallTex;
+        uniform float uGroundWrap;
+        uniform float uSlopeWrap;
+        uniform float uWallWrap;
         out vec4 FragColor;
         void main() {
-            FragColor = vColor;
+            if (uHasTex == 1) {
+                // Compute face normal from screen-space derivatives of world position
+                vec3 dpdx = dFdx(vWorldPos);
+                vec3 dpdy = dFdy(vWorldPos);
+                vec3 faceN = normalize(cross(dpdx, dpdy));
+                float steepness = abs(faceN.z);
+
+                // UV from world position: XY for ground, best side projection for walls
+                vec2 groundUV = vWorldPos.xy / uGroundWrap;
+                vec2 slopeUV = vWorldPos.xy / uSlopeWrap;
+                // For walls, project onto the plane facing the camera most
+                vec2 wallUV = abs(faceN.x) > abs(faceN.y)
+                    ? vWorldPos.yz / uWallWrap
+                    : vWorldPos.xz / uWallWrap;
+
+                vec3 groundCol = texture(uGroundTex, groundUV).rgb;
+                vec3 slopeCol = texture(uSlopeTex, slopeUV).rgb;
+                vec3 wallCol = texture(uWallTex, wallUV).rgb;
+
+                // Blend: ground above 0.7, wall below 0.3, slope in between
+                float groundFactor = smoothstep(0.6, 0.8, steepness);
+                float wallFactor = smoothstep(0.4, 0.2, steepness);
+                float slopeFactor = 1.0 - groundFactor - wallFactor;
+
+                vec3 texCol = groundCol * groundFactor + slopeCol * slopeFactor + wallCol * wallFactor;
+                FragColor = vec4(vColor.rgb * texCol * 2.0, 1.0);
+            } else {
+                FragColor = vColor;
+            }
         }
         """;
 
