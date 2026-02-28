@@ -79,37 +79,14 @@ public class ModelManager
         var entries = catalog.GetById(typeId);
         if (entries.Count == 0) return null;
 
-        string s = entries[0].ModelPath;
-        if (string.IsNullOrEmpty(s)) return null;
+        string modelPath = entries[0].ModelPath;
+        if (string.IsNullOrEmpty(modelPath)) return null;
 
-        int parenIdx = s.IndexOf('(');
-        if (parenIdx > 0)
-        {
-            // e.g. "kb (0)" or "mc (0..7)" or "rp_bow (_..5)"
-            string s2 = s[(parenIdx + 1)..].TrimEnd(')').Trim();
-            s = s[..(parenIdx - 1)].Trim(); // base name before " ("
+        // Strip .gbs extension if present — callers append it when needed
+        if (modelPath.EndsWith(".gbs", StringComparison.OrdinalIgnoreCase))
+            modelPath = modelPath[..^4];
 
-            // Take first value: before comma or dot range
-            int commaIdx = s2.IndexOf(',');
-            if (commaIdx > 0) s2 = s2[..commaIdx];
-            int dotIdx = s2.IndexOf('.');
-            if (dotIdx > 0) s2 = s2[..dotIdx];
-
-            if (s2 == "_")
-            {
-                // Use base name as-is
-            }
-            else if (s2.Length == 1 && char.IsAsciiDigit(s2[0]))
-            {
-                s = s + "_L" + s2; // e.g. "kb" + "_L0" = "kb_L0"
-            }
-            else
-            {
-                s = s2; // Use the inner part as the model name
-            }
-        }
-
-        return s;
+        return modelPath;
     }
 
     /// <summary>

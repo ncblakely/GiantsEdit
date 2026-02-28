@@ -11,16 +11,15 @@ public class ObjectCatalogTests
         var lines = new[]
         {
             "# comment line",
-            "1\txx_kabuto_flick\tkb (0)",
-            "1\txx_kabutolev1\tkb (0..7)",
-            "11\txx_smartie\tsm (0..7)",
+            "1\tKabuto\tkb_l0.gbs",
+            "11\tSmartie\tsm_L0.gbs",
             ""
         };
 
         var catalog = ObjectCatalog.LoadFromTsv(lines);
 
-        Assert.AreEqual(3, catalog.Entries.Count);
-        Assert.AreEqual(2, catalog.GetById(1).Count);
+        Assert.AreEqual(2, catalog.Entries.Count);
+        Assert.AreEqual(1, catalog.GetById(1).Count);
         Assert.AreEqual(1, catalog.GetById(11).Count);
         Assert.AreEqual(0, catalog.GetById(999).Count);
     }
