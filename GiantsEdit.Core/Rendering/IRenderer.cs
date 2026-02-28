@@ -34,6 +34,9 @@ public interface IRenderer : IDisposable
     /// <summary>Upload map object shapes and type→shape mapping for editor object rendering.</summary>
     void UploadMapObjects(Formats.MapObjectReader mapObjects);
 
+    /// <summary>Upload a dome mesh from a GB2 object, optionally with a texture.</summary>
+    void UploadDome(Formats.Gb2Object dome, Formats.TgaImage? texture);
+
     /// <summary>Release all GPU resources.</summary>
     void Cleanup();
 }

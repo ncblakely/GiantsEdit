@@ -24,7 +24,7 @@ public class OpenGlViewport : OpenGlControlBase
     private MouseButton _activeButton;
     private TerrainRenderData? _pendingTerrain;
     private MapObjectReader? _pendingMapObjects;
-    private Action<IRenderer>? _pendingGlAction;
+    private readonly Queue<Action<IRenderer>> _pendingGlActions = new();
 
     public EditorCamera Camera { get; } = new();
 
@@ -54,7 +54,7 @@ public class OpenGlViewport : OpenGlControlBase
     /// </summary>
     public void QueueGlAction(Action<IRenderer> action)
     {
-        _pendingGlAction = action;
+        _pendingGlActions.Enqueue(action);
         Invalidate();
     }
 
@@ -119,11 +119,10 @@ public class OpenGlViewport : OpenGlControlBase
             _renderer.UploadMapObjects(pendingMapObj);
         }
 
-        var pendingGl = _pendingGlAction;
-        if (pendingGl != null)
+        while (_pendingGlActions.Count > 0)
         {
-            _pendingGlAction = null;
-            pendingGl(_renderer);
+            var action = _pendingGlActions.Dequeue();
+            action(_renderer);
         }
 
         // Ask the host to provide render state if we don't have one

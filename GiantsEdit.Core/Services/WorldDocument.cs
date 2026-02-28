@@ -586,6 +586,15 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Gets the dome texture name from the world tree (opcode 0x1E).
+    /// </summary>
+    public string? GetDomeTextureName()
+    {
+        var texNode = _worldRoot?.FindChildNode("<Textures>");
+        return texNode?.FindChildLeaf("DomeTex")?.StringValue;
+    }
+
+    /// <summary>
     /// Gets the terrain mipmap brightness falloff coefficients from the world tree.
     /// </summary>
     public (float C0, float C1, float C2) GetTerrainMipFalloff()

@@ -50,6 +50,8 @@ public sealed class OpenGlRenderer : IRenderer
     private uint _domeVbo;
     private uint _domeEbo;
     private int _domeIndexCount;
+    private uint _domeTex;
+    private bool _domeHasTexture;
 
     // Sea
     private uint _seaVao;
@@ -60,6 +62,7 @@ public sealed class OpenGlRenderer : IRenderer
     private uint _terrainShader;
     private uint _solidShader;
     private uint _modelShader;
+    private uint _domeShader;
 
     // Uniform locations
     private int _terrainMvpLoc;
@@ -91,6 +94,8 @@ public sealed class OpenGlRenderer : IRenderer
     private int _modelMatPowerLoc;
     private int _modelCameraPosLoc;
     private int _modelColorScaleLoc;
+    private int _domeMvpLoc;
+    private int _domeTexLoc;
 
     private readonly Dictionary<int, ModelGpuData> _models = new();
     private int _nextModelId;
@@ -166,7 +171,10 @@ public sealed class OpenGlRenderer : IRenderer
             _modelLightColorLocs[i] = _gl.GetUniformLocation(_modelShader, $"uLightColor[{i}]");
         }
 
-        BuildDome(10240f);
+        _domeShader = CreateShader(DomeVertSrc, DomeFragSrc);
+        _domeMvpLoc = _gl.GetUniformLocation(_domeShader, "uMVP");
+        _domeTexLoc = _gl.GetUniformLocation(_domeShader, "uTex");
+
         BuildSea(10240f);
 
         // Create reusable line VAO/VBO for splines
@@ -227,14 +235,15 @@ public sealed class OpenGlRenderer : IRenderer
         var vp = state.ViewMatrix * state.ProjectionMatrix;
 
         // Draw dome (behind everything, no depth write)
-        // Camera is inside the dome, so disable back-face culling
-        if (state.ShowDome && _domeIndexCount > 0)
+        if (state.ShowDome && _domeIndexCount > 0 && _domeHasTexture)
         {
             _gl.DepthMask(false);
             _gl.Disable(EnableCap.CullFace);
-            _gl.UseProgram(_terrainShader);
-            SetUniformMatrix(_terrainMvpLoc, vp);
-            _gl.Uniform1(_terrainHasTexLoc, 0); // Dome uses vertex colors only
+            _gl.UseProgram(_domeShader);
+            SetUniformMatrix(_domeMvpLoc, vp);
+            _gl.ActiveTexture(TextureUnit.Texture0);
+            _gl.BindTexture(TextureTarget.Texture2D, _domeTex);
+            _gl.Uniform1(_domeTexLoc, 0);
             _gl.BindVertexArray(_domeVao);
             _gl.DrawElements(PrimitiveType.Triangles, (uint)_domeIndexCount, DrawElementsType.UnsignedInt, null);
             _gl.Enable(EnableCap.CullFace);
@@ -1148,6 +1157,7 @@ public sealed class OpenGlRenderer : IRenderer
         if (_domeVao != 0) _gl.DeleteVertexArray(_domeVao);
         if (_domeVbo != 0) _gl.DeleteBuffer(_domeVbo);
         if (_domeEbo != 0) _gl.DeleteBuffer(_domeEbo);
+        if (_domeTex != 0) _gl.DeleteTexture(_domeTex);
 
         if (_seaVao != 0) _gl.DeleteVertexArray(_seaVao);
         if (_seaVbo != 0) _gl.DeleteBuffer(_seaVbo);
@@ -1179,84 +1189,12 @@ public sealed class OpenGlRenderer : IRenderer
         if (_terrainShader != 0) _gl.DeleteProgram(_terrainShader);
         if (_solidShader != 0) _gl.DeleteProgram(_solidShader);
         if (_modelShader != 0) _gl.DeleteProgram(_modelShader);
+        if (_domeShader != 0) _gl.DeleteProgram(_domeShader);
     }
 
     public void Dispose() => Cleanup();
 
     #region Dome & Sea mesh generation
-
-    private unsafe void BuildDome(float radius)
-    {
-        const int hSegments = 32;
-        const int vSegments = 8;
-        int vertCount = (hSegments + 1) * (vSegments + 1);
-
-        // Position(3) + Color(3)
-        var verts = new float[vertCount * 6];
-        int vi = 0;
-        for (int y = 0; y <= vSegments; y++)
-        {
-            float v = y / (float)vSegments;
-            float phi = v * MathF.PI / 2f; // 0 to pi/2 (hemisphere)
-            for (int x = 0; x <= hSegments; x++)
-            {
-                float u = x / (float)hSegments;
-                float theta = u * MathF.PI * 2f;
-
-                verts[vi++] = MathF.Cos(theta) * MathF.Cos(phi) * radius;
-                verts[vi++] = MathF.Sin(theta) * MathF.Cos(phi) * radius;
-                verts[vi++] = MathF.Sin(phi) * radius;
-
-                // Gradient: darker at horizon, lighter at zenith
-                float brightness = 0.15f + 0.85f * v;
-                verts[vi++] = 0.4f * brightness;
-                verts[vi++] = 0.5f * brightness;
-                verts[vi++] = 0.9f * brightness;
-            }
-        }
-
-        var indices = new List<uint>();
-        for (int y = 0; y < vSegments; y++)
-        {
-            for (int x = 0; x < hSegments; x++)
-            {
-                uint a = (uint)(y * (hSegments + 1) + x);
-                uint b = a + (uint)(hSegments + 1);
-                uint c = a + 1;
-                uint d = b + 1;
-
-                indices.Add(a); indices.Add(b); indices.Add(c);
-                indices.Add(c); indices.Add(b); indices.Add(d);
-            }
-        }
-
-        _domeVao = _gl.GenVertexArray();
-        _gl.BindVertexArray(_domeVao);
-
-        _domeVbo = _gl.GenBuffer();
-        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _domeVbo);
-        fixed (float* p = verts)
-            _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(verts.Length * sizeof(float)),
-                p, BufferUsageARB.StaticDraw);
-
-        // Position (location 0)
-        _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), (void*)0);
-        _gl.EnableVertexAttribArray(0);
-        // Color (location 1)
-        _gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float),
-            (void*)(3 * sizeof(float)));
-        _gl.EnableVertexAttribArray(1);
-
-        _domeEbo = _gl.GenBuffer();
-        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _domeEbo);
-        var idxArr = indices.ToArray();
-        fixed (uint* p = idxArr)
-            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(idxArr.Length * sizeof(uint)),
-                p, BufferUsageARB.StaticDraw);
-
-        _domeIndexCount = idxArr.Length;
-        _gl.BindVertexArray(0);
-    }
 
     private unsafe void BuildSea(float radius)
     {
@@ -1294,6 +1232,69 @@ public sealed class OpenGlRenderer : IRenderer
 
         _seaVertexCount = segments * 3;
         _gl.BindVertexArray(0);
+    }
+
+    public unsafe void UploadDome(Gb2Object dome, TgaImage? texture)
+    {
+        // Delete previous dome GPU resources
+        if (_domeVao != 0) { _gl.DeleteVertexArray(_domeVao); _domeVao = 0; }
+        if (_domeVbo != 0) { _gl.DeleteBuffer(_domeVbo); _domeVbo = 0; }
+        if (_domeEbo != 0) { _gl.DeleteBuffer(_domeEbo); _domeEbo = 0; }
+        if (_domeTex != 0) { _gl.DeleteTexture(_domeTex); _domeTex = 0; }
+        _domeHasTexture = false;
+        _domeIndexCount = 0;
+
+        if (dome.Vertices.Length == 0 || dome.Triangles.Length == 0)
+            return;
+        if (!dome.HasUVs || dome.UVs.Length != dome.Vertices.Length || texture == null)
+            return;
+
+        // Build interleaved vertex data: position(3) + uv(2)
+        const int stride = 5;
+        var verts = new float[dome.Vertices.Length * stride];
+        for (int i = 0; i < dome.Vertices.Length; i++)
+        {
+            int off = i * stride;
+            verts[off + 0] = dome.Vertices[i].X;
+            verts[off + 1] = dome.Vertices[i].Y;
+            verts[off + 2] = dome.Vertices[i].Z;
+            verts[off + 3] = dome.UVs[i][0];
+            verts[off + 4] = dome.UVs[i][1];
+        }
+
+        // Convert triangle indices from int to uint
+        var indices = new uint[dome.Triangles.Length];
+        for (int i = 0; i < dome.Triangles.Length; i++)
+            indices[i] = (uint)dome.Triangles[i];
+
+        _domeVao = _gl.GenVertexArray();
+        _gl.BindVertexArray(_domeVao);
+
+        _domeVbo = _gl.GenBuffer();
+        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _domeVbo);
+        fixed (float* p = verts)
+            _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(verts.Length * sizeof(float)),
+                p, BufferUsageARB.StaticDraw);
+
+        // Position (location 0)
+        _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride * sizeof(float), (void*)0);
+        _gl.EnableVertexAttribArray(0);
+        // UV (location 1)
+        _gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, stride * sizeof(float),
+            (void*)(3 * sizeof(float)));
+        _gl.EnableVertexAttribArray(1);
+
+        _domeEbo = _gl.GenBuffer();
+        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _domeEbo);
+        fixed (uint* p = indices)
+            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)),
+                p, BufferUsageARB.StaticDraw);
+
+        _domeIndexCount = indices.Length;
+        _gl.BindVertexArray(0);
+
+        _domeTex = UploadTerrainTex(texture);
+        _domeHasTexture = _domeTex != 0;
     }
 
     #endregion
@@ -1519,6 +1520,29 @@ public sealed class OpenGlRenderer : IRenderer
         out vec4 FragColor;
         void main() {
             FragColor = uColor;
+        }
+        """;
+
+    private const string DomeVertSrc = """
+        #version 300 es
+        layout(location = 0) in vec3 aPos;
+        layout(location = 1) in vec2 aUV;
+        uniform mat4 uMVP;
+        out vec2 vUV;
+        void main() {
+            gl_Position = uMVP * vec4(aPos, 1.0);
+            vUV = aUV;
+        }
+        """;
+
+    private const string DomeFragSrc = """
+        #version 300 es
+        precision mediump float;
+        uniform sampler2D uTex;
+        in vec2 vUV;
+        out vec4 FragColor;
+        void main() {
+            FragColor = texture(uTex, vUV);
         }
         """;
 

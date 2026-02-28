@@ -338,10 +338,14 @@ public partial class MainWindow : Window
         _vm.Document.WorldChanged += () =>
         {
             UploadTerrainToGpu();
-            if (_drawRealObjects && _modelManager.HasGameData)
+            if (_modelManager.HasGameData)
             {
-                var objects = _vm.Document.GetObjectInstances();
-                Viewport.QueueGlAction(renderer => _modelManager.PreloadModels(objects, renderer));
+                LoadDomeFromGameData();
+                if (_drawRealObjects)
+                {
+                    var objects = _vm.Document.GetObjectInstances();
+                    Viewport.QueueGlAction(renderer => _modelManager.PreloadModels(objects, renderer));
+                }
             }
             InvalidateViewport();
         };
@@ -1283,6 +1287,38 @@ public partial class MainWindow : Window
         }
     }
 
+    private void LoadDomeFromGameData()
+    {
+        if (!_modelManager.HasGameData) return;
+
+        try
+        {
+            byte[]? gb2Data = _modelManager.LoadGameFile("world.gb2");
+            if (gb2Data == null || gb2Data.Length == 0) return;
+
+            var skyObj = Gb2ModelLoader.Load(gb2Data, "sky");
+            if (skyObj == null) return;
+
+            TgaImage? domeTex = null;
+            string? domeTexName = _vm.Document.GetDomeTextureName();
+            if (!string.IsNullOrEmpty(domeTexName))
+            {
+                byte[]? texData = _modelManager.LoadGameFile(domeTexName + ".tga");
+                if (texData != null && texData.Length > 18)
+                {
+                    try { domeTex = TgaLoader.Load(texData); }
+                    catch { /* non-fatal */ }
+                }
+            }
+
+            Viewport.QueueGlAction(renderer => renderer.UploadDome(skyObj, domeTex));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[LoadDome] Error: {ex.Message}");
+        }
+    }
+
     #endregion
 
     #region File menu handlers
@@ -1710,7 +1746,11 @@ public partial class MainWindow : Window
                 InvalidateViewport();
             }
         };
-        win.Closed += (_, _) => UploadTerrainToGpu();
+        win.Closed += (_, _) =>
+        {
+            UploadTerrainToGpu();
+            LoadDomeFromGameData();
+        };
         win.Show(this);
     }
 
@@ -2041,6 +2081,10 @@ public partial class MainWindow : Window
         StatusText.Text = _modelManager.HasGameData
             ? $"Game path set — {dlg.GamePath}"
             : "No .gzp files found in bin/ folder";
+
+        // Reload dome with game textures if a world is loaded
+        if (_modelManager.HasGameData && _vm.Document.WorldRoot != null)
+            LoadDomeFromGameData();
     }
 
     private async Task ToggleDrawRealObjectsAsync()

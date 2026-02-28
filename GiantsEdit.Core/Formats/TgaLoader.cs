@@ -23,7 +23,8 @@ public static class TgaLoader
         if (channels is not (1 or 3 or 4))
             throw new InvalidDataException($"Unsupported TGA bpp: {bpp}");
 
-        int pixelDataStart = 18;
+        int idLength = data[0];
+        int pixelDataStart = 18 + idLength;
         int pixelCount = width * height;
         var pixels = new byte[pixelCount * channels];
 
