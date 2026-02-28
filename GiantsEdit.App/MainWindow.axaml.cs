@@ -1090,7 +1090,13 @@ public partial class MainWindow : Window
                 LoadTerrainTexture("WallBumpTexture", v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
 
             if (texInfo.GroundImage != null || texInfo.SlopeImage != null || texInfo.WallImage != null)
+            {
+                var (c0, c1, c2) = _vm.Document.GetTerrainMipFalloff();
+                texInfo.MipFalloff0 = c0;
+                texInfo.MipFalloff1 = c1;
+                texInfo.MipFalloff2 = c2;
                 terrainData.Textures = texInfo;
+            }
         }
 
         Viewport.QueueTerrainUpload(terrainData);

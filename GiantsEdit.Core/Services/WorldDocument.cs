@@ -354,8 +354,13 @@ public class WorldDocument
                 int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
                 modelId = aiMode switch
                 {
-                    1 => -1, 2 => -2, 3 => -3, 4 => -4,
-                    27 => -5, 22 => -6, 23 => -7,
+                    1 => -1,
+                    2 => -2,
+                    3 => -3,
+                    4 => -4,
+                    27 => -5,
+                    22 => -6,
+                    23 => -7,
                     _ => 679
                 };
             }
@@ -539,7 +544,29 @@ public class WorldDocument
     {
         if (_terrain == null)
             return null;
-        var data = TerrainMeshBuilder.Build(_terrain);
+
+        // Get sun direction for dot3 bump mapping
+        Vector3? sunDir = null;
+        var lights = GetDirectionalLights();
+        foreach (var light in lights)
+        {
+            if (light.IsSun)
+            {
+                sunDir = light.Direction;
+                break;
+            }
+        }
+        // Fall back to first light if no sun found
+        sunDir ??= lights.Count > 0 ? lights[0].Direction : null;
+
+        // Negate: stored direction points toward surface, but bump mapping needs toward-light
+        var toLight = sunDir.HasValue ? -sunDir.Value : (Vector3?)null;
+
+        // Read bump clamp value — ensures bump detail is visible even on shaded surfaces
+        float bumpClampValue = _worldRoot?.FindChildNode("BumpClampValue")
+            ?.FindChildLeaf("Value")?.SingleValue ?? 0f;
+
+        var data = TerrainMeshBuilder.Build(_terrain, toLight, bumpClampValue);
         return data;
     }
 
@@ -556,6 +583,20 @@ public class WorldDocument
         string? name = texNode.FindChildLeaf("Name")?.StringValue;
         float wrap = texNode.FindChildLeaf("Wrap")?.SingleValue ?? 100f;
         return (name, wrap);
+    }
+
+    /// <summary>
+    /// Gets the terrain mipmap brightness falloff coefficients from the world tree.
+    /// </summary>
+    public (float C0, float C1, float C2) GetTerrainMipFalloff()
+    {
+        var node = _worldRoot?.FindChildNode("LandTexFade");
+        if (node == null) return (1.0f, -0.1f, -0.05f);
+
+        float c0 = node.FindChildLeaf("Falloff0")?.SingleValue ?? 1.0f;
+        float c1 = node.FindChildLeaf("Falloff1")?.SingleValue ?? -0.1f;
+        float c2 = node.FindChildLeaf("Falloff2")?.SingleValue ?? -0.05f;
+        return (c0, c1, c2);
     }
 
     /// <summary>

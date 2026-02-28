@@ -28,6 +28,7 @@ public sealed class OpenGlRenderer : IRenderer
     private uint _terrainVao;
     private uint _terrainVboPos;
     private uint _terrainVboColor;
+    private uint _terrainVboBumpDiffuse;
     private uint _terrainEbo;
     private int _terrainIndexCount;
     private uint _terrainLineEbo;
@@ -35,11 +36,9 @@ public sealed class OpenGlRenderer : IRenderer
     private uint _terrainTexGround;
     private uint _terrainTexSlope;
     private uint _terrainTexWall;
-    private uint _terrainNormGround;
-    private uint _terrainNormSlope;
-    private uint _terrainNormWall;
+    private uint _terrainBumpTex;
     private bool _terrainHasTextures;
-    private bool _terrainHasNormals;
+    private bool _terrainHasBump;
 
     // Dome
     private uint _domeVao;
@@ -66,14 +65,9 @@ public sealed class OpenGlRenderer : IRenderer
     private int _terrainGroundWrapLoc;
     private int _terrainSlopeWrapLoc;
     private int _terrainWallWrapLoc;
-    private int _terrainGroundNormTexLoc;
-    private int _terrainSlopeNormTexLoc;
-    private int _terrainWallNormTexLoc;
-    private int _terrainGroundNormWrapLoc;
-    private int _terrainSlopeNormWrapLoc;
-    private int _terrainWallNormWrapLoc;
-    private int _terrainHasNormLoc;
-    private int _terrainSunDirLoc;
+    private int _terrainBumpTexLoc;
+    private int _terrainBumpWrapLoc;
+    private int _terrainHasBumpLoc;
     private int _solidMvpLoc;
     private int _solidColorLoc;
     private int _modelMvpLoc;
@@ -139,14 +133,9 @@ public sealed class OpenGlRenderer : IRenderer
         _terrainGroundWrapLoc = _gl.GetUniformLocation(_terrainShader, "uGroundWrap");
         _terrainSlopeWrapLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeWrap");
         _terrainWallWrapLoc = _gl.GetUniformLocation(_terrainShader, "uWallWrap");
-        _terrainGroundNormTexLoc = _gl.GetUniformLocation(_terrainShader, "uGroundNorm");
-        _terrainSlopeNormTexLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeNorm");
-        _terrainWallNormTexLoc = _gl.GetUniformLocation(_terrainShader, "uWallNorm");
-        _terrainGroundNormWrapLoc = _gl.GetUniformLocation(_terrainShader, "uGroundNormWrap");
-        _terrainSlopeNormWrapLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeNormWrap");
-        _terrainWallNormWrapLoc = _gl.GetUniformLocation(_terrainShader, "uWallNormWrap");
-        _terrainHasNormLoc = _gl.GetUniformLocation(_terrainShader, "uHasNorm");
-        _terrainSunDirLoc = _gl.GetUniformLocation(_terrainShader, "uSunDir");
+        _terrainBumpTexLoc = _gl.GetUniformLocation(_terrainShader, "uBumpTex");
+        _terrainBumpWrapLoc = _gl.GetUniformLocation(_terrainShader, "uBumpWrap");
+        _terrainHasBumpLoc = _gl.GetUniformLocation(_terrainShader, "uHasBump");
 
         _solidShader = CreateShader(SolidVertSrc, SolidFragSrc);
         _solidMvpLoc = _gl.GetUniformLocation(_solidShader, "uMVP");
@@ -290,38 +279,16 @@ public sealed class OpenGlRenderer : IRenderer
                 _gl.BindTexture(TextureTarget.Texture2D, _terrainTexWall);
                 _gl.Uniform1(_terrainWallTexLoc, 2);
 
-                // Bind normal map textures on units 3-5
-                _gl.Uniform1(_terrainHasNormLoc, _terrainHasNormals ? 1 : 0);
-                if (_terrainHasNormals)
+                // Bind bump texture on unit 3
+                _gl.Uniform1(_terrainHasBumpLoc, _terrainHasBump ? 1 : 0);
+                if (_terrainHasBump)
                 {
                     _gl.ActiveTexture(TextureUnit.Texture3);
-                    _gl.BindTexture(TextureTarget.Texture2D, _terrainNormGround);
-                    _gl.Uniform1(_terrainGroundNormTexLoc, 3);
-
-                    _gl.ActiveTexture(TextureUnit.Texture4);
-                    _gl.BindTexture(TextureTarget.Texture2D, _terrainNormSlope);
-                    _gl.Uniform1(_terrainSlopeNormTexLoc, 4);
-
-                    _gl.ActiveTexture(TextureUnit.Texture5);
-                    _gl.BindTexture(TextureTarget.Texture2D, _terrainNormWall);
-                    _gl.Uniform1(_terrainWallNormTexLoc, 5);
+                    _gl.BindTexture(TextureTarget.Texture2D, _terrainBumpTex);
+                    _gl.Uniform1(_terrainBumpTexLoc, 3);
                 }
 
                 _gl.ActiveTexture(TextureUnit.Texture0);
-
-                // Update sun direction for terrain bump mapping from actual map lights
-                if (_terrainHasNormals)
-                {
-                    foreach (var light in state.Lights)
-                    {
-                        if (light.IsSun)
-                        {
-                            var d = light.Direction;
-                            _gl.Uniform3(_terrainSunDirLoc, d.X, d.Y, d.Z);
-                            break;
-                        }
-                    }
-                }
             }
 
             _gl.BindVertexArray(_terrainVao);
@@ -608,9 +575,11 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.DeleteVertexArray(_terrainVao);
             _gl.DeleteBuffer(_terrainVboPos);
             _gl.DeleteBuffer(_terrainVboColor);
+            if (_terrainVboBumpDiffuse != 0) _gl.DeleteBuffer(_terrainVboBumpDiffuse);
             _gl.DeleteBuffer(_terrainEbo);
             if (_terrainLineEbo != 0) _gl.DeleteBuffer(_terrainLineEbo);
         }
+        _terrainVboBumpDiffuse = 0;
 
         _terrainVao = _gl.GenVertexArray();
         _gl.BindVertexArray(_terrainVao);
@@ -632,6 +601,18 @@ public sealed class OpenGlRenderer : IRenderer
                 p, BufferUsageARB.StaticDraw);
         _gl.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(uint), null);
         _gl.EnableVertexAttribArray(1);
+
+        // Bump diffuse buffer (location 2) — per-vertex sun direction in tangent space
+        if (terrain.BumpDiffuseColors != null)
+        {
+            _terrainVboBumpDiffuse = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _terrainVboBumpDiffuse);
+            fixed (uint* p = terrain.BumpDiffuseColors)
+                _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(terrain.BumpDiffuseColors.Length * sizeof(uint)),
+                    p, BufferUsageARB.StaticDraw);
+            _gl.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(uint), null);
+            _gl.EnableVertexAttribArray(2);
+        }
 
         // Index buffer
         _terrainEbo = _gl.GenBuffer();
@@ -674,13 +655,13 @@ public sealed class OpenGlRenderer : IRenderer
         // Upload terrain textures
         DeleteTerrainTextures();
         _terrainHasTextures = false;
-        _terrainHasNormals = false;
+        _terrainHasBump = false;
 
         if (terrain.Textures is { } tex)
         {
-            _terrainTexGround = UploadTerrainTex(tex.GroundImage);
-            _terrainTexSlope = UploadTerrainTex(tex.SlopeImage ?? tex.GroundImage);
-            _terrainTexWall = UploadTerrainTex(tex.WallImage ?? tex.SlopeImage ?? tex.GroundImage);
+            _terrainTexGround = UploadTerrainTexWithFalloff(tex.GroundImage, tex.MipFalloff0, tex.MipFalloff1, tex.MipFalloff2);
+            _terrainTexSlope = UploadTerrainTexWithFalloff(tex.SlopeImage ?? tex.GroundImage, tex.MipFalloff0, tex.MipFalloff1, tex.MipFalloff2);
+            _terrainTexWall = UploadTerrainTexWithFalloff(tex.WallImage ?? tex.SlopeImage ?? tex.GroundImage, tex.MipFalloff0, tex.MipFalloff1, tex.MipFalloff2);
 
             if (_terrainTexGround != 0)
             {
@@ -692,24 +673,15 @@ public sealed class OpenGlRenderer : IRenderer
                 _gl.Uniform1(_terrainWallWrapLoc, tex.WallWrap);
             }
 
-            // Upload normal map textures
-            _terrainNormGround = UploadTerrainTex(tex.GroundNormalImage);
-            _terrainNormSlope = UploadTerrainTex(tex.SlopeNormalImage ?? tex.GroundNormalImage);
-            _terrainNormWall = UploadTerrainTex(tex.WallNormalImage ?? tex.SlopeNormalImage ?? tex.GroundNormalImage);
-
-            if (_terrainNormGround != 0)
+            // Upload single bump texture (ground bump) for dot3 bump mapping
+            // Convert diffuse image to normal map
+            _terrainBumpTex = UploadBumpTex(tex.GroundNormalImage);
+            if (_terrainBumpTex != 0 && terrain.BumpDiffuseColors != null)
             {
-                _terrainHasNormals = true;
+                _terrainHasBump = true;
 
                 _gl.UseProgram(_terrainShader);
-                _gl.Uniform1(_terrainGroundNormWrapLoc, tex.GroundNormalWrap);
-                _gl.Uniform1(_terrainSlopeNormWrapLoc, tex.SlopeNormalWrap);
-                _gl.Uniform1(_terrainWallNormWrapLoc, tex.WallNormalWrap);
-
-                // Hardcoded sun direction (normalized)
-                float sx = 0.5f, sy = 0.3f, sz = 0.8f;
-                float len = MathF.Sqrt(sx * sx + sy * sy + sz * sz);
-                _gl.Uniform3(_terrainSunDirLoc, sx / len, sy / len, sz / len);
+                _gl.Uniform1(_terrainBumpWrapLoc, tex.GroundNormalWrap);
             }
         }
     }
@@ -749,14 +721,174 @@ public sealed class OpenGlRenderer : IRenderer
         return tex;
     }
 
+    private unsafe uint UploadBumpTex(TgaImage? img)
+    {
+        if (img == null) return 0;
+
+        byte[] normalMapData = ConvertDiffuseToNormalMap(img.Pixels, img.Width, img.Height, img.Channels);
+
+        uint tex = _gl.GenTexture();
+        _gl.BindTexture(TextureTarget.Texture2D, tex);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
+
+        fixed (byte* px = normalMapData)
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba,
+                (uint)img.Width, (uint)img.Height, 0,
+                PixelFormat.Rgba, PixelType.UnsignedByte, px);
+
+        _gl.GenerateMipmap(TextureTarget.Texture2D);
+        return tex;
+    }
+
+    /// <summary>
+    /// Converts a diffuse texture to a normal map
+    /// 1. RGB → height via screen-blend formula (colorspace)
+    /// 2. Height → normal map via finite differences with scale factor
+    /// </summary>
+    private static byte[] ConvertDiffuseToNormalMap(byte[] pixels, int width, int height, int channels, float scale = 1.0f / 64.0f)
+    {
+        // Step 1: Compute height from RGB using the colorspace (screen blend) formula
+        var heights = new byte[width * height];
+        for (int j = 0; j < height; j++)
+        {
+            for (int i = 0; i < width; i++)
+            {
+                int idx = (j * width + i) * channels;
+                float fr = pixels[idx] / 255.0f;
+                float fg = pixels[idx + 1] / 255.0f;
+                float fb = (channels >= 3) ? pixels[idx + 2] / 255.0f : 0f;
+
+                float fa = 1.0f - (1.0f - fr) * (1.0f - fg) * (1.0f - fb);
+                heights[j * width + i] = (byte)Math.Min(255, (int)(fa * 255));
+            }
+        }
+
+        // Step 2: Convert height map to normal map via finite differences
+        var result = new byte[width * height * 4];
+        for (int j = 0; j < height; j++)
+        {
+            for (int i = 0; i < width; i++)
+            {
+                float h0 = heights[j * width + i];
+                float h1 = heights[j * width + Math.Min(i + 1, width - 1)];
+                float h2 = heights[Math.Min(j + 1, height - 1) * width + i];
+
+                // Normal = cross(v2, v1) where v1 = (1, scale*(h1-h0), 0), v2 = (0, scale*(h2-h0), 1)
+                float nx = -scale * (h1 - h0);
+                float ny = 1.0f;
+                float nz = -scale * (h2 - h0);
+
+                float len = MathF.Sqrt(nx * nx + ny * ny + nz * nz);
+                if (len > 0)
+                {
+                    nx /= len;
+                    ny /= len;
+                    nz /= len;
+                }
+
+                int outIdx = (j * width + i) * 4;
+                result[outIdx] = (byte)Math.Min(255, (int)((nx + 1.0f) * 127.5f));     // R = X
+                result[outIdx + 1] = (byte)Math.Min(255, (int)((ny + 1.0f) * 127.5f)); // G = Y (up)
+                result[outIdx + 2] = (byte)Math.Min(255, (int)((nz + 1.0f) * 127.5f)); // B = Z
+                result[outIdx + 3] = heights[j * width + i];                            // A = height
+            }
+        }
+
+        return result;
+    }
+
     private void DeleteTerrainTextures()
     {
         if (_terrainTexGround != 0) { _gl.DeleteTexture(_terrainTexGround); _terrainTexGround = 0; }
         if (_terrainTexSlope != 0) { _gl.DeleteTexture(_terrainTexSlope); _terrainTexSlope = 0; }
         if (_terrainTexWall != 0) { _gl.DeleteTexture(_terrainTexWall); _terrainTexWall = 0; }
-        if (_terrainNormGround != 0) { _gl.DeleteTexture(_terrainNormGround); _terrainNormGround = 0; }
-        if (_terrainNormSlope != 0) { _gl.DeleteTexture(_terrainNormSlope); _terrainNormSlope = 0; }
-        if (_terrainNormWall != 0) { _gl.DeleteTexture(_terrainNormWall); _terrainNormWall = 0; }
+        if (_terrainBumpTex != 0) { _gl.DeleteTexture(_terrainBumpTex); _terrainBumpTex = 0; }
+    }
+
+    /// <summary>
+    /// Uploads a terrain texture with manually generated mipmaps that fade to black at higher levels.
+    /// </summary>
+    private unsafe uint UploadTerrainTexWithFalloff(TgaImage? img, float c0, float c1, float c2)
+    {
+        if (img == null) return 0;
+
+        uint tex = _gl.GenTexture();
+        _gl.BindTexture(TextureTarget.Texture2D, tex);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
+
+        int ch = img.Channels;
+        var format = ch switch { 1 => InternalFormat.R8, 3 => InternalFormat.Rgb, 4 => InternalFormat.Rgba, _ => InternalFormat.Rgb };
+        var pixelFmt = ch switch { 1 => PixelFormat.Red, 3 => PixelFormat.Rgb, 4 => PixelFormat.Rgba, _ => PixelFormat.Rgb };
+
+        // Level 0: full brightness
+        int mipW = img.Width, mipH = img.Height;
+        int maxLevels = 1 + (int)MathF.Floor(MathF.Log2(MathF.Max(mipW, mipH)));
+        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, maxLevels - 1);
+
+        fixed (byte* px = img.Pixels)
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, format, (uint)mipW, (uint)mipH, 0, pixelFmt, PixelType.UnsignedByte, px);
+
+        // Generate subsequent mip levels with brightness falloff
+        byte[] src = img.Pixels;
+        int srcW = mipW, srcH = mipH;
+        float mapIndex = 0f;
+
+        for (int level = 1; level < maxLevels; level++)
+        {
+            int newW = Math.Max(1, srcW / 2);
+            int newH = Math.Max(1, srcH / 2);
+
+            mapIndex += 1f;
+            float brightness = Math.Clamp(c0 + mapIndex * c1 + mapIndex * mapIndex * c2, 0f, 1f);
+
+            byte[] mip = DownscaleWithBrightness(src, srcW, srcH, ch, newW, newH, brightness);
+
+            fixed (byte* px = mip)
+                _gl.TexImage2D(TextureTarget.Texture2D, level, format, (uint)newW, (uint)newH, 0, pixelFmt, PixelType.UnsignedByte, px);
+
+            src = mip;
+            srcW = newW;
+            srcH = newH;
+        }
+
+        return tex;
+    }
+
+    /// <summary>
+    /// Downscales an image by 2x using box filter, then applies a brightness multiplier to RGB channels.
+    /// </summary>
+    private static byte[] DownscaleWithBrightness(byte[] src, int srcW, int srcH, int ch, int dstW, int dstH, float brightness)
+    {
+        var dst = new byte[dstW * dstH * ch];
+        for (int y = 0; y < dstH; y++)
+        {
+            for (int x = 0; x < dstW; x++)
+            {
+                int sx = x * 2, sy = y * 2;
+                int sx1 = Math.Min(sx + 1, srcW - 1);
+                int sy1 = Math.Min(sy + 1, srcH - 1);
+
+                for (int c = 0; c < ch; c++)
+                {
+                    bool isAlpha = (ch == 4 && c == 3);
+                    int sum = src[(sy * srcW + sx) * ch + c]
+                            + src[(sy * srcW + sx1) * ch + c]
+                            + src[(sy1 * srcW + sx) * ch + c]
+                            + src[(sy1 * srcW + sx1) * ch + c];
+                    float avg = sum / 4f;
+                    // Apply brightness to color channels only, not alpha
+                    if (!isAlpha) avg *= brightness;
+                    dst[(y * dstW + x) * ch + c] = (byte)Math.Clamp((int)avg, 0, 255);
+                }
+            }
+        }
+        return dst;
     }
 
     public unsafe int UploadModel(ModelRenderData model, int modelId = -1)
@@ -1251,12 +1383,15 @@ public sealed class OpenGlRenderer : IRenderer
         #version 300 es
         layout(location = 0) in vec3 aPos;
         layout(location = 1) in vec4 aColor;
+        layout(location = 2) in vec4 aBumpDiffuse;
         uniform mat4 uMVP;
         out vec4 vColor;
+        out vec4 vBumpDiffuse;
         out vec3 vWorldPos;
         void main() {
             gl_Position = uMVP * vec4(aPos, 1.0);
             vColor = aColor;
+            vBumpDiffuse = aBumpDiffuse;
             vWorldPos = aPos;
         }
         """;
@@ -1265,6 +1400,7 @@ public sealed class OpenGlRenderer : IRenderer
         #version 300 es
         precision highp float;
         in vec4 vColor;
+        in vec4 vBumpDiffuse;
         in vec3 vWorldPos;
         uniform int uHasTex;
         uniform sampler2D uGroundTex;
@@ -1273,14 +1409,9 @@ public sealed class OpenGlRenderer : IRenderer
         uniform float uGroundWrap;
         uniform float uSlopeWrap;
         uniform float uWallWrap;
-        uniform int uHasNorm;
-        uniform sampler2D uGroundNorm;
-        uniform sampler2D uSlopeNorm;
-        uniform sampler2D uWallNorm;
-        uniform float uGroundNormWrap;
-        uniform float uSlopeNormWrap;
-        uniform float uWallNormWrap;
-        uniform vec3 uSunDir;
+        uniform int uHasBump;
+        uniform sampler2D uBumpTex;
+        uniform float uBumpWrap;
         out vec4 FragColor;
 
         // Anti-tiling: hash function for random offsets per tile
@@ -1328,40 +1459,7 @@ public sealed class OpenGlRenderer : IRenderer
         }
 
         // Expand [0,1] to [-1,1]
-        vec3 bx2(vec3 x) { return 2.0 * x - 1.0; }
-
-        // Calculate tangent-normal-binormal frame from world position derivatives
-        void calcTNB(vec3 worldPos, vec3 N, vec2 uv, out vec3 T, out vec3 B) {
-            vec3 dp1 = dFdx(worldPos);
-            vec3 dp2 = dFdy(worldPos);
-            vec2 duv1 = dFdx(uv);
-            vec2 duv2 = dFdy(uv);
-
-            vec3 t = normalize(duv2.y * dp1 - duv1.y * dp2);
-            vec3 b = normalize(duv2.x * dp1 - duv1.x * dp2);
-            vec3 n = normalize(N);
-
-            // Re-orthogonalize tangent and binormal to the normal
-            vec3 x = cross(n, t);
-            t = normalize(cross(x, n));
-
-            x = cross(b, n);
-            b = normalize(cross(n, x));
-
-            T = t;
-            B = b;
-        }
-
-        // Sample normal map and compute lighting intensity
-        float calcNormalMapLighting(sampler2D normTex, vec3 worldPos, vec3 faceN, vec2 uv) {
-            vec3 T, B;
-            calcTNB(worldPos, faceN, uv, T, B);
-
-            vec3 bumpSample = bx2(textureNoTile(normTex, uv).rgb);
-            vec3 bumpNormal = normalize(bumpSample.x * T + bumpSample.y * B + bumpSample.z * normalize(faceN));
-
-            return max(0.01, clamp(dot(bumpNormal, uSunDir), 0.0, 1.0));
-        }
+        vec4 bx2(vec4 x) { return 2.0 * x - 1.0; }
 
         void main() {
             if (uHasTex == 1) {
@@ -1386,23 +1484,18 @@ public sealed class OpenGlRenderer : IRenderer
 
                 vec3 texCol = groundCol * groundFactor + slopeCol * slopeFactor + wallCol * wallFactor;
 
-                if (uHasNorm == 1) {
-                    // Normal map lighting per terrain type, blended by steepness
-                    vec2 groundNormUV = vWorldPos.xy / uGroundNormWrap;
-                    vec2 slopeNormUV = vWorldPos.xy / uSlopeNormWrap;
-                    vec2 wallNormUV = abs(faceN.x) > abs(faceN.y)
-                        ? vWorldPos.yz / uWallNormWrap
-                        : vWorldPos.xz / uWallNormWrap;
+                if (uHasBump == 1) {
+                    // Dot3 bump mapping: bump texture dotted with per-vertex light direction
+                    vec2 bumpUV = vWorldPos.xy / uBumpWrap;
+                    vec4 bumpTexColor = bx2(textureNoTile(uBumpTex, bumpUV));
+                    vec4 bumpDiffuse = bx2(vBumpDiffuse);
+                    float dot3Light = clamp(dot(bumpTexColor.rgb, bumpDiffuse.rgb), 0.0, 1.0);
 
-                    float gLight = calcNormalMapLighting(uGroundNorm, vWorldPos, faceN, groundNormUV);
-                    float sLight = calcNormalMapLighting(uSlopeNorm, vWorldPos, faceN, slopeNormUV);
-                    float wLight = calcNormalMapLighting(uWallNorm, vWorldPos, faceN, wallNormUV);
-                    float bumpLight = gLight * groundFactor + sLight * slopeFactor + wLight * wallFactor;
-
-                    // Game formula: 2.0 * (bumpLight * diffuseTexture + bakedLightmap)
-                    FragColor = vec4(2.0 * (bumpLight * texCol + vColor.rgb), 1.0);
+                    // Game formula: 2.0 * (dot3Light * diffuseTexture + bakedLightmap * 0.5)
+                    FragColor = vec4(2.0 * (dot3Light * texCol + vColor.rgb * 0.5), 1.0);
                 } else {
-                    FragColor = vec4(vColor.rgb * texCol * 2.0, 1.0);
+                    // Non-bump: game uses saturate(texture + lightmap)
+                    FragColor = vec4(clamp(texCol + vColor.rgb, 0.0, 1.0), 1.0);
                 }
             } else {
                 FragColor = vColor;

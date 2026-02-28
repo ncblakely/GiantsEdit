@@ -129,8 +129,10 @@ public class TerrainRenderData
 {
     /// <summary>Vertex positions: 3 floats per vertex (x, y, z).</summary>
     public required float[] Positions { get; init; }
-    /// <summary>Vertex colors: 4 bytes per vertex (R, G, B, A) packed as uint.</summary>
+    /// <summary>Vertex colors: 4 bytes per vertex (R, G, B, A) packed as uint — baked lightmap.</summary>
     public required uint[] Colors { get; init; }
+    /// <summary>Per-vertex dot3 bump diffuse: sun direction in tangent space, packed as RGBA uint.</summary>
+    public uint[]? BumpDiffuseColors { get; set; }
     /// <summary>Triangle indices into the vertex array.</summary>
     public required uint[] Indices { get; init; }
     public int VertexCount { get; init; }
@@ -158,6 +160,11 @@ public class TerrainTextureInfo
     public float SlopeNormalWrap { get; set; } = 100f;
     public Formats.TgaImage? WallNormalImage { get; set; }
     public float WallNormalWrap { get; set; } = 100f;
+
+    /// <summary>Mipmap brightness falloff coefficients: brightness = c0 + level*c1 + level²*c2.</summary>
+    public float MipFalloff0 { get; set; } = 1.0f;
+    public float MipFalloff1 { get; set; } = -0.1f;
+    public float MipFalloff2 { get; set; } = -0.05f;
 }
 
 /// <summary>
