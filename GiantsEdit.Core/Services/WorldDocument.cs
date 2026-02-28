@@ -59,7 +59,7 @@ public class WorldDocument
     // Map metadata (matches Delphi 'map' record)
     public string MapBinName { get; set; } = string.Empty;
     public string UserMessage { get; set; } = string.Empty;
-    public int MapType { get; set; } = -1;
+    public int MapType { get; set; }
 
     public event Action? WorldChanged;
     public event Action? SelectionChanged;
@@ -98,9 +98,6 @@ public class WorldDocument
             if (File.Exists(gtiPath))
                 LoadTerrain(gtiPath);
         }
-
-        // Extract metadata from tree
-        ExtractMapMetadata();
 
         WorldChanged?.Invoke();
     }
@@ -167,7 +164,12 @@ public class WorldDocument
         }
 
         if (gmmEntry != null)
+        {
             GckGmmEntryName = gmmEntry;
+            byte[]? gmmData = GckArchive.ExtractFile(gckPath, gmmEntry);
+            if (gmmData != null)
+                ParseGmmText(System.Text.Encoding.ASCII.GetString(gmmData));
+        }
 
         // Preserve any extra files (e.g. .abx) for round-trip saving
         _otherGckFiles.Clear();
@@ -184,7 +186,6 @@ public class WorldDocument
         MapBinName = binEntry != null ? Path.GetFileName(binEntry) : string.Empty;
         TerrainPath = null;
         IsModified = false;
-        ExtractMapMetadata();
         WorldChanged?.Invoke();
     }
 
@@ -220,6 +221,10 @@ public class WorldDocument
     {
         var files = new List<(string EntryName, byte[] Data)>();
 
+        // Sync the BIN entry name with the user-facing map name
+        if (!string.IsNullOrEmpty(MapBinName))
+            GckBinEntryName = MapBinName;
+
         // Add GTI terrain data
         if (_terrain != null)
         {
@@ -253,9 +258,9 @@ public class WorldDocument
     {
         var sb = new System.Text.StringBuilder();
 
-        if (!string.IsNullOrEmpty(GckBinEntryName))
+        if (!string.IsNullOrEmpty(MapBinName))
         {
-            sb.AppendLine($"Modinfo_BinName={GckBinEntryName}");
+            sb.AppendLine($"Modinfo_BinName={MapBinName}");
             sb.AppendLine($"Modinfo_BinType={MapType}");
         }
 
@@ -738,18 +743,31 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Extracts map metadata (user message, map type) from the world tree.
-    /// The Delphi code reads these from special leaf nodes during BIN loading.
+    /// Parses GMM metadata text (key=value lines) to extract map type and user message.
     /// </summary>
-    private void ExtractMapMetadata()
+    private void ParseGmmText(string text)
     {
-        if (_worldRoot == null) return;
-
-        var gmmData = _worldRoot.FindChildNode("GmmData");
-        if (gmmData != null)
+        foreach (var line in text.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
-            UserMessage = gmmData.FindChildLeaf("UserMessage")?.StringValue ?? string.Empty;
-            MapType = gmmData.FindChildLeaf("MapType")?.Int32Value ?? -1;
+            var trimmed = line.Trim();
+            int eq = trimmed.IndexOf('=');
+            if (eq < 0) continue;
+
+            string key = trimmed[..eq];
+            string value = trimmed[(eq + 1)..];
+
+            switch (key)
+            {
+                case "Modinfo_BinType":
+                    if (int.TryParse(value, out int mt)) MapType = mt;
+                    break;
+                case "Modinfo_UserMessage":
+                    UserMessage = value;
+                    break;
+                case "Modinfo_BinName":
+                    MapBinName = value;
+                    break;
+            }
         }
     }
 
