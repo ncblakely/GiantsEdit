@@ -162,7 +162,11 @@ public class EditorCamera
     /// </summary>
     public void LookAt(Vector3 target, float distance = 500f)
     {
-        _view = Vector3.Normalize(target - _eye);
+        var toTarget = target - _eye;
+        if (toTarget.LengthSquared() < 1e-6f)
+            return;
+
+        _view = Vector3.Normalize(toTarget);
 
         // Recompute right/up from view direction
         _right = Vector3.Normalize(Vector3.Cross(_view, Vector3.UnitZ));

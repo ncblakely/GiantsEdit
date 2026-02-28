@@ -27,6 +27,9 @@ public class BinWorldReader
     /// <summary>Optional trace log — populated when non-null.</summary>
     public List<string>? TraceLog { get; set; }
 
+    /// <summary>Non-fatal warnings encountered during parsing (e.g. corrupt section data).</summary>
+    public List<string> Warnings { get; } = [];
+
     /// <summary>
     /// Loads a world .bin file into a tree structure.
     /// </summary>
@@ -91,7 +94,7 @@ public class BinWorldReader
                 tex.AddString("Name", _r.ReadBLString());
             }
         }
-        catch (Exception ex) { Debug.WriteLine($"[BinWorldReader] Error in textures section: {ex.Message}"); }
+        catch (Exception ex) { Warnings.Add($"Error in textures section: {ex.Message}"); Debug.WriteLine($"[BinWorldReader] Error in textures section: {ex.Message}"); }
 
         // [sfx] section (sound effects)
         try
@@ -107,7 +110,7 @@ public class BinWorldReader
             _entry.AddInt32("EntrySize", _r.ReadInt32());
             _entry.AddInt32("DataSize", _r.ReadInt32());
         }
-        catch (Exception ex) { Debug.WriteLine($"[BinWorldReader] Error in sfx section: {ex.Message}"); }
+        catch (Exception ex) { Warnings.Add($"Error in sfx section: {ex.Message}"); Debug.WriteLine($"[BinWorldReader] Error in sfx section: {ex.Message}"); }
 
         // [objdefs] section (object definitions / GBS models)
         try
@@ -118,7 +121,7 @@ public class BinWorldReader
             for (int i = 0; i < count2; i++)
                 _entry.AddByte("data", _r.ReadByte());
         }
-        catch (Exception ex) { Debug.WriteLine($"[BinWorldReader] Error in objdefs section: {ex.Message}"); }
+        catch (Exception ex) { Warnings.Add($"Error in objdefs section: {ex.Message}"); Debug.WriteLine($"[BinWorldReader] Error in objdefs section: {ex.Message}"); }
 
         // [fx] section
         try
@@ -127,7 +130,7 @@ public class BinWorldReader
             _entry = _base.AddNode(BinFormatConstants.SectionFx);
             _entry.AddInt32("EnvironmentType", _r.ReadInt32());
         }
-        catch (Exception ex) { Debug.WriteLine($"[BinWorldReader] Error in fx section: {ex.Message}"); }
+        catch (Exception ex) { Warnings.Add($"Error in fx section: {ex.Message}"); Debug.WriteLine($"[BinWorldReader] Error in fx section: {ex.Message}"); }
 
         // [scenerios] section
         try
@@ -142,7 +145,7 @@ public class BinWorldReader
                 sc.AddString("Name", _r.ReadString32());
             }
         }
-        catch (Exception ex) { Debug.WriteLine($"[BinWorldReader] Error in scenerios section: {ex.Message}"); }
+        catch (Exception ex) { Warnings.Add($"Error in scenerios section: {ex.Message}"); Debug.WriteLine($"[BinWorldReader] Error in scenerios section: {ex.Message}"); }
 
         // [includefiles] section
         try
@@ -153,7 +156,7 @@ public class BinWorldReader
             for (int i = 0; i < count4; i++)
                 _entry.AddString("Name", _r.ReadString32());
         }
-        catch (Exception ex) { Debug.WriteLine($"[BinWorldReader] Error in includefiles section: {ex.Message}"); }
+        catch (Exception ex) { Warnings.Add($"Error in includefiles section: {ex.Message}"); Debug.WriteLine($"[BinWorldReader] Error in includefiles section: {ex.Message}"); }
 
         return _base;
     }

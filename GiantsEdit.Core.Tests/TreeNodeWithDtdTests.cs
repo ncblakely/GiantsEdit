@@ -52,7 +52,7 @@ public class TreeNodeWithDtdTests
     }
 
     [TestMethod]
-    public void NodeCount_ByName_ReturnsCorrectCount()
+    public void GetNodeCountByName_ReturnsCorrectCount()
     {
         var objectsRule = new DtdNode { Name = "Objects" };
         var objectRule = new DtdNode { Name = "Object" };
@@ -63,7 +63,7 @@ public class TreeNodeWithDtdTests
         node.AddNode("Object");
         node.AddNode("Object");
 
-        Assert.AreEqual(3, node.NodeCount_ByName("Object"));
+        Assert.AreEqual(3, node.GetNodeCountByName("Object"));
     }
 
     [TestMethod]

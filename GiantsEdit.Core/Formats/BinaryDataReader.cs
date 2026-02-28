@@ -26,13 +26,22 @@ public class BinaryDataReader
     public int Length => _data.Length;
     public bool HasMore => _pos < _data.Length;
 
+    private void EnsureAvailable(int count)
+    {
+        if (_pos + count > _data.Length)
+            throw new InvalidDataException(
+                $"Attempted to read {count} byte(s) at position {_pos}, but only {_data.Length - _pos} byte(s) remain (total length: {_data.Length}).");
+    }
+
     public byte ReadByte()
     {
+        EnsureAvailable(1);
         return _data[_pos++];
     }
 
     public int ReadInt32()
     {
+        EnsureAvailable(4);
         int value = BitConverter.ToInt32(_data, _pos);
         _pos += 4;
         return value;
@@ -40,6 +49,7 @@ public class BinaryDataReader
 
     public float ReadSingle()
     {
+        EnsureAvailable(4);
         float value = BitConverter.ToSingle(_data, _pos);
         _pos += 4;
         return value;
@@ -47,8 +57,17 @@ public class BinaryDataReader
 
     public ushort ReadWord()
     {
+        EnsureAvailable(2);
         ushort value = BitConverter.ToUInt16(_data, _pos);
         _pos += 2;
+        return value;
+    }
+
+    public uint ReadUInt32()
+    {
+        EnsureAvailable(4);
+        uint value = BitConverter.ToUInt32(_data, _pos);
+        _pos += 4;
         return value;
     }
 
@@ -57,6 +76,7 @@ public class BinaryDataReader
     /// </summary>
     public string ReadFixedString(int length)
     {
+        EnsureAvailable(length);
         int end = _pos + length;
         int nullIdx = Array.IndexOf(_data, (byte)0, _pos, length);
         int strLen = nullIdx >= 0 ? nullIdx - _pos : length;
@@ -89,6 +109,7 @@ public class BinaryDataReader
     /// </summary>
     public string ReadBLString()
     {
+        EnsureAvailable(1);
         _pos++; // skip length byte
         return ReadPChar();
     }
@@ -98,14 +119,16 @@ public class BinaryDataReader
     /// </summary>
     public (byte R, byte G, byte B) ReadRgb()
     {
-        byte r = ReadByte();
-        byte g = ReadByte();
-        byte b = ReadByte();
+        EnsureAvailable(3);
+        byte r = _data[_pos++];
+        byte g = _data[_pos++];
+        byte b = _data[_pos++];
         return (r, g, b);
     }
 
     public byte[] ReadBytes(int count)
     {
+        EnsureAvailable(count);
         var result = new byte[count];
         Array.Copy(_data, _pos, result, 0, count);
         _pos += count;
@@ -114,6 +137,7 @@ public class BinaryDataReader
 
     public void Skip(int count)
     {
+        EnsureAvailable(count);
         _pos += count;
     }
 }

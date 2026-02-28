@@ -106,111 +106,113 @@ public static class GbsModelLoader
     public static GbsModel Load(byte[] data)
     {
         var model = new GbsModel();
-        int pos = 0;
+        var r = new BinaryDataReader(data);
 
-        model.Magic = ReadInt32(data, ref pos);
-        model.OptionsFlags = ReadInt32(data, ref pos);
-        int basePointCount = ReadInt32(data, ref pos);
+        model.Magic = r.ReadInt32();
+        model.OptionsFlags = r.ReadInt32();
+        int basePointCount = r.ReadInt32();
 
         // Read base points (12 bytes each: 3 floats)
         model.BasePoints = new Vector3[basePointCount];
         for (int i = 0; i < basePointCount; i++)
         {
-            float x = ReadSingle(data, ref pos);
-            float y = ReadSingle(data, ref pos);
-            float z = ReadSingle(data, ref pos);
+            float x = r.ReadSingle();
+            float y = r.ReadSingle();
+            float z = r.ReadSingle();
             model.BasePoints[i] = new Vector3(x, y, z);
         }
 
         // Normal definitions (only present when GBXFlagNormals is set in the file)
         if (model.HasNormalData)
         {
-            model.TexPos = ReadInt32(data, ref pos);
-            model.VertexRefCount = ReadInt32(data, ref pos);
+            model.TexPos = r.ReadInt32();
+            model.VertexRefCount = r.ReadInt32();
             model.VertexRefs = new ushort[model.VertexRefCount];
             for (int i = 0; i < model.VertexRefCount; i++)
-                model.VertexRefs[i] = ReadUInt16(data, ref pos);
+                model.VertexRefs[i] = r.ReadWord();
         }
 
         // Points (texture/color vertices)
-        model.PointCount = ReadInt32(data, ref pos);
+        model.PointCount = r.ReadInt32();
         int pc = model.PointCount;
 
         model.PointIndices1 = new ushort[pc];
         for (int i = 0; i < pc; i++)
-            model.PointIndices1[i] = ReadUInt16(data, ref pos);
+            model.PointIndices1[i] = r.ReadWord();
 
         // Normal indices (only present in file when GBXFlagNormals is set)
         if (model.HasNormalData)
         {
             model.PointIndices2 = new ushort[pc];
             for (int i = 0; i < pc; i++)
-                model.PointIndices2[i] = ReadUInt16(data, ref pos);
+                model.PointIndices2[i] = r.ReadWord();
         }
 
         // UVs (8 bytes per point)
         model.PointUVs = new float[pc][];
         for (int i = 0; i < pc; i++)
         {
-            float u = ReadSingle(data, ref pos);
-            float v = ReadSingle(data, ref pos);
+            float u = r.ReadSingle();
+            float v = r.ReadSingle();
             model.PointUVs[i] = [u, v];
         }
 
         // Vertex colors (3 bytes per point: RGB)
-        model.PointColors = new byte[pc * 3];
         if (model.HasRGBs)
         {
-            Buffer.BlockCopy(data, pos, model.PointColors, 0, pc * 3);
-            pos += pc * 3;
+            model.PointColors = r.ReadBytes(pc * 3);
+        }
+        else
+        {
+            model.PointColors = new byte[pc * 3];
         }
 
         // Ref1 array (20 bytes per entry: 5 ints)
-        int ref1Count = ReadInt32(data, ref pos);
+        int ref1Count = r.ReadInt32();
         model.Ref1 = new int[ref1Count][];
         for (int i = 0; i < ref1Count; i++)
         {
             model.Ref1[i] = new int[5];
             for (int j = 0; j < 5; j++)
-                model.Ref1[i][j] = ReadInt32(data, ref pos);
+                model.Ref1[i][j] = r.ReadInt32();
         }
 
         // Parts
-        int partCount = ReadInt32(data, ref pos);
+        int partCount = r.ReadInt32();
         for (int p = 0; p < partCount; p++)
         {
             var mat = new GbsMaterial();
 
             // 46 bytes: objname(32) + objindex(4) + refs(4) + wordz(4) + refs_(2)
-            mat.Name = ReadFixedString(data, ref pos, 32);
-            mat.ObjectIndex = ReadInt32(data, ref pos);
-            mat.FaceCount = ReadInt32(data, ref pos);
-            mat.WordZ = ReadInt32(data, ref pos);
-            mat.Refs_ = ReadUInt16(data, ref pos);
+            mat.Name = r.ReadFixedString(32);
+            mat.ObjectIndex = r.ReadInt32();
+            mat.FaceCount = r.ReadInt32();
+            mat.WordZ = r.ReadInt32();
+            mat.Refs_ = r.ReadWord();
 
             // Triangles: FaceCount * 6 bytes (3 ushorts per face)
             for (int f = 0; f < mat.FaceCount; f++)
             {
-                ushort v0 = ReadUInt16(data, ref pos);
-                ushort v1 = ReadUInt16(data, ref pos);
-                ushort v2 = ReadUInt16(data, ref pos);
+                ushort v0 = r.ReadWord();
+                ushort v1 = r.ReadWord();
+                ushort v2 = r.ReadWord();
                 mat.Triangles.Add([v0, v1, v2]);
             }
 
             // 104 bytes: refstart(4) + refnum(4) + texture(32) + bumptexture(32) +
             //   falloff(4) + blend(4) + flags(4) + emissive(4) + ambient(4) + diffuse(4) + specular(4) + power(4)
-            mat.RefStart = ReadInt32(data, ref pos);
-            mat.RefNum = ReadInt32(data, ref pos);
-            mat.TextureName = ReadFixedString(data, ref pos, 32);
-            mat.BumpTextureName = ReadFixedString(data, ref pos, 32);
-            mat.Falloff = ReadSingle(data, ref pos);
-            mat.Blend = ReadSingle(data, ref pos);
-            mat.Flags = ReadInt32(data, ref pos);
-            mat.Emissive = ReadUInt32(data, ref pos);
-            mat.Ambient = ReadUInt32(data, ref pos);
-            mat.Diffuse = ReadUInt32(data, ref pos);
-            mat.Specular = ReadUInt32(data, ref pos);
-            mat.Power = ReadSingle(data, ref pos);
+            mat.RefStart = r.ReadInt32();
+            mat.RefNum = r.ReadInt32();
+            mat.TextureName = r.ReadFixedString(32);
+            mat.BumpTextureName = r.ReadFixedString(32);
+            mat.Falloff = r.ReadSingle();
+            mat.Blend = r.ReadSingle();
+            mat.Flags = r.ReadInt32();
+            mat.Emissive = r.ReadUInt32();
+            mat.Ambient = r.ReadUInt32();
+            mat.Diffuse = r.ReadUInt32();
+            mat.Specular = r.ReadUInt32();
+            mat.Power = r.ReadSingle();
 
             model.Parts.Add(mat);
         }
@@ -238,48 +240,6 @@ public static class GbsModelLoader
             model.BoundsMax = Vector3.Max(model.BoundsMax, pt);
         }
     }
-
-    #region Low-level read helpers
-
-    private static int ReadInt32(byte[] data, ref int pos)
-    {
-        int v = BitConverter.ToInt32(data, pos);
-        pos += 4;
-        return v;
-    }
-
-    private static uint ReadUInt32(byte[] data, ref int pos)
-    {
-        uint v = BitConverter.ToUInt32(data, pos);
-        pos += 4;
-        return v;
-    }
-
-    private static ushort ReadUInt16(byte[] data, ref int pos)
-    {
-        ushort v = BitConverter.ToUInt16(data, pos);
-        pos += 2;
-        return v;
-    }
-
-    private static float ReadSingle(byte[] data, ref int pos)
-    {
-        float v = BitConverter.ToSingle(data, pos);
-        pos += 4;
-        return v;
-    }
-
-    private static string ReadFixedString(byte[] data, ref int pos, int length)
-    {
-        int end = pos + length;
-        int nullPos = Array.IndexOf(data, (byte)0, pos, length);
-        int strLen = nullPos >= 0 ? nullPos - pos : length;
-        string s = System.Text.Encoding.ASCII.GetString(data, pos, strLen);
-        pos = end;
-        return s;
-    }
-
-    #endregion
 }
 
 /// <summary>

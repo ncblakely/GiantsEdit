@@ -16,7 +16,7 @@ public class TreeNode
 {
     public string Name { get; set; }
     public string Help { get; set; } = string.Empty;
-    public int State { get; set; }
+    public TreeState State { get; set; }
     public TreeNode? Parent { get; internal set; }
     public DtdNode? Rule { get; }
 
@@ -73,7 +73,7 @@ public class TreeNode
     /// <summary>
     /// Count of child nodes in the named DTD slot.
     /// </summary>
-    public int NodeCount_ByName(string name)
+    public int GetNodeCountByName(string name)
     {
         if (Rule == null)
             throw new InvalidOperationException("Cannot query by name without a DTD rule.");
@@ -84,7 +84,7 @@ public class TreeNode
     /// <summary>
     /// Count of child leaves in the named DTD slot.
     /// </summary>
-    public int LeafCount_ByName(string name)
+    public int GetLeafCountByName(string name)
     {
         if (Rule == null)
             throw new InvalidOperationException("Cannot query by name without a DTD rule.");

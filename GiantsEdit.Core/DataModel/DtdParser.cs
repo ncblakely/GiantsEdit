@@ -17,11 +17,22 @@ public static class DtdParser
 {
     /// <summary>
     /// Loads a DTD schema from a file path.
+    /// Returns an empty list if the file cannot be read.
     /// </summary>
     public static List<DtdNode> LoadFromFile(string path)
     {
-        var lines = File.ReadAllLines(path);
-        return Parse(lines);
+        if (!File.Exists(path))
+            return [];
+
+        try
+        {
+            var lines = File.ReadAllLines(path);
+            return Parse(lines);
+        }
+        catch (IOException)
+        {
+            return [];
+        }
     }
 
     /// <summary>

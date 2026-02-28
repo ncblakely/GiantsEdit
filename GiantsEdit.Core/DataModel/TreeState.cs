@@ -1,13 +1,14 @@
 namespace GiantsEdit.Core.DataModel;
 
 /// <summary>
-/// Constants for tree node/leaf state flags.
-/// Ported from Delphi's ST_* constants.
+/// Bit flags for tree node/leaf state.
 /// </summary>
-public static class TreeState
+[Flags]
+public enum TreeState
 {
-    public const int Visible = 1;
-    public const int SubNodesSortNumeric = 2;
-    public const int SubNodesSortAlpha = 4;
-    public const int AllowEditName = 8;
+    None = 0,
+    Visible = 1,
+    SubNodesSortNumeric = 2,
+    SubNodesSortAlpha = 4,
+    AllowEditName = 8,
 }

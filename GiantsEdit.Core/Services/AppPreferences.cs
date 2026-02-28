@@ -47,8 +47,9 @@ public class AppPreferences
             var json = File.ReadAllText(PrefsFile);
             return JsonSerializer.Deserialize<AppPreferences>(json) ?? new AppPreferences();
         }
-        catch
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
+            System.Diagnostics.Debug.WriteLine($"[AppPreferences] Failed to load preferences: {ex.Message}");
             return new AppPreferences();
         }
     }

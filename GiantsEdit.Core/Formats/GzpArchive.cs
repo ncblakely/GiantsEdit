@@ -28,14 +28,14 @@ public static class GzpArchive
         int indexOffset = br.ReadInt32();
         fs.Seek(indexOffset, SeekOrigin.Begin);
 
-        int _indexUnknown = br.ReadInt32();
+        _ = br.ReadInt32(); // index header field (unused)
         int entryCount = br.ReadInt32();
 
         for (int i = 0; i < entryCount; i++)
         {
             int size = br.ReadInt32();
             int sizeUncompressed = br.ReadInt32();
-            int _u1 = br.ReadInt32();
+            _ = br.ReadInt32(); // unknown field
             int start = br.ReadInt32();
             byte compr = br.ReadByte();
             byte nameLength = br.ReadByte();

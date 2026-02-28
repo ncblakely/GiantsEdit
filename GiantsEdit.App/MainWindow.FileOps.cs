@@ -91,8 +91,16 @@ public partial class MainWindow
             var path = file.TryGetLocalPath();
             if (path != null)
             {
-                _vm.Document.SaveWorld(path);
-                StatusText.Text = $"Saved: {System.IO.Path.GetFileName(path)}";
+                try
+                {
+                    _vm.Document.SaveWorld(path);
+                    StatusText.Text = $"Saved: {System.IO.Path.GetFileName(path)}";
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SaveWorld] Error: {ex}");
+                    StatusText.Text = $"Save failed: {ex.Message}";
+                }
             }
         }
     }
@@ -146,8 +154,16 @@ public partial class MainWindow
             var path = files[0].TryGetLocalPath();
             if (path != null)
             {
-                _vm.Document.LoadTerrain(path);
-                StatusText.Text = $"Imported terrain: {System.IO.Path.GetFileName(path)}";
+                try
+                {
+                    _vm.Document.LoadTerrain(path);
+                    StatusText.Text = $"Imported terrain: {System.IO.Path.GetFileName(path)}";
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ImportTerrain] Error: {ex}");
+                    StatusText.Text = $"Import failed: {ex.Message}";
+                }
             }
         }
     }
@@ -166,8 +182,16 @@ public partial class MainWindow
             var path = files[0].TryGetLocalPath();
             if (path != null)
             {
-                CloseOwnedWindows();
-                _vm.Document.LoadWorld(path);
+                try
+                {
+                    CloseOwnedWindows();
+                    _vm.Document.LoadWorld(path);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ImportObjects] Error: {ex}");
+                    StatusText.Text = $"Import failed: {ex.Message}";
+                }
             }
         }
     }
@@ -186,8 +210,16 @@ public partial class MainWindow
             var path = file.TryGetLocalPath();
             if (path != null)
             {
-                _vm.Document.SaveTerrain(path);
-                StatusText.Text = $"Terrain exported: {System.IO.Path.GetFileName(path)}";
+                try
+                {
+                    _vm.Document.SaveTerrain(path);
+                    StatusText.Text = $"Terrain exported: {System.IO.Path.GetFileName(path)}";
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ExportTerrain] Error: {ex}");
+                    StatusText.Text = $"Export failed: {ex.Message}";
+                }
             }
         }
     }
@@ -201,27 +233,35 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("BIN Files") { Patterns = ["*.bin"] }]
         });
 
-        if (file != null)
+         if (file != null)
         {
             var path = file.TryGetLocalPath();
             if (path != null)
             {
-                _vm.Document.SaveWorld(path);
+                try
+                {
+                    _vm.Document.SaveWorld(path);
 
-                // Show export report in console (matches Delphi SaveBinW → ScanDone behavior)
-                var console = new ConsoleWindow();
-                var report = _vm.Document.GetExportReport();
-                if (!string.IsNullOrEmpty(report))
-                {
-                    console.AppendLine(report);
-                    console.AppendLine("These items were not included in the saved map file; all other items should be alright.");
+                    // Show export report in console (matches Delphi SaveBinW → ScanDone behavior)
+                    var console = new ConsoleWindow();
+                    var report = _vm.Document.GetExportReport();
+                    if (!string.IsNullOrEmpty(report))
+                    {
+                        console.AppendLine(report);
+                        console.AppendLine("These items were not included in the saved map file; all other items should be alright.");
+                    }
+                    else
+                    {
+                        console.AppendLine($"Objects exported successfully to {System.IO.Path.GetFileName(path)}");
+                    }
+                    console.Show(this);
+                    StatusText.Text = $"Objects exported: {System.IO.Path.GetFileName(path)}";
                 }
-                else
+                catch (Exception ex)
                 {
-                    console.AppendLine($"Objects exported successfully to {System.IO.Path.GetFileName(path)}");
+                    Debug.WriteLine($"[ExportObjects] Error: {ex}");
+                    StatusText.Text = $"Export failed: {ex.Message}";
                 }
-                console.Show(this);
-                StatusText.Text = $"Objects exported: {System.IO.Path.GetFileName(path)}";
             }
         }
     }
