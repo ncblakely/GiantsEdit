@@ -13,6 +13,11 @@ public sealed class OpenGlRenderer : IRenderer
 {
     private GL _gl = null!;
     private int _viewportWidth;
+
+    private void TexParam(TextureParameterName pname, int value)
+    {
+        _gl.TexParameterI(TextureTarget.Texture2D, pname, in value);
+    }
     private int _viewportHeight;
 
     // MSAA framebuffer
@@ -94,7 +99,6 @@ public sealed class OpenGlRenderer : IRenderer
     private readonly Dictionary<int, ModelGpuData> _mapObjShapes = new();
     private readonly Dictionary<int, int> _mapObjWrap = new();
     private bool _mapObjsLoaded;
-    private bool _debugDumped1050;
 
     // Spline lines (dynamic, rebuilt each frame)
     private uint _lineVao;
@@ -692,10 +696,10 @@ public sealed class OpenGlRenderer : IRenderer
 
         uint tex = _gl.GenTexture();
         _gl.BindTexture(TextureTarget.Texture2D, tex);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
+        TexParam(TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+        TexParam(TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+        TexParam(TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+        TexParam(TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
 
         var format = img.Channels switch
         {
@@ -729,10 +733,10 @@ public sealed class OpenGlRenderer : IRenderer
 
         uint tex = _gl.GenTexture();
         _gl.BindTexture(TextureTarget.Texture2D, tex);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
+        TexParam(TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+        TexParam(TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+        TexParam(TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+        TexParam(TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
 
         fixed (byte* px = normalMapData)
             _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba,
@@ -817,10 +821,10 @@ public sealed class OpenGlRenderer : IRenderer
 
         uint tex = _gl.GenTexture();
         _gl.BindTexture(TextureTarget.Texture2D, tex);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
+        TexParam(TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+        TexParam(TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+        TexParam(TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+        TexParam(TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
 
         int ch = img.Channels;
         var format = ch switch { 1 => InternalFormat.R8, 3 => InternalFormat.Rgb, 4 => InternalFormat.Rgba, _ => InternalFormat.Rgb };
@@ -829,7 +833,7 @@ public sealed class OpenGlRenderer : IRenderer
         // Level 0: full brightness
         int mipW = img.Width, mipH = img.Height;
         int maxLevels = 1 + (int)MathF.Floor(MathF.Log2(MathF.Max(mipW, mipH)));
-        _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, maxLevels - 1);
+        TexParam(TextureParameterName.TextureMaxLevel, maxLevels - 1);
 
         fixed (byte* px = img.Pixels)
             _gl.TexImage2D(TextureTarget.Texture2D, 0, format, (uint)mipW, (uint)mipH, 0, pixelFmt, PixelType.UnsignedByte, px);
@@ -956,14 +960,10 @@ public sealed class OpenGlRenderer : IRenderer
                 {
                     uint tex = _gl.GenTexture();
                     _gl.BindTexture(TextureTarget.Texture2D, tex);
-                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
-                        (int)GLEnum.Repeat);
-                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
-                        (int)GLEnum.Repeat);
-                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                        (int)GLEnum.Linear);
-                    _gl.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                        (int)GLEnum.LinearMipmapLinear);
+                    TexParam(TextureParameterName.TextureWrapS, (int)GLEnum.Repeat);
+                    TexParam(TextureParameterName.TextureWrapT, (int)GLEnum.Repeat);
+                    TexParam(TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
+                    TexParam(TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
 
                     var format = img.Channels switch
                     {
