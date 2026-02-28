@@ -1076,6 +1076,17 @@ public partial class MainWindow : Window
             LoadTerrainTexture("SlopeTexture", v => { texInfo.SlopeImage = v.img; texInfo.SlopeWrap = v.wrap; });
             LoadTerrainTexture("WallTexture", v => { texInfo.WallImage = v.img; texInfo.WallWrap = v.wrap; });
 
+            // Normal maps (try normal textures first, fall back to bump textures)
+            LoadTerrainTexture("GroundNormalTexture", v => { texInfo.GroundNormalImage = v.img; texInfo.GroundNormalWrap = v.wrap; });
+            if (texInfo.GroundNormalImage == null)
+                LoadTerrainTexture("GroundBumpTexture", v => { texInfo.GroundNormalImage = v.img; texInfo.GroundNormalWrap = v.wrap; });
+            LoadTerrainTexture("SlopeNormalTexture", v => { texInfo.SlopeNormalImage = v.img; texInfo.SlopeNormalWrap = v.wrap; });
+            if (texInfo.SlopeNormalImage == null)
+                LoadTerrainTexture("SlopeBumpTexture", v => { texInfo.SlopeNormalImage = v.img; texInfo.SlopeNormalWrap = v.wrap; });
+            LoadTerrainTexture("WallNormalTexture", v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
+            if (texInfo.WallNormalImage == null)
+                LoadTerrainTexture("WallBumpTexture", v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
+
             if (texInfo.GroundImage != null || texInfo.SlopeImage != null || texInfo.WallImage != null)
                 terrainData.Textures = texInfo;
         }

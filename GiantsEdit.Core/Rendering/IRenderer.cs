@@ -132,6 +132,13 @@ public class TerrainTextureInfo
     public float SlopeWrap { get; set; } = 100f;
     public Formats.TgaImage? WallImage { get; set; }
     public float WallWrap { get; set; } = 100f;
+
+    public Formats.TgaImage? GroundNormalImage { get; set; }
+    public float GroundNormalWrap { get; set; } = 100f;
+    public Formats.TgaImage? SlopeNormalImage { get; set; }
+    public float SlopeNormalWrap { get; set; } = 100f;
+    public Formats.TgaImage? WallNormalImage { get; set; }
+    public float WallNormalWrap { get; set; } = 100f;
 }
 
 /// <summary>

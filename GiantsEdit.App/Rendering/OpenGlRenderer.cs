@@ -35,7 +35,11 @@ public sealed class OpenGlRenderer : IRenderer
     private uint _terrainTexGround;
     private uint _terrainTexSlope;
     private uint _terrainTexWall;
+    private uint _terrainNormGround;
+    private uint _terrainNormSlope;
+    private uint _terrainNormWall;
     private bool _terrainHasTextures;
+    private bool _terrainHasNormals;
 
     // Dome
     private uint _domeVao;
@@ -62,6 +66,14 @@ public sealed class OpenGlRenderer : IRenderer
     private int _terrainGroundWrapLoc;
     private int _terrainSlopeWrapLoc;
     private int _terrainWallWrapLoc;
+    private int _terrainGroundNormTexLoc;
+    private int _terrainSlopeNormTexLoc;
+    private int _terrainWallNormTexLoc;
+    private int _terrainGroundNormWrapLoc;
+    private int _terrainSlopeNormWrapLoc;
+    private int _terrainWallNormWrapLoc;
+    private int _terrainHasNormLoc;
+    private int _terrainSunDirLoc;
     private int _solidMvpLoc;
     private int _solidColorLoc;
     private int _modelMvpLoc;
@@ -114,6 +126,14 @@ public sealed class OpenGlRenderer : IRenderer
         _terrainGroundWrapLoc = _gl.GetUniformLocation(_terrainShader, "uGroundWrap");
         _terrainSlopeWrapLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeWrap");
         _terrainWallWrapLoc = _gl.GetUniformLocation(_terrainShader, "uWallWrap");
+        _terrainGroundNormTexLoc = _gl.GetUniformLocation(_terrainShader, "uGroundNorm");
+        _terrainSlopeNormTexLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeNorm");
+        _terrainWallNormTexLoc = _gl.GetUniformLocation(_terrainShader, "uWallNorm");
+        _terrainGroundNormWrapLoc = _gl.GetUniformLocation(_terrainShader, "uGroundNormWrap");
+        _terrainSlopeNormWrapLoc = _gl.GetUniformLocation(_terrainShader, "uSlopeNormWrap");
+        _terrainWallNormWrapLoc = _gl.GetUniformLocation(_terrainShader, "uWallNormWrap");
+        _terrainHasNormLoc = _gl.GetUniformLocation(_terrainShader, "uHasNorm");
+        _terrainSunDirLoc = _gl.GetUniformLocation(_terrainShader, "uSunDir");
 
         _solidShader = CreateShader(SolidVertSrc, SolidFragSrc);
         _solidMvpLoc = _gl.GetUniformLocation(_solidShader, "uMVP");
@@ -193,6 +213,7 @@ public sealed class OpenGlRenderer : IRenderer
             _gl.Disable(EnableCap.CullFace);
             _gl.UseProgram(_terrainShader);
             SetUniformMatrix(_terrainMvpLoc, vp);
+            _gl.Uniform1(_terrainHasTexLoc, 0); // Dome uses vertex colors only
             _gl.BindVertexArray(_domeVao);
             _gl.DrawElements(PrimitiveType.Triangles, (uint)_domeIndexCount, DrawElementsType.UnsignedInt, null);
             _gl.Enable(EnableCap.CullFace);
@@ -240,6 +261,23 @@ public sealed class OpenGlRenderer : IRenderer
                 _gl.ActiveTexture(TextureUnit.Texture2);
                 _gl.BindTexture(TextureTarget.Texture2D, _terrainTexWall);
                 _gl.Uniform1(_terrainWallTexLoc, 2);
+
+                // Bind normal map textures on units 3-5
+                _gl.Uniform1(_terrainHasNormLoc, _terrainHasNormals ? 1 : 0);
+                if (_terrainHasNormals)
+                {
+                    _gl.ActiveTexture(TextureUnit.Texture3);
+                    _gl.BindTexture(TextureTarget.Texture2D, _terrainNormGround);
+                    _gl.Uniform1(_terrainGroundNormTexLoc, 3);
+
+                    _gl.ActiveTexture(TextureUnit.Texture4);
+                    _gl.BindTexture(TextureTarget.Texture2D, _terrainNormSlope);
+                    _gl.Uniform1(_terrainSlopeNormTexLoc, 4);
+
+                    _gl.ActiveTexture(TextureUnit.Texture5);
+                    _gl.BindTexture(TextureTarget.Texture2D, _terrainNormWall);
+                    _gl.Uniform1(_terrainWallNormTexLoc, 5);
+                }
 
                 _gl.ActiveTexture(TextureUnit.Texture0);
             }
@@ -568,6 +606,7 @@ public sealed class OpenGlRenderer : IRenderer
         // Upload terrain textures
         DeleteTerrainTextures();
         _terrainHasTextures = false;
+        _terrainHasNormals = false;
 
         if (terrain.Textures is { } tex)
         {
@@ -583,6 +622,26 @@ public sealed class OpenGlRenderer : IRenderer
                 _gl.Uniform1(_terrainGroundWrapLoc, tex.GroundWrap);
                 _gl.Uniform1(_terrainSlopeWrapLoc, tex.SlopeWrap);
                 _gl.Uniform1(_terrainWallWrapLoc, tex.WallWrap);
+            }
+
+            // Upload normal map textures
+            _terrainNormGround = UploadTerrainTex(tex.GroundNormalImage);
+            _terrainNormSlope = UploadTerrainTex(tex.SlopeNormalImage ?? tex.GroundNormalImage);
+            _terrainNormWall = UploadTerrainTex(tex.WallNormalImage ?? tex.SlopeNormalImage ?? tex.GroundNormalImage);
+
+            if (_terrainNormGround != 0)
+            {
+                _terrainHasNormals = true;
+
+                _gl.UseProgram(_terrainShader);
+                _gl.Uniform1(_terrainGroundNormWrapLoc, tex.GroundNormalWrap);
+                _gl.Uniform1(_terrainSlopeNormWrapLoc, tex.SlopeNormalWrap);
+                _gl.Uniform1(_terrainWallNormWrapLoc, tex.WallNormalWrap);
+
+                // Hardcoded sun direction (normalized)
+                float sx = 0.5f, sy = 0.3f, sz = 0.8f;
+                float len = MathF.Sqrt(sx * sx + sy * sy + sz * sz);
+                _gl.Uniform3(_terrainSunDirLoc, sx / len, sy / len, sz / len);
             }
         }
     }
@@ -627,6 +686,9 @@ public sealed class OpenGlRenderer : IRenderer
         if (_terrainTexGround != 0) { _gl.DeleteTexture(_terrainTexGround); _terrainTexGround = 0; }
         if (_terrainTexSlope != 0) { _gl.DeleteTexture(_terrainTexSlope); _terrainTexSlope = 0; }
         if (_terrainTexWall != 0) { _gl.DeleteTexture(_terrainTexWall); _terrainTexWall = 0; }
+        if (_terrainNormGround != 0) { _gl.DeleteTexture(_terrainNormGround); _terrainNormGround = 0; }
+        if (_terrainNormSlope != 0) { _gl.DeleteTexture(_terrainNormSlope); _terrainNormSlope = 0; }
+        if (_terrainNormWall != 0) { _gl.DeleteTexture(_terrainNormWall); _terrainNormWall = 0; }
     }
 
     public unsafe int UploadModel(ModelRenderData model, int modelId = -1)
@@ -1126,7 +1188,7 @@ public sealed class OpenGlRenderer : IRenderer
 
     private const string TerrainFragSrc = """
         #version 300 es
-        precision mediump float;
+        precision highp float;
         in vec4 vColor;
         in vec3 vWorldPos;
         uniform int uHasTex;
@@ -1136,34 +1198,137 @@ public sealed class OpenGlRenderer : IRenderer
         uniform float uGroundWrap;
         uniform float uSlopeWrap;
         uniform float uWallWrap;
+        uniform int uHasNorm;
+        uniform sampler2D uGroundNorm;
+        uniform sampler2D uSlopeNorm;
+        uniform sampler2D uWallNorm;
+        uniform float uGroundNormWrap;
+        uniform float uSlopeNormWrap;
+        uniform float uWallNormWrap;
+        uniform vec3 uSunDir;
         out vec4 FragColor;
+
+        // Anti-tiling: hash function for random offsets per tile
+        vec4 hash4(vec2 p) {
+            return fract(
+                sin(vec4(
+                    1.0 + dot(p, vec2(37.0, 17.0)),
+                    2.0 + dot(p, vec2(11.0, 47.0)),
+                    3.0 + dot(p, vec2(41.0, 29.0)),
+                    4.0 + dot(p, vec2(23.0, 31.0))
+                )) * 103.0);
+        }
+
+        // Anti-tiling texture sample using 4 offset/rotated lookups blended together
+        vec4 textureNoTile(sampler2D tex, vec2 uv) {
+            vec2 iuv = floor(uv);
+            vec2 fuv = fract(uv);
+
+            vec4 ofa = hash4(iuv + vec2(0.0, 0.0));
+            vec4 ofb = hash4(iuv + vec2(1.0, 0.0));
+            vec4 ofc = hash4(iuv + vec2(0.0, 1.0));
+            vec4 ofd = hash4(iuv + vec2(1.0, 1.0));
+
+            vec2 ddxuv = dFdx(uv);
+            vec2 ddyuv = dFdy(uv);
+
+            ofa.zw = sign(ofa.zw - 0.5);
+            ofb.zw = sign(ofb.zw - 0.5);
+            ofc.zw = sign(ofc.zw - 0.5);
+            ofd.zw = sign(ofd.zw - 0.5);
+
+            vec2 uva = uv * ofa.zw + ofa.xy; vec2 ddxa = ddxuv * ofa.zw; vec2 ddya = ddyuv * ofa.zw;
+            vec2 uvb = uv * ofb.zw + ofb.xy; vec2 ddxb = ddxuv * ofb.zw; vec2 ddyb = ddyuv * ofb.zw;
+            vec2 uvc = uv * ofc.zw + ofc.xy; vec2 ddxc = ddxuv * ofc.zw; vec2 ddyc = ddyuv * ofc.zw;
+            vec2 uvd = uv * ofd.zw + ofd.xy; vec2 ddxd = ddxuv * ofd.zw; vec2 ddyd = ddyuv * ofd.zw;
+
+            vec2 b = smoothstep(0.25, 0.75, fuv);
+
+            return mix(
+                mix(textureGrad(tex, uva, ddxa, ddya),
+                    textureGrad(tex, uvb, ddxb, ddyb), b.x),
+                mix(textureGrad(tex, uvc, ddxc, ddyc),
+                    textureGrad(tex, uvd, ddxd, ddyd), b.x),
+                b.y);
+        }
+
+        // Expand [0,1] to [-1,1]
+        vec3 bx2(vec3 x) { return 2.0 * x - 1.0; }
+
+        // Calculate tangent-normal-binormal frame from world position derivatives
+        void calcTNB(vec3 worldPos, vec3 N, vec2 uv, out vec3 T, out vec3 B) {
+            vec3 dp1 = dFdx(worldPos);
+            vec3 dp2 = dFdy(worldPos);
+            vec2 duv1 = dFdx(uv);
+            vec2 duv2 = dFdy(uv);
+
+            vec3 t = normalize(duv2.y * dp1 - duv1.y * dp2);
+            vec3 b = normalize(duv2.x * dp1 - duv1.x * dp2);
+            vec3 n = normalize(N);
+
+            // Re-orthogonalize tangent and binormal to the normal
+            vec3 x = cross(n, t);
+            t = normalize(cross(x, n));
+
+            x = cross(b, n);
+            b = normalize(cross(n, x));
+
+            T = t;
+            B = b;
+        }
+
+        // Sample normal map and compute lighting intensity
+        float calcNormalMapLighting(sampler2D normTex, vec3 worldPos, vec3 faceN, vec2 uv) {
+            vec3 T, B;
+            calcTNB(worldPos, faceN, uv, T, B);
+
+            vec3 bumpSample = bx2(textureNoTile(normTex, uv).rgb);
+            vec3 bumpNormal = normalize(bumpSample.x * T + bumpSample.y * B + bumpSample.z * normalize(faceN));
+
+            return max(0.01, clamp(dot(bumpNormal, uSunDir), 0.0, 1.0));
+        }
+
         void main() {
             if (uHasTex == 1) {
-                // Compute face normal from screen-space derivatives of world position
                 vec3 dpdx = dFdx(vWorldPos);
                 vec3 dpdy = dFdy(vWorldPos);
                 vec3 faceN = normalize(cross(dpdx, dpdy));
                 float steepness = abs(faceN.z);
 
-                // UV from world position: XY for ground, best side projection for walls
                 vec2 groundUV = vWorldPos.xy / uGroundWrap;
                 vec2 slopeUV = vWorldPos.xy / uSlopeWrap;
-                // For walls, project onto the plane facing the camera most
                 vec2 wallUV = abs(faceN.x) > abs(faceN.y)
                     ? vWorldPos.yz / uWallWrap
                     : vWorldPos.xz / uWallWrap;
 
-                vec3 groundCol = texture(uGroundTex, groundUV).rgb;
-                vec3 slopeCol = texture(uSlopeTex, slopeUV).rgb;
-                vec3 wallCol = texture(uWallTex, wallUV).rgb;
+                vec3 groundCol = textureNoTile(uGroundTex, groundUV).rgb;
+                vec3 slopeCol = textureNoTile(uSlopeTex, slopeUV).rgb;
+                vec3 wallCol = textureNoTile(uWallTex, wallUV).rgb;
 
-                // Blend: ground above 0.7, wall below 0.3, slope in between
                 float groundFactor = smoothstep(0.6, 0.8, steepness);
                 float wallFactor = smoothstep(0.4, 0.2, steepness);
                 float slopeFactor = 1.0 - groundFactor - wallFactor;
 
                 vec3 texCol = groundCol * groundFactor + slopeCol * slopeFactor + wallCol * wallFactor;
-                FragColor = vec4(vColor.rgb * texCol * 2.0, 1.0);
+
+                if (uHasNorm == 1) {
+                    // Normal map lighting per terrain type, blended by steepness
+                    vec2 groundNormUV = vWorldPos.xy / uGroundNormWrap;
+                    vec2 slopeNormUV = vWorldPos.xy / uSlopeNormWrap;
+                    vec2 wallNormUV = abs(faceN.x) > abs(faceN.y)
+                        ? vWorldPos.yz / uWallNormWrap
+                        : vWorldPos.xz / uWallNormWrap;
+
+                    float gLight = calcNormalMapLighting(uGroundNorm, vWorldPos, faceN, groundNormUV);
+                    float sLight = calcNormalMapLighting(uSlopeNorm, vWorldPos, faceN, slopeNormUV);
+                    float wLight = calcNormalMapLighting(uWallNorm, vWorldPos, faceN, wallNormUV);
+                    float bumpLight = gLight * groundFactor + sLight * slopeFactor + wLight * wallFactor;
+
+                    // Game formula: 2.0 * (bumpLight * diffuseTexture + bakedLightmap)
+                    FragColor = vec4(2.0 * (bumpLight * texCol + vColor.rgb), 1.0);
+                } else {
+                    FragColor = vec4(vColor.rgb * texCol * 2.0, 1.0);
+                }
             } else {
                 FragColor = vColor;
             }
