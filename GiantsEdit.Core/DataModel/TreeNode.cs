@@ -6,8 +6,6 @@ namespace GiantsEdit.Core.DataModel;
 public class TreeNode
 {
     public string Name { get; set; }
-    public string Help { get; set; } = string.Empty;
-    public TreeState State { get; set; }
     public TreeNode? Parent { get; internal set; }
 
     private readonly List<TreeNode> _childNodes = [];
@@ -33,11 +31,7 @@ public class TreeNode
     /// </summary>
     public TreeNode AddNode(string name)
     {
-        var child = new TreeNode(name)
-        {
-            State = TreeState.Visible,
-            Parent = this
-        };
+        var child = new TreeNode(name) { Parent = this };
         _childNodes.Add(child);
         return child;
     }
@@ -56,7 +50,7 @@ public class TreeNode
     /// </summary>
     public TreeLeaf AddLeaf(string name, PropertyType type)
     {
-        var leaf = new TreeLeaf { Name = name, Parent = this, PropertyType = type, State = TreeState.Visible };
+        var leaf = new TreeLeaf { Name = name, Parent = this, PropertyType = type };
         _childLeaves.Add(leaf);
         return leaf;
     }

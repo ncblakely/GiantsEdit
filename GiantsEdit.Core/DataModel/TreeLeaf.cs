@@ -14,8 +14,6 @@ public class TreeLeaf
 {
     public string Name { get; set; } = string.Empty;
     public PropertyType PropertyType { get; set; }
-    public string Help { get; set; } = string.Empty;
-    public TreeState State { get; set; }
     public TreeNode? Parent { get; internal set; }
 
     // Storage: int32 holds Byte/Int32/Single (bit pattern), string holds String values.
