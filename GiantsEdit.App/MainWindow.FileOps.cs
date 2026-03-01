@@ -127,15 +127,7 @@ public partial class MainWindow
         var root = _vm.Document.WorldRoot;
         if (root == null) return;
 
-        // Find the "Object" slot and clear it
-        for (int i = 0; i < root.NodeSlots.Count; i++)
-        {
-            if (root.NodeSlots[i].Count > 0 && root.NodeSlots[i][0].Name == "Object")
-            {
-                root.ClearSlot(i);
-                break;
-            }
-        }
+        root.RemoveNodesByName("Object");
         InvalidateViewport();
         StatusText.Text = "Objects cleared";
     }

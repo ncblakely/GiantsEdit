@@ -34,12 +34,11 @@ public class BinWorldReader
     /// Loads a world .bin file into a tree structure.
     /// </summary>
     /// <param name="data">Raw file bytes.</param>
-    /// <param name="mapDataRule">DTD rule for the root MapData node (from w.dtd).</param>
     /// <returns>The root TreeNode, or null if the file is invalid.</returns>
-    public TreeNode? Load(byte[] data, DtdNode? mapDataRule = null)
+    public TreeNode? Load(byte[] data)
     {
         _r = new BinaryDataReader(data);
-        _base = new TreeNode("Map data", mapDataRule) { State = TreeState.Visible };
+        _base = new TreeNode("Map data") { State = TreeState.Visible };
 
         // Read header: 8 x int32 = 32 bytes
         // Delphi declares pointers[-1..6], so the first int32 is index -1 (unused/ignored)

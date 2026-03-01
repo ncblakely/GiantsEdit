@@ -1,133 +1,45 @@
 namespace GiantsEdit.Core.DataModel;
 
 /// <summary>
-/// A node in the tree hierarchy. Contains named child nodes and leaves,
-/// organized by DTD rule category.
-/// Ported from Delphi's tNode class.
+/// A node in the tree hierarchy. Contains named child nodes and leaves.
 /// </summary>
-/// <remarks>
-/// The original Delphi tNode stores children as array-of-array:
-///   node: array of array of tNode
-///   leaf: array of array of tLeaf
-/// The outer index maps to a DTD rule slot; the inner is instances of that slot.
-/// When no rule is present, a single slot (index 0) is used.
-/// </remarks>
 public class TreeNode
 {
     public string Name { get; set; }
     public string Help { get; set; } = string.Empty;
     public TreeState State { get; set; }
     public TreeNode? Parent { get; internal set; }
-    public DtdNode? Rule { get; }
 
-    // Children organized by DTD rule slot.
-    // Outer list index = rule slot, inner list = instances in that slot.
-    private readonly List<List<TreeNode>> _childNodes;
-    private readonly List<List<TreeLeaf>> _childLeaves;
+    private readonly List<TreeNode> _childNodes = [];
+    private readonly List<TreeLeaf> _childLeaves = [];
 
-    public TreeNode(string name, DtdNode? rule = null)
+    public TreeNode(string name)
     {
         Name = name;
-        Rule = rule;
-
-        int nodeSlots = rule?.SubNodes.Count ?? 1;
-        int leafSlots = rule?.SubLeaves.Count ?? 1;
-
-        _childNodes = new List<List<TreeNode>>(nodeSlots);
-        for (int i = 0; i < nodeSlots; i++)
-            _childNodes.Add([]);
-
-        _childLeaves = new List<List<TreeLeaf>>(leafSlots);
-        for (int i = 0; i < leafSlots; i++)
-            _childLeaves.Add([]);
     }
 
     /// <summary>
-    /// Total number of child nodes across all slots.
+    /// Total number of child nodes.
     /// </summary>
-    public int NodeCount
-    {
-        get
-        {
-            int count = 0;
-            foreach (var slot in _childNodes)
-                count += slot.Count;
-            return count;
-        }
-    }
+    public int NodeCount => _childNodes.Count;
 
     /// <summary>
-    /// Total number of child leaves across all slots.
+    /// Total number of child leaves.
     /// </summary>
-    public int LeafCount
-    {
-        get
-        {
-            int count = 0;
-            foreach (var slot in _childLeaves)
-                count += slot.Count;
-            return count;
-        }
-    }
+    public int LeafCount => _childLeaves.Count;
 
     /// <summary>
-    /// Count of child nodes in the named DTD slot.
-    /// </summary>
-    public int GetNodeCountByName(string name)
-    {
-        if (Rule == null)
-            throw new InvalidOperationException("Cannot query by name without a DTD rule.");
-        int slot = FindNodeSlot(name);
-        return slot >= 0 ? _childNodes[slot].Count : -1;
-    }
-
-    /// <summary>
-    /// Count of child leaves in the named DTD slot.
-    /// </summary>
-    public int GetLeafCountByName(string name)
-    {
-        if (Rule == null)
-            throw new InvalidOperationException("Cannot query by name without a DTD rule.");
-        int slot = FindLeafSlot(name);
-        return slot >= 0 ? _childLeaves[slot].Count : -1;
-    }
-
-    /// <summary>
-    /// Adds a child node. If a DTD rule is present, validates the name against it.
+    /// Adds a child node.
     /// </summary>
     public TreeNode AddNode(string name)
     {
-        if (Rule != null)
+        var child = new TreeNode(name)
         {
-            int slot = FindNodeSlot(name);
-            if (slot < 0)
-                throw new InvalidOperationException(
-                    $"DTD error: cannot add child node '{name}' to '{Name}' — not defined in schema.");
-
-            var ruleEntry = Rule.SubNodes[slot];
-            if (_childNodes[slot].Count > 0 &&
-                ruleEntry.Count is DtdCount.Once or DtdCount.Optional)
-                throw new InvalidOperationException(
-                    $"DTD error: child node '{name}' in '{Name}' already exists and is limited to one instance.");
-
-            var child = new TreeNode(name, ruleEntry.Node)
-            {
-                State = TreeState.Visible,
-                Parent = this
-            };
-            _childNodes[slot].Add(child);
-            return child;
-        }
-        else
-        {
-            var child = new TreeNode(name)
-            {
-                State = TreeState.Visible,
-                Parent = this
-            };
-            _childNodes[0].Add(child);
-            return child;
-        }
+            State = TreeState.Visible,
+            Parent = this
+        };
+        _childNodes.Add(child);
+        return child;
     }
 
     /// <summary>
@@ -144,9 +56,8 @@ public class TreeNode
     /// </summary>
     public TreeLeaf AddLeaf(string name, PropertyType type)
     {
-        var leaf = AddLeafInternal(name);
-        leaf.PropertyType = type;
-        leaf.State = TreeState.Visible;
+        var leaf = new TreeLeaf { Name = name, Parent = this, PropertyType = type, State = TreeState.Visible };
+        _childLeaves.Add(leaf);
         return leaf;
     }
 
@@ -193,34 +104,23 @@ public class TreeNode
     }
 
     /// <summary>
-    /// Enumerates all child nodes across all slots, in slot order.
+    /// Enumerates all child nodes.
     /// </summary>
-    public IEnumerable<TreeNode> EnumerateNodes()
-    {
-        foreach (var slot in _childNodes)
-            foreach (var node in slot)
-                yield return node;
-    }
+    public IEnumerable<TreeNode> EnumerateNodes() => _childNodes;
 
     /// <summary>
-    /// Enumerates all child leaves across all slots, in slot order.
+    /// Enumerates all child leaves.
     /// </summary>
-    public IEnumerable<TreeLeaf> EnumerateLeaves()
-    {
-        foreach (var slot in _childLeaves)
-            foreach (var leaf in slot)
-                yield return leaf;
-    }
+    public IEnumerable<TreeLeaf> EnumerateLeaves() => _childLeaves;
 
     /// <summary>
     /// Finds the first child node with the given name, or null.
     /// </summary>
     public TreeNode? FindChildNode(string name)
     {
-        foreach (var slot in _childNodes)
-            foreach (var node in slot)
-                if (node.Name == name)
-                    return node;
+        foreach (var node in _childNodes)
+            if (node.Name == name)
+                return node;
         return null;
     }
 
@@ -229,10 +129,9 @@ public class TreeNode
     /// </summary>
     public TreeLeaf? FindChildLeaf(string name)
     {
-        foreach (var slot in _childLeaves)
-            foreach (var leaf in slot)
-                if (leaf.Name == name)
-                    return leaf;
+        foreach (var leaf in _childLeaves)
+            if (leaf.Name == name)
+                return leaf;
         return null;
     }
 
@@ -262,13 +161,10 @@ public class TreeNode
     /// </summary>
     public bool RemoveNode(TreeNode child)
     {
-        foreach (var slot in _childNodes)
+        if (_childNodes.Remove(child))
         {
-            if (slot.Remove(child))
-            {
-                child.Parent = null;
-                return true;
-            }
+            child.Parent = null;
+            return true;
         }
         return false;
     }
@@ -278,44 +174,20 @@ public class TreeNode
     /// </summary>
     public bool RemoveLeaf(TreeLeaf child)
     {
-        foreach (var slot in _childLeaves)
+        if (_childLeaves.Remove(child))
         {
-            if (slot.Remove(child))
-            {
-                child.Parent = null;
-                return true;
-            }
+            child.Parent = null;
+            return true;
         }
         return false;
     }
 
     /// <summary>
-    /// Provides direct access to child node slots for advanced iteration (e.g., ScanNode).
+    /// Removes all child nodes matching the given name.
     /// </summary>
-    public IReadOnlyList<List<TreeNode>> NodeSlots => _childNodes;
-
-    /// <summary>
-    /// Provides direct access to child leaf slots for advanced iteration (e.g., ScanLeaf).
-    /// </summary>
-    public IReadOnlyList<List<TreeLeaf>> LeafSlots => _childLeaves;
-
-    /// <summary>
-    /// Gets all child nodes in a given DTD slot.
-    /// </summary>
-    public IReadOnlyList<TreeNode> GetChildNodes(int slotIndex)
+    public void RemoveNodesByName(string name)
     {
-        if (slotIndex >= 0 && slotIndex < _childNodes.Count)
-            return _childNodes[slotIndex];
-        return [];
-    }
-
-    /// <summary>
-    /// Removes all child nodes from a given DTD slot.
-    /// </summary>
-    public void ClearSlot(int slotIndex)
-    {
-        if (slotIndex >= 0 && slotIndex < _childNodes.Count)
-            _childNodes[slotIndex].Clear();
+        _childNodes.RemoveAll(n => n.Name == name);
     }
 
     /// <summary>
@@ -325,55 +197,10 @@ public class TreeNode
     {
         onNode?.Invoke(this);
 
-        foreach (var leaf in EnumerateLeaves())
+        foreach (var leaf in _childLeaves)
             onLeaf?.Invoke(leaf);
 
-        foreach (var child in EnumerateNodes())
+        foreach (var child in _childNodes)
             child.Walk(onNode, onLeaf);
-    }
-
-    private TreeLeaf AddLeafInternal(string name)
-    {
-        var leaf = new TreeLeaf { Name = name, Parent = this };
-
-        if (Rule != null)
-        {
-            int slot = FindLeafSlot(name);
-            if (slot < 0)
-                throw new InvalidOperationException(
-                    $"DTD error: cannot add leaf '{name}' to '{Name}' — not defined in schema.");
-
-            var ruleEntry = Rule.SubLeaves[slot];
-            if (_childLeaves[slot].Count >= 1 &&
-                ruleEntry.Count is DtdCount.Once or DtdCount.Optional)
-                throw new InvalidOperationException(
-                    $"DTD error: leaf '{name}' in '{Name}' already exists and is limited to one instance.");
-
-            _childLeaves[slot].Add(leaf);
-        }
-        else
-        {
-            _childLeaves[0].Add(leaf);
-        }
-
-        return leaf;
-    }
-
-    private int FindNodeSlot(string name)
-    {
-        if (Rule == null) return -1;
-        for (int i = 0; i < Rule.SubNodes.Count; i++)
-            if (Rule.SubNodes[i].Name == name)
-                return i;
-        return -1;
-    }
-
-    private int FindLeafSlot(string name)
-    {
-        if (Rule == null) return -1;
-        for (int i = 0; i < Rule.SubLeaves.Count; i++)
-            if (Rule.SubLeaves[i].Name == name)
-                return i;
-        return -1;
     }
 }
