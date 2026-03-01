@@ -425,5 +425,27 @@ public partial class MainWindow
         _vm.Document.NotifyTerrainChanged();
     }
 
+    private async Task SubdivideTerrainAsync()
+    {
+        var terrain = _vm.Document.Terrain;
+        if (terrain == null)
+        {
+            StatusText.Text = "No terrain loaded";
+            return;
+        }
+
+        var dialog = new SubdivideTerrainDialog(terrain.Width, terrain.Height);
+        var result = await dialog.ShowDialog<int?>(this);
+        if (result is not { } factor)
+            return;
+
+        StatusText.Text = $"Subdividing terrain by {factor}x...";
+
+        var subdivided = await Task.Run(() => TerrainSubdivider.Subdivide(terrain, factor));
+        _vm.Document.ReplaceTerrain(subdivided);
+
+        StatusText.Text = $"Terrain subdivided {factor}x → {subdivided.Width}×{subdivided.Height}";
+    }
+
     #endregion
 }

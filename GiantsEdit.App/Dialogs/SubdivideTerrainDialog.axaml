@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.SubdivideTerrainDialog"
+        Title="Subdivide Terrain" Width="360"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="16" Spacing="12">
+        <TextBlock Text="Increases terrain resolution by splitting each cell into smaller sub-cells with smooth interpolation."
+                   TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Factor:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                           x:Name="FactorInput"
+                           Minimum="2" Maximum="10" Value="2"
+                           Increment="1" FormatString="0"
+                           HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Result:" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="ResultPreview"
+                       VerticalAlignment="Center" Foreground="Gray" />
+        </Grid>
+        <TextBlock x:Name="WarningText" Foreground="Orange" TextWrapping="Wrap"
+                   IsVisible="False" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button x:Name="BtnOk" Content="Subdivide" Width="90" IsDefault="True" />
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" IsCancel="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

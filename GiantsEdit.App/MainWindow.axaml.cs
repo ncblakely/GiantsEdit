@@ -100,6 +100,7 @@ public partial class MainWindow : Window
         MenuFixEdges.Click += (_, _) => StatusText.Text = "Fix edges: not yet implemented";
         MenuSoftenNoEdges.Click += (_, _) => { SoftenTerrain(false); StatusText.Text = "Terrain softened (no edges)"; };
         MenuSoftenWithEdges.Click += (_, _) => { SoftenTerrain(true); StatusText.Text = "Terrain softened (with edges)"; };
+        MenuSubdivide.Click += async (_, _) => await SubdivideTerrainAsync();
         MenuAutoLighting.Click += (_, _) => StatusText.Text = "Auto lighting: not yet implemented";
 
         // === Map menu ===

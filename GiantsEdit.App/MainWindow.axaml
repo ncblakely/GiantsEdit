@@ -71,6 +71,8 @@
                 <MenuItem Header="Soften map (no edges)" x:Name="MenuSoftenNoEdges" />
                 <MenuItem Header="Soften map (including edges)" x:Name="MenuSoftenWithEdges" />
                 <Separator/>
+                <MenuItem Header="Subdivide..." x:Name="MenuSubdivide" />
+                <Separator/>
                 <MenuItem Header="Automatic lighting..." x:Name="MenuAutoLighting" />
             </MenuItem>
             <!-- Map -->

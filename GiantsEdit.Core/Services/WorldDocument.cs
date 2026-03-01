@@ -80,6 +80,14 @@ public class WorldDocument
     /// <summary>Raises TerrainChanged for external callers.</summary>
     public void NotifyTerrainChanged() => TerrainChanged?.Invoke();
 
+    /// <summary>Replaces the terrain data and notifies listeners.</summary>
+    public void ReplaceTerrain(TerrainData terrain)
+    {
+        _terrain = terrain;
+        IsModified = true;
+        TerrainChanged?.Invoke();
+    }
+
     public void NotifyWorldChanged()
     {
         IsModified = true;
