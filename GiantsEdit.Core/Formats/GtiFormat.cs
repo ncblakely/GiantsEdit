@@ -307,7 +307,7 @@ public static class GtiFormat
                 U7 = 0f,
                 U8 = 1f
             },
-            TextureName = "TextureName",
+            TextureName = "useless",
             Heights = new float[width * height],
             Triangles = new byte[width * height],
             LightMap = new byte[width * height * 3]

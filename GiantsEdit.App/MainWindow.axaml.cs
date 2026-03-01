@@ -330,6 +330,29 @@ public partial class MainWindow : Window
             PropSplineStartId.IsEnabled = ChkObjSplineStartId.IsChecked == true;
             ToggleOptionalByteLeaf("StartId", ChkObjSplineStartId.IsChecked == true, PropSplineStartId, 0);
         };
+        ChkObjSplineTangents.IsCheckedChanged += (_, _) => ToggleSplineTangents();
+        ChkObjSplineJet.IsCheckedChanged += (_, _) => ToggleSplineJet();
+        ChkObjAnimType.IsCheckedChanged += (_, _) =>
+        {
+            PropAnimType.IsEnabled = ChkObjAnimType.IsChecked == true;
+            ToggleOptionalByteLeaf("AnimType", ChkObjAnimType.IsChecked == true, PropAnimType, 0);
+        };
+        ChkObjAnimTime.IsCheckedChanged += (_, _) =>
+        {
+            PropAnimTime.IsEnabled = ChkObjAnimTime.IsChecked == true;
+            ToggleOptionalLeaf("AnimTime", ChkObjAnimTime.IsChecked == true, PropAnimTime, 0);
+        };
+        ChkObjPath.IsCheckedChanged += (_, _) => TogglePath();
+        ChkObjWind.IsCheckedChanged += (_, _) => ToggleWind();
+        ChkObjFlickUsed.IsCheckedChanged += (_, _) => ToggleFlickUsed();
+        ChkObjAIData.IsCheckedChanged += (_, _) => ToggleAIData();
+        ChkObjMinishopR.IsCheckedChanged += (_, _) => ToggleMinishopR();
+        ChkObjMinishopM.IsCheckedChanged += (_, _) => ToggleMinishopM();
+        ChkObjHerdPoint.IsCheckedChanged += (_, _) => ToggleHerdPoint();
+
+        // Icon picker buttons
+        BtnEditMinishopR.Click += (_, _) => OpenIconPicker("Reaper Icons", "RIcon", TxtMinishopR, IconNames.ReaperIcons);
+        BtnEditMinishopM.Click += (_, _) => OpenIconPicker("Mecc Icons", "MIcon", TxtMinishopM, IconNames.MeccIcons);
 
         // Document events
         _vm.Document.WorldChanged += () =>

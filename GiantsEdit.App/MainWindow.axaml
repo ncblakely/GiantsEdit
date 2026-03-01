@@ -345,8 +345,206 @@
                                     <CheckBox x:Name="ChkObjSplineStartId" Content="Spline start ID:" />
                                     <TextBox x:Name="PropSplineStartId" Width="70" IsEnabled="False" />
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjSplineTangents" Content="Spline tangents:" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelSplineTangents" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="In:" Width="20" />
+                                        <TextBox x:Name="PropSplineTanIn" Width="70" />
+                                        <TextBlock Text="Out:" Width="24" />
+                                        <TextBox x:Name="PropSplineTanOut" Width="70" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjSplineJet" Content="Spline jet" />
+                                </StackPanel>
 
-                                <Button x:Name="BtnApplyProps" Content="Apply" HorizontalAlignment="Stretch" />
+                                <!-- Animation -->
+                                <Separator Margin="0,4" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjAnimType" Content="Anim type:" />
+                                    <TextBox x:Name="PropAnimType" Width="70" IsEnabled="False" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjAnimTime" Content="Anim time:" />
+                                    <TextBox x:Name="PropAnimTime" Width="70" IsEnabled="False" />
+                                </StackPanel>
+
+                                <!-- Paths -->
+                                <Separator Margin="0,4" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjPath" Content="Path" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelPath" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Name:" Width="36" />
+                                        <TextBox x:Name="PropPathName" Width="130" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Speed:" Width="36" />
+                                        <TextBox x:Name="PropPathSpeed" Width="70" />
+                                        <CheckBox x:Name="ChkPathGround" Content="Ground" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjWind" Content="Wind" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelWind" IsVisible="False" Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Name:" Width="36" />
+                                        <TextBox x:Name="PropWindName" Width="130" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Speed:" Width="36" />
+                                        <TextBox x:Name="PropWindSpeed" Width="70" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Dist:" Width="36" />
+                                        <TextBox x:Name="PropWindDist" Width="70" />
+                                        <TextBlock Text="Mag:" Width="28" />
+                                        <TextBox x:Name="PropWindMag" Width="70" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Misc object properties -->
+                                <Separator Margin="0,4" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjFlickUsed" Content="Flick used:" />
+                                </StackPanel>
+                                <TextBox x:Name="PropFlickUsed" IsEnabled="False" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjAIData" Content="AI data" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelAIData" IsVisible="False" Spacing="2">
+                                    <TextBox x:Name="PropAIData" Watermark="float values, comma-separated" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelMinishopSection" IsVisible="False" Spacing="4">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <CheckBox x:Name="ChkObjMinishopR" Content="Reaper icons" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="PanelMinishopR" IsVisible="False" Spacing="2">
+                                        <TextBlock x:Name="TxtMinishopR" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                                        <Button x:Name="BtnEditMinishopR" Content="Edit..." HorizontalAlignment="Left"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <CheckBox x:Name="ChkObjMinishopM" Content="Mecc icons" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="PanelMinishopM" IsVisible="False" Spacing="2">
+                                        <TextBlock x:Name="TxtMinishopM" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                                        <Button x:Name="BtnEditMinishopM" Content="Edit..." HorizontalAlignment="Left"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <CheckBox x:Name="ChkObjHerdPoint" Content="Herd points" />
+                                </StackPanel>
+                                <StackPanel x:Name="PanelHerdPoint" IsVisible="False" Spacing="2">
+                                    <TextBox x:Name="PropHerdPoints" Watermark="x,y,z per line"
+                                             AcceptsReturn="True" MinHeight="48" MaxHeight="100"
+                                             TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <!-- Lock (read-only display) -->
+                                <Separator Margin="0,4" />
+                                <StackPanel x:Name="PanelLock" IsVisible="False" Spacing="2">
+                                    <TextBlock Text="Lock:" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="RefSrc:" Width="42" />
+                                        <TextBox x:Name="PropLockRefSrc" Width="50" />
+                                        <TextBlock Text="RefDst:" Width="42" />
+                                        <TextBox x:Name="PropLockRefDst" Width="50" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- SmokeGen-specific fields -->
+                                <StackPanel x:Name="PanelSmokeGen" IsVisible="False" Spacing="2">
+                                    <Separator Margin="0,4" />
+                                    <TextBlock Text="Smoke Generator" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Stop:" Width="34" />
+                                        <TextBox x:Name="PropSmkStopMin" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkStopMax" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Go:" Width="34" />
+                                        <TextBox x:Name="PropSmkGoMin" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkGoMax" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Rate:" Width="34" />
+                                        <TextBox x:Name="PropSmkRateMin" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkRateMax" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Scale:" Width="34" />
+                                        <TextBox x:Name="PropSmkScaleStart" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkScaleEnd" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Speed:" Width="34" />
+                                        <TextBox x:Name="PropSmkSpeedMin" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkSpeedMax" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Fade:" Width="34" />
+                                        <TextBox x:Name="PropSmkFadeMin" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkFadeMax" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="WAng:" Width="34" />
+                                        <TextBox x:Name="PropSmkWAngMin" Width="48" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkWAngMax" Width="48" />
+                                        <TextBlock Text="R:" />
+                                        <TextBox x:Name="PropSmkWAngRate" Width="48" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="WSpd:" Width="34" />
+                                        <TextBox x:Name="PropSmkWSpdMin" Width="48" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropSmkWSpdMax" Width="48" />
+                                        <TextBlock Text="R:" />
+                                        <TextBox x:Name="PropSmkWSpdRate" Width="48" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="White:" Width="34" />
+                                        <TextBox x:Name="PropSmkWhite" Width="70" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- AreaAlien-specific fields -->
+                                <StackPanel x:Name="PanelAreaAlien" IsVisible="False" Spacing="2">
+                                    <Separator Margin="0,4" />
+                                    <TextBlock Text="Area Alien Generator" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Count:" Width="40" />
+                                        <TextBox x:Name="PropAreaCount" Width="50" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Radius:" Width="40" />
+                                        <TextBox x:Name="PropAreaMinRadius" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropAreaMaxRadius" Width="60" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Scale:" Width="40" />
+                                        <TextBox x:Name="PropAreaMinScale" Width="60" />
+                                        <TextBlock Text="-" />
+                                        <TextBox x:Name="PropAreaMaxScale" Width="60" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Button x:Name="BtnApplyProps" Content="Apply" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
                                 <Button x:Name="BtnDeleteObj" Content="Delete Object"
                                         HorizontalAlignment="Stretch" Foreground="OrangeRed" />
                             </StackPanel>

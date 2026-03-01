@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.IconPickerDialog"
+        Title="Select Icons" Width="320" Height="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+    <DockPanel Margin="12">
+        <TextBox x:Name="TxtSearch" DockPanel.Dock="Top" Watermark="Search..."
+                 Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button x:Name="BtnSelectAll" Content="All" Width="60" />
+            <Button x:Name="BtnSelectNone" Content="None" Width="60" />
+            <Button x:Name="BtnOk" Content="OK" Width="80" IsDefault="True" />
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" IsCancel="True" />
+        </StackPanel>
+        <ListBox x:Name="IconList" SelectionMode="Multiple" />
+    </DockPanel>
+</Window>

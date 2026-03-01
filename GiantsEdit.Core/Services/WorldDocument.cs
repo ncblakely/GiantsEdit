@@ -380,7 +380,10 @@ public class WorldDocument
 
         foreach (var obj in objNode.EnumerateNodes())
         {
-            if (obj.Name != BinFormatConstants.NodeObject) continue;
+            if (obj.Name != BinFormatConstants.NodeObject
+                && obj.Name != BinFormatConstants.NodeSmokeGen
+                && obj.Name != BinFormatConstants.NodeAreaAlien)
+                continue;
 
             var typeLeaf = obj.FindChildLeaf("Type");
             if (typeLeaf == null) continue;

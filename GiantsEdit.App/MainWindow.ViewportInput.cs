@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
@@ -19,6 +20,9 @@ public partial class MainWindow
 
     // Object type: directional light
     private const int ObjectTypeLightDirectional = 1004;
+
+    // Object type: minishop (guard_shop) — only type with MoveTypeMinishop
+    private const int ObjectTypeMinishop = 1092;
 
     #region Viewport input
 
@@ -369,6 +373,9 @@ public partial class MainWindow
         _vm.Document.SelectedObject = objNode;
         ObjPropsPanel.IsVisible = true;
 
+        bool isSmokeGen = objNode.Name == "SmokeGen";
+        bool isAreaAlien = objNode.Name == "AreaAlien";
+
         int typeId = objNode.FindChildLeaf("Type")?.Int32Value ?? 0;
         PropObjType.Text = ObjectNames.GetDisplayName(typeId);
         PropObjX.Text = (objNode.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
@@ -481,7 +488,177 @@ public partial class MainWindow
         PropSplineStartId.IsEnabled = startId != null;
         PropSplineStartId.Text = (startId?.ByteValue ?? 0).ToString();
 
-        PropHeader.Text = $"Object: {PropObjType.Text}";
+        // Spline tangents (optional)
+        var inTan = objNode.FindChildLeaf("InTangent");
+        ChkObjSplineTangents.IsChecked = inTan != null;
+        PanelSplineTangents.IsVisible = inTan != null;
+        if (inTan != null)
+        {
+            PropSplineTanIn.Text = inTan.SingleValue.ToString("F4");
+            PropSplineTanOut.Text = (objNode.FindChildLeaf("OutTangent")?.SingleValue ?? 0).ToString("F4");
+        }
+
+        // Spline jet (optional, marker node)
+        var splineJet = objNode.FindChildNode("SplineJet");
+        ChkObjSplineJet.IsChecked = splineJet != null;
+
+        // AnimType (optional)
+        var animType = objNode.FindChildLeaf("AnimType");
+        ChkObjAnimType.IsChecked = animType != null;
+        PropAnimType.IsEnabled = animType != null;
+        PropAnimType.Text = (animType?.ByteValue ?? 0).ToString();
+
+        // AnimTime (optional)
+        var animTime = objNode.FindChildLeaf("AnimTime");
+        ChkObjAnimTime.IsChecked = animTime != null;
+        PropAnimTime.IsEnabled = animTime != null;
+        PropAnimTime.Text = (animTime?.SingleValue ?? 0).ToString("F4");
+
+        // Path (optional child node)
+        var pathNode = objNode.FindChildNode("Path") ?? objNode.FindChildNode("GroundPath");
+        ChkObjPath.IsChecked = pathNode != null;
+        PanelPath.IsVisible = pathNode != null;
+        if (pathNode != null)
+        {
+            PropPathName.Text = pathNode.FindChildLeaf("AnimName")?.StringValue ?? "";
+            PropPathSpeed.Text = (pathNode.FindChildLeaf("PathSpeed")?.SingleValue ?? 0).ToString("F4");
+            ChkPathGround.IsChecked = pathNode.Name == "GroundPath";
+        }
+        else
+        {
+            ChkPathGround.IsChecked = false;
+        }
+
+        // Wind (optional child node)
+        var windNode = objNode.FindChildNode("Wind");
+        ChkObjWind.IsChecked = windNode != null;
+        PanelWind.IsVisible = windNode != null;
+        if (windNode != null)
+        {
+            PropWindName.Text = windNode.FindChildLeaf("AnimName")?.StringValue ?? "";
+            PropWindSpeed.Text = (windNode.FindChildLeaf("PathSpeed")?.SingleValue ?? 0).ToString("F4");
+            PropWindDist.Text = (windNode.FindChildLeaf("Distance")?.SingleValue ?? 0).ToString("F4");
+            PropWindMag.Text = (windNode.FindChildLeaf("Magnitude")?.SingleValue ?? 0).ToString("F4");
+        }
+
+        // FlickUsed (optional)
+        var flickUsed = objNode.FindChildLeaf("FlickUsed");
+        ChkObjFlickUsed.IsChecked = flickUsed != null;
+        PropFlickUsed.IsEnabled = flickUsed != null;
+        PropFlickUsed.Text = flickUsed?.StringValue ?? "";
+
+        // AIData (optional, indexed leaves)
+        var aiData0 = objNode.FindChildLeaf("AIData0");
+        ChkObjAIData.IsChecked = aiData0 != null;
+        PanelAIData.IsVisible = aiData0 != null;
+        if (aiData0 != null)
+        {
+            var vals = new System.Collections.Generic.List<string>();
+            int i = 0;
+            while (objNode.FindChildLeaf($"AIData{i}") is { } d) { vals.Add(d.SingleValue.ToString("F4")); i++; }
+            PropAIData.Text = string.Join(", ", vals);
+        }
+
+        // MinishopRIcons / MinishopMIcons — only valid for minishop objects
+        bool isMinishop = typeId == ObjectTypeMinishop;
+        PanelMinishopSection.IsVisible = isMinishop;
+        if (isMinishop)
+        {
+            // MinishopRIcons (optional, indexed leaves)
+            var ricon0 = objNode.FindChildLeaf("RIcon0");
+            ChkObjMinishopR.IsChecked = ricon0 != null;
+            PanelMinishopR.IsVisible = ricon0 != null;
+            if (ricon0 != null)
+            {
+                var names = new System.Collections.Generic.List<string>();
+                int i = 0;
+                while (objNode.FindChildLeaf($"RIcon{i}") is { } r) { names.Add(IconNames.GetDisplayName(r.Int32Value)); i++; }
+                TxtMinishopR.Text = names.Count > 0 ? string.Join(", ", names) : "(none)";
+            }
+
+            // MinishopMIcons (optional, indexed leaves)
+            var micon0 = objNode.FindChildLeaf("MIcon0");
+            ChkObjMinishopM.IsChecked = micon0 != null;
+            PanelMinishopM.IsVisible = micon0 != null;
+            if (micon0 != null)
+            {
+                var names = new System.Collections.Generic.List<string>();
+                int i = 0;
+                while (objNode.FindChildLeaf($"MIcon{i}") is { } m) { names.Add(IconNames.GetDisplayName(m.Int32Value)); i++; }
+                TxtMinishopM.Text = names.Count > 0 ? string.Join(", ", names) : "(none)";
+            }
+        }
+        else
+        {
+            ChkObjMinishopR.IsChecked = false;
+            PanelMinishopR.IsVisible = false;
+            ChkObjMinishopM.IsChecked = false;
+            PanelMinishopM.IsVisible = false;
+        }
+
+        // HerdPoints (optional child nodes)
+        var herdPoints = objNode.EnumerateNodes().Where(n => n.Name == "HerdPoint").ToList();
+        ChkObjHerdPoint.IsChecked = herdPoints.Count > 0;
+        PanelHerdPoint.IsVisible = herdPoints.Count > 0;
+        if (herdPoints.Count > 0)
+        {
+            var lines = herdPoints.Select(hp =>
+            {
+                float hx = hp.FindChildLeaf("X")?.SingleValue ?? 0;
+                float hy = hp.FindChildLeaf("Y")?.SingleValue ?? 0;
+                float hz = hp.FindChildLeaf("Z")?.SingleValue ?? 0;
+                return $"{hx:F2}, {hy:F2}, {hz:F2}";
+            });
+            PropHerdPoints.Text = string.Join("\n", lines);
+        }
+
+        // Lock (child node — read-only display)
+        var lockNode = objNode.FindChildNode("Lock");
+        PanelLock.IsVisible = lockNode != null;
+        if (lockNode != null)
+        {
+            PropLockRefSrc.Text = (lockNode.FindChildLeaf("LockRefSrc")?.ByteValue ?? 0).ToString();
+            PropLockRefDst.Text = (lockNode.FindChildLeaf("LockRefDst")?.ByteValue ?? 0).ToString();
+        }
+
+        // SmokeGen-specific fields
+        PanelSmokeGen.IsVisible = isSmokeGen;
+        if (isSmokeGen)
+        {
+            PropSmkStopMin.Text = (objNode.FindChildLeaf("StopTimeMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkStopMax.Text = (objNode.FindChildLeaf("StopTimeMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkGoMin.Text = (objNode.FindChildLeaf("GoTimeMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkGoMax.Text = (objNode.FindChildLeaf("GoTimeMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkRateMin.Text = (objNode.FindChildLeaf("GenRateMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkRateMax.Text = (objNode.FindChildLeaf("GenRateMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkScaleStart.Text = (objNode.FindChildLeaf("ScaleStart")?.SingleValue ?? 0).ToString("F4");
+            PropSmkScaleEnd.Text = (objNode.FindChildLeaf("ScaleEnd")?.SingleValue ?? 0).ToString("F4");
+            PropSmkSpeedMin.Text = (objNode.FindChildLeaf("SpeedMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkSpeedMax.Text = (objNode.FindChildLeaf("SpeedMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkFadeMin.Text = (objNode.FindChildLeaf("FadeTimeMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkFadeMax.Text = (objNode.FindChildLeaf("FadeTimeMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWAngMin.Text = (objNode.FindChildLeaf("WindAngMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWAngMax.Text = (objNode.FindChildLeaf("WindAngMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWAngRate.Text = (objNode.FindChildLeaf("WindAngRate")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWSpdMin.Text = (objNode.FindChildLeaf("WindSpeedMin")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWSpdMax.Text = (objNode.FindChildLeaf("WindSpeedMax")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWSpdRate.Text = (objNode.FindChildLeaf("WindSpeedRate")?.SingleValue ?? 0).ToString("F4");
+            PropSmkWhite.Text = (objNode.FindChildLeaf("White")?.SingleValue ?? 0).ToString("F4");
+        }
+
+        // AreaAlien-specific fields
+        PanelAreaAlien.IsVisible = isAreaAlien;
+        if (isAreaAlien)
+        {
+            PropAreaCount.Text = (objNode.FindChildLeaf("Count")?.ByteValue ?? 0).ToString();
+            PropAreaMinRadius.Text = (objNode.FindChildLeaf("MinRadius")?.SingleValue ?? 0).ToString("F2");
+            PropAreaMaxRadius.Text = (objNode.FindChildLeaf("MaxRadius")?.SingleValue ?? 0).ToString("F2");
+            PropAreaMinScale.Text = (objNode.FindChildLeaf("MinScale")?.SingleValue ?? 0.75f).ToString("F4");
+            PropAreaMaxScale.Text = (objNode.FindChildLeaf("MaxScale")?.SingleValue ?? 1f).ToString("F4");
+        }
+
+        string label = isSmokeGen ? "SmokeGen" : isAreaAlien ? "AreaAlien" : PropObjType.Text;
+        PropHeader.Text = $"Object: {label}";
         _suppressOptionalLeafToggle = false;
     }
 
@@ -607,15 +784,70 @@ public partial class MainWindow
         var dialog = new Window
         {
             Title = "New Object",
-            Width = 300,
-            Height = 150,
+            Width = 340,
+            Height = 200,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false
         };
         var panel = new StackPanel { Margin = new Avalonia.Thickness(16), Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = "Object type (name or ID):" });
+
+        var allObjNames = ObjectNames.GetAllDisplayNames();
         var txtType = new TextBox { Text = ObjectNames.GetName(DefaultNewObjectType) };
-        panel.Children.Add(txtType);
+        var btnDropdown = new Button { Content = "▼", Width = 28, Padding = new Avalonia.Thickness(4, 0) };
+        var typeRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        Grid.SetColumn(txtType, 0);
+        Grid.SetColumn(btnDropdown, 1);
+        typeRow.Children.Add(txtType);
+        typeRow.Children.Add(btnDropdown);
+        panel.Children.Add(typeRow);
+
+        var txtSearch = new TextBox { Watermark = "Search..." };
+        var lstTypes = new ListBox { MaxHeight = 240, ItemsSource = allObjNames };
+        var popupContent = new Border
+        {
+            Background = Avalonia.Media.Brushes.White,
+            BorderBrush = Avalonia.Media.Brushes.Gray,
+            BorderThickness = new Avalonia.Thickness(1),
+            CornerRadius = new Avalonia.CornerRadius(4),
+            Padding = new Avalonia.Thickness(4),
+            Child = new StackPanel { Spacing = 4, Children = { txtSearch, lstTypes } }
+        };
+        var popup = new Avalonia.Controls.Primitives.Popup
+        {
+            PlacementTarget = txtType,
+            Placement = Avalonia.Controls.PlacementMode.Bottom,
+            MaxHeight = 300,
+            Width = 280,
+            IsLightDismissEnabled = true,
+            Child = popupContent
+        };
+        panel.Children.Add(popup);
+
+        btnDropdown.Click += (_, _) =>
+        {
+            txtSearch.Text = "";
+            lstTypes.ItemsSource = allObjNames;
+            popup.IsOpen = !popup.IsOpen;
+            if (popup.IsOpen)
+                txtSearch.Focus();
+        };
+        txtSearch.TextChanged += (_, _) =>
+        {
+            var filter = txtSearch.Text;
+            lstTypes.ItemsSource = string.IsNullOrEmpty(filter)
+                ? allObjNames
+                : ObjectNames.Search(filter);
+        };
+        lstTypes.SelectionChanged += (_, _) =>
+        {
+            if (lstTypes.SelectedItem is string selected)
+            {
+                txtType.Text = selected;
+                popup.IsOpen = false;
+            }
+        };
+
         var btnOk = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
         panel.Children.Add(btnOk);
         dialog.Content = panel;
