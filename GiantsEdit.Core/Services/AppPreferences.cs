@@ -20,7 +20,7 @@ public enum ControlScheme
 public class AppPreferences
 {
     private static readonly string PrefsDir =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "GiantsEdit");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GiantsEdit");
 
     private static readonly string PrefsFile = Path.Combine(PrefsDir, "preferences.json");
 

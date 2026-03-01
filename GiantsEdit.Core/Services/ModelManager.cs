@@ -30,8 +30,8 @@ public class ModelManager
     /// <param name="giantsFolder">Path to the Giants installation (parent of bin/).</param>
     public void SetGamePath(string giantsFolder)
     {
-        string binPath = Path.Combine(giantsFolder, "bin");
-        _overridePath = Path.Combine(binPath, "override");
+        string binPath = Path.Combine(giantsFolder, "Bin");
+        _overridePath = Path.Combine(binPath, "Override");
         _gzpIndex = GzpArchive.BuildIndexFromDirectory(binPath);
     }
 
