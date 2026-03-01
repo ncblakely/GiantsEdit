@@ -128,6 +128,7 @@ public sealed class OpenGlRenderer : IRenderer
 
     public void Render(RenderState state)
     {
+        _gl.ClearColor(0.05f, 0.05f, 0.1f, 1f);
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         var vp = state.ViewMatrix * state.ProjectionMatrix;
@@ -154,7 +155,10 @@ public sealed class OpenGlRenderer : IRenderer
         _gl.UseProgram(0);
     }
 
-    public void UploadTerrain(TerrainRenderData terrain) => _terrain.Upload(terrain);
+    public void UploadTerrain(TerrainRenderData terrain)
+    {
+        _terrain.Upload(terrain);
+    }
 
     public int UploadModel(ModelRenderData model, int modelId = -1) => _models.UploadModel(model, modelId);
 

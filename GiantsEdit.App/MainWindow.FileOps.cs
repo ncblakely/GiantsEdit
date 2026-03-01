@@ -149,7 +149,10 @@ public partial class MainWindow
                 try
                 {
                     _vm.Document.LoadTerrain(path);
-                    StatusText.Text = $"Imported terrain: {System.IO.Path.GetFileName(path)}";
+                    UploadTerrainToGpu();
+                    InvalidateViewport();
+                    var t = _vm.Document.Terrain;
+                    StatusText.Text = $"Imported terrain: {System.IO.Path.GetFileName(path)} ({t?.Width}x{t?.Height})";
                 }
                 catch (Exception ex)
                 {

@@ -136,7 +136,7 @@ internal static class TextureUploader
 
     private static void SetTexParam(GL gl, TextureParameterName pname, int value)
     {
-        gl.TexParameterI(TextureTarget.Texture2D, pname, in value);
+        gl.TexParameter(TextureTarget.Texture2D, pname, value);
     }
 
     private static (InternalFormat format, PixelFormat pixelFormat) GetImageFormats(int channels)

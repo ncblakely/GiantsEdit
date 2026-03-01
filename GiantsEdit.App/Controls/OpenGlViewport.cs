@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.OpenGL;
@@ -21,9 +23,9 @@ public class OpenGlViewport : OpenGlControlBase
     private bool _initialized;
     private Point _lastMousePos;
     private MouseButton _activeButton;
-    private TerrainRenderData? _pendingTerrain;
-    private MapObjectReader? _pendingMapObjects;
-    private readonly Queue<Action<IRenderer>> _pendingGlActions = new();
+    private volatile TerrainRenderData? _pendingTerrain;
+    private volatile MapObjectReader? _pendingMapObjects;
+    private readonly ConcurrentQueue<Action<IRenderer>> _pendingGlActions = new();
 
     public EditorCamera Camera { get; } = new();
 
@@ -93,52 +95,59 @@ public class OpenGlViewport : OpenGlControlBase
     {
         if (!_initialized || _renderer == null || _gl == null) return;
 
-        // Bind Avalonia's framebuffer — required for correct rendering
-        _gl.BindFramebuffer(FramebufferTarget.Framebuffer, (uint)fb);
-
-        // Use physical pixel dimensions for GL viewport (framebuffer is at physical size)
-        var scaling = VisualRoot?.RenderScaling ?? 1.0;
-        var bounds = Bounds;
-        int w = Math.Max(1, (int)(bounds.Width * scaling));
-        int h = Math.Max(1, (int)(bounds.Height * scaling));
-        _renderer.Resize(w, h);
-
-        // Process pending terrain upload on the GL thread
-        var pending = _pendingTerrain;
-        if (pending != null)
+        try
         {
-            _pendingTerrain = null;
-            _renderer.UploadTerrain(pending);
+            // Bind Avalonia's framebuffer — required for correct rendering
+            _gl.BindFramebuffer(FramebufferTarget.Framebuffer, (uint)fb);
+
+            // Use physical pixel dimensions for GL viewport (framebuffer is at physical size)
+            var scaling = VisualRoot?.RenderScaling ?? 1.0;
+            var bounds = Bounds;
+            int w = Math.Max(1, (int)(bounds.Width * scaling));
+            int h = Math.Max(1, (int)(bounds.Height * scaling));
+            _renderer.Resize(w, h);
+
+            // Process pending terrain upload on the GL thread (atomic read-and-clear)
+            var pending = Interlocked.Exchange(ref _pendingTerrain, null);
+            if (pending != null)
+                _renderer.UploadTerrain(pending);
+
+            var pendingMapObj = Interlocked.Exchange(ref _pendingMapObjects, null);
+            if (pendingMapObj != null)
+            {
+                _renderer.UploadMapObjects(pendingMapObj);
+            }
+
+            while (_pendingGlActions.TryDequeue(out var action))
+            {
+                action(_renderer);
+            }
+
+            // Ask the host to provide render state if we don't have one
+            if (CurrentRenderState == null)
+                RenderStateNeeded?.Invoke();
+
+            // Build a default render state from camera if none provided
+            var state = CurrentRenderState ?? new RenderState
+            {
+                ViewMatrix = Camera.GetViewMatrix(),
+                ProjectionMatrix = Camera.GetProjectionMatrix((float)bounds.Width / (float)Math.Max(1, bounds.Height)),
+                CameraPosition = Camera.Position
+            };
+
+            _renderer.BeginRender((uint)fb);
+            _renderer.Render(state);
+            _renderer.EndRender();
+
+            // If we uploaded new data this frame, request another render to ensure
+            // the compositor presents the updated content.
+            if (pending != null || pendingMapObj != null)
+                Dispatcher.UIThread.Post(RequestNextFrameRendering, DispatcherPriority.Render);
         }
-
-        var pendingMapObj = _pendingMapObjects;
-        if (pendingMapObj != null)
+        catch (Exception ex)
         {
-            _pendingMapObjects = null;
-            _renderer.UploadMapObjects(pendingMapObj);
+            Debug.WriteLine($"[GL Render] EXCEPTION: {ex}");
         }
-
-        while (_pendingGlActions.Count > 0)
-        {
-            var action = _pendingGlActions.Dequeue();
-            action(_renderer);
-        }
-
-        // Ask the host to provide render state if we don't have one
-        if (CurrentRenderState == null)
-            RenderStateNeeded?.Invoke();
-
-        // Build a default render state from camera if none provided
-        var state = CurrentRenderState ?? new RenderState
-        {
-            ViewMatrix = Camera.GetViewMatrix(),
-            ProjectionMatrix = Camera.GetProjectionMatrix((float)bounds.Width / (float)Math.Max(1, bounds.Height)),
-            CameraPosition = Camera.Position
-        };
-
-        _renderer.BeginRender((uint)fb);
-        _renderer.Render(state);
-        _renderer.EndRender();
     }
 
     /// <summary>

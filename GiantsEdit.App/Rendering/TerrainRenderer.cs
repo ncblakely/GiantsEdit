@@ -75,6 +75,7 @@ internal sealed class TerrainRenderer
             if (_lineEbo != 0) _gl.DeleteBuffer(_lineEbo);
         }
         _vboBumpDiffuse = 0;
+        _lineEbo = 0;
 
         _vao = _gl.GenVertexArray();
         _gl.BindVertexArray(_vao);
@@ -119,8 +120,6 @@ internal sealed class TerrainRenderer
         _indexCount = terrain.IndexCount;
 
         // Build wireframe line indices from triangles (each triangle → 3 edges)
-        if (_lineEbo != 0)
-            _gl.DeleteBuffer(_lineEbo);
 
         int triCount = terrain.IndexCount / 3;
         var lineIndices = new uint[triCount * 6]; // 3 edges × 2 vertices each

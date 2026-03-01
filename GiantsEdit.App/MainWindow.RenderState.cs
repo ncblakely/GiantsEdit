@@ -48,7 +48,8 @@ public partial class MainWindow
     private void UploadTerrainToGpu()
     {
         var terrainData = _vm.Document.BuildTerrainRenderData();
-        if (terrainData == null) return;
+        if (terrainData == null)
+            return;
 
         if (_modelManager.HasGameData)
         {
