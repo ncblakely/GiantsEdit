@@ -24,8 +24,10 @@ public partial class MainWindow
         if (dlg.Confirmed)
         {
             CloseOwnedWindows();
-            _vm.Document.NewWorld(dlg.MapWidth, dlg.MapHeight, dlg.TextureName);
-            StatusText.Text = $"New map: {dlg.MapWidth}x{dlg.MapHeight}";
+            _vm.Document.NewWorld(dlg.MapWidth, dlg.MapHeight, dlg.FillType,
+                dlg.MapName, dlg.GameMapType);
+            string name = string.IsNullOrEmpty(dlg.MapName) ? "untitled" : dlg.MapName;
+            StatusText.Text = $"New map: {name} ({dlg.MapWidth}x{dlg.MapHeight})";
         }
     }
 

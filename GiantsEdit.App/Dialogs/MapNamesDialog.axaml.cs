@@ -132,7 +132,6 @@ public partial class MapNamesDialog : Window
         };
 
         s += (i & 8) != 0 ? "\n0 Kabutos" : "\n1 Kabuto";
-        s += (i & 64) != 0 ? "\nNo hosting allowed" : "\nHosting allowed";
 
         TxtFlags.Text = s;
         UpdateFileName();
@@ -204,7 +203,6 @@ public partial class MapNamesDialog : Window
                          8 => no kabuto allowed
                         16 => no meccs vs meccs allowed
                         32 => no reaper vs reaper allowed
-                        64 => no hosting, joining only
                         """,
                     TextWrapping = Avalonia.Media.TextWrapping.Wrap,
                     Margin = new Avalonia.Thickness(16)

@@ -280,9 +280,9 @@ public static class GtiFormat
     }
 
     /// <summary>
-    /// Creates a new empty terrain with default header values.
+    /// Creates a new terrain with default header values and the specified fill type.
     /// </summary>
-    public static TerrainData CreateNew(int width, int height, string textureName = "")
+    public static TerrainData CreateNew(int width, int height, MapFillType fillType = MapFillType.Filled)
     {
         const float stretch = 40.0f;
 
@@ -307,7 +307,7 @@ public static class GtiFormat
                 U7 = 0f,
                 U8 = 1f
             },
-            TextureName = textureName,
+            TextureName = "TextureName",
             Heights = new float[width * height],
             Triangles = new byte[width * height],
             LightMap = new byte[width * height * 3]
@@ -316,9 +316,129 @@ public static class GtiFormat
         // Default lightmap to white
         Array.Fill(terrain.LightMap, (byte)255);
 
-        // Default all cells to triangle type 1 (both triangles, TL-BR diagonal)
+        // Default all cells to filled (both triangles, TL-BR diagonal)
         Array.Fill(terrain.Triangles, (byte)1);
+
+        // Apply fill type
+        switch (fillType)
+        {
+            case MapFillType.Empty:
+                Array.Clear(terrain.Triangles);
+                break;
+
+            case MapFillType.Circular:
+                ApplyCircularFill(terrain);
+                break;
+        }
 
         return terrain;
     }
+
+    /// <summary>
+    /// Applies circular fill to terrain — inscribes an ellipse touching all 4 edges
+    /// and clips cells to the circle boundary using diagonal triangles.
+    /// </summary>
+    private static void ApplyCircularFill(TerrainData terrain)
+    {
+        ReadOnlySpan<byte> trshp = [2, 7, 3, 1];
+        int xl = terrain.Width;
+        int yl = terrain.Height;
+
+        for (int y = 0; y < yl - 1; y++)
+        {
+            for (int x = 0; x < xl - 1; x++)
+            {
+                // Cells on the center cross are always filled
+                if (x * 2 + 2 == xl || y * 2 + 2 == yl)
+                {
+                    terrain.Triangles[y * xl + x] = 5;
+                    continue;
+                }
+
+                // Map cell to first quadrant of unit circle x²+y²=1
+                float x1, y1, x2, y2;
+                if (x * 2 + 2 > xl)
+                {
+                    x1 = (x + 0f) / (xl - 1) * 2 - 1;
+                    x2 = (x + 1f) / (xl - 1) * 2 - 1;
+                }
+                else
+                {
+                    x1 = (xl - 1 - (x + 1f)) / (xl - 1) * 2 - 1;
+                    x2 = (xl - 1 - (x + 0f)) / (xl - 1) * 2 - 1;
+                }
+
+                if (y * 2 + 2 > yl)
+                {
+                    y1 = (y + 0f) / (yl - 1) * 2 - 1;
+                    y2 = (y + 1f) / (yl - 1) * 2 - 1;
+                }
+                else
+                {
+                    y1 = (yl - 1 - (y + 1f)) / (yl - 1) * 2 - 1;
+                    y2 = (yl - 1 - (y + 0f)) / (yl - 1) * 2 - 1;
+                }
+
+                // Cell completely outside circle
+                if (x1 * x1 + y1 * y1 > 1)
+                {
+                    terrain.Triangles[y * xl + x] = 0;
+                    continue;
+                }
+
+                // Cell completely inside circle
+                if (x2 * x2 + y2 * y2 < 1)
+                {
+                    terrain.Triangles[y * xl + x] = 5;
+                    continue;
+                }
+
+                // Cell intersects circle — find which corners are hit
+                bool c00 = false, c01 = false, c10 = false, c11 = false;
+                float y1p = MathF.Sqrt(1 - x1 * x1);
+                float x1p = MathF.Sqrt(1 - y1 * y1);
+                float y2p = MathF.Sqrt(1 - x2 * x2);
+                float x2p = MathF.Sqrt(1 - y2 * y2);
+
+                float ymid = (y1 + y2) / 2;
+                float xmid = (x1 + x2) / 2;
+
+                if (y1 < y1p && y1p < y2)
+                {
+                    if (y1p < ymid) c00 = true; else c01 = true;
+                }
+                if (y1 < y2p && y2p < y2)
+                {
+                    if (y2p < ymid) c10 = true; else c11 = true;
+                }
+                if (x1 < x1p && x1p < x2)
+                {
+                    if (x1p < xmid) c00 = true; else c10 = true;
+                }
+                if (x1 < x2p && x2p < x2)
+                {
+                    if (x2p < xmid) c01 = true; else c11 = true;
+                }
+
+                int mask = (c00 ? 1 : 0) | (c10 ? 2 : 0) | (c01 ? 4 : 0) | (c11 ? 8 : 0);
+                terrain.Triangles[y * xl + x] = mask switch
+                {
+                    3 or 5 or 1 => 0,
+                    8 or 10 or 12 => 5,
+                    6 or 9 => trshp[(x * 2 + 1 > xl ? 1 : 0) + (y * 2 + 1 > yl ? 2 : 0)],
+                    _ => 0
+                };
+            }
+        }
+    }
+}
+
+/// <summary>
+/// Fill type for new terrain maps.
+/// </summary>
+public enum MapFillType
+{
+    Empty = 0,
+    Filled = 1,
+    Circular = 2
 }

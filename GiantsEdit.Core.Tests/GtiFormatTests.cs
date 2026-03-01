@@ -8,11 +8,11 @@ public class GtiFormatTests
     [TestMethod]
     public void CreateNew_HasCorrectDimensions()
     {
-        var terrain = GtiFormat.CreateNew(64, 32, "test.tga");
+        var terrain = GtiFormat.CreateNew(64, 32);
 
         Assert.AreEqual(64, terrain.Width);
         Assert.AreEqual(32, terrain.Height);
-        Assert.AreEqual("test.tga", terrain.TextureName);
+        Assert.AreEqual("useless", terrain.TextureName);
         Assert.HasCount(64 * 32, terrain.Heights);
         Assert.HasCount(64 * 32, terrain.Triangles);
         Assert.HasCount(64 * 32 * 3, terrain.LightMap);
@@ -21,12 +21,13 @@ public class GtiFormatTests
     [TestMethod]
     public void SaveLoad_RoundTrips()
     {
-        var original = GtiFormat.CreateNew(16, 16, "ground.tga");
+        var original = GtiFormat.CreateNew(16, 16);
 
         // Set some test data
         original.Header.XOffset = 100.5f;
         original.Header.YOffset = -200.25f;
         original.Header.Stretch = 2.0f;
+        original.TextureName = "ground.tga";
         original.SetHeight(0, 0, 10.5f);
         original.SetHeight(5, 3, -3.14f);
         original.Triangles[0] = 7;

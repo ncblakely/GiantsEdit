@@ -10,7 +10,7 @@ public class WorldDocumentTests
     public void NewWorld_CreatesValidTree()
     {
         var doc = new WorldDocument();
-        doc.NewWorld(64, 64, "test.tga");
+        doc.NewWorld(64, 64);
 
         Assert.IsNotNull(doc.WorldRoot);
         Assert.IsNotNull(doc.Terrain);

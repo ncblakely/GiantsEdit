@@ -1,20 +1,35 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="GiantsEdit.App.Dialogs.NewMapDialog"
-        Title="New Map" Width="350" Height="300"
+        Title="New Map" Width="380" Height="440"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
     <StackPanel Margin="16" Spacing="8">
         <TextBlock Text="Create a new map" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
 
+        <TextBlock Text="Map Name:" />
+        <TextBox x:Name="TxtMapName" Text="" Watermark="e.g. MyMap" />
+
+        <TextBlock Text="Map Type:" />
+        <ComboBox x:Name="CmbMapType" SelectedIndex="0" HorizontalAlignment="Stretch">
+            <ComboBoxItem Content="Singleplayer" />
+            <ComboBoxItem Content="Multiplayer (3 way)" />
+            <ComboBoxItem Content="Multiplayer (Mecc vs Mecc)" />
+            <ComboBoxItem Content="Multiplayer (Reaper vs Reaper)" />
+        </ComboBox>
+
         <TextBlock Text="Terrain Width:" />
-        <NumericUpDown x:Name="NumWidth" Value="256" Minimum="16" Maximum="2048" Increment="16" />
+        <NumericUpDown x:Name="NumWidth" Value="256" Minimum="2" Maximum="4096" Increment="16" />
 
         <TextBlock Text="Terrain Height:" />
-        <NumericUpDown x:Name="NumHeight" Value="256" Minimum="16" Maximum="2048" Increment="16" />
+        <NumericUpDown x:Name="NumHeight" Value="256" Minimum="2" Maximum="4096" Increment="16" />
 
-        <TextBlock Text="Texture Name:" />
-        <TextBox x:Name="TxtTexture" Text="" Watermark="e.g. ground.tga" />
+        <TextBlock Text="Terrain:" />
+        <ComboBox x:Name="CmbFillType" SelectedIndex="1" HorizontalAlignment="Stretch">
+            <ComboBoxItem Content="Empty" />
+            <ComboBoxItem Content="Filled" />
+            <ComboBoxItem Content="Circular" />
+        </ComboBox>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
             <Button x:Name="BtnCancel" Content="Cancel" Width="80" />

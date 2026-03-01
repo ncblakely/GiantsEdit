@@ -323,7 +323,8 @@ public class WorldDocument
     /// <summary>
     /// Creates a new empty world with the given terrain dimensions.
     /// </summary>
-    public void NewWorld(int terrainWidth, int terrainHeight, string textureName = "")
+    public void NewWorld(int terrainWidth, int terrainHeight, MapFillType fillType = MapFillType.Filled,
+        string mapName = "", int mapType = 0)
     {
         _worldRoot = new TreeNode("Map data");
         var fs = _worldRoot.AddNode(BinFormatConstants.SectionFileStart);
@@ -341,7 +342,25 @@ public class WorldDocument
         _worldRoot.AddNode(BinFormatConstants.SectionIncludeFiles);
         _worldRoot.AddNode(BinFormatConstants.GroupObjects);
 
-        _terrain = GtiFormat.CreateNew(terrainWidth, terrainHeight, textureName);
+        _terrain = GtiFormat.CreateNew(terrainWidth, terrainHeight, fillType);
+
+        // Set map metadata
+        MapType = mapType;
+        if (!string.IsNullOrEmpty(mapName))
+        {
+            string prefix = mapType switch
+            {
+                0x31 => "w_M_3Way_",
+                0x0D => "w_M_Mecc_",
+                0x0B => "w_M_Reaper_",
+                _ => "w_"
+            };
+            MapBinName = prefix + mapName + ".bin";
+        }
+        else
+        {
+            MapBinName = string.Empty;
+        }
 
         FilePath = null;
         TerrainPath = null;
