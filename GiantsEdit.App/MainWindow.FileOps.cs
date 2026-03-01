@@ -46,7 +46,8 @@ public partial class MainWindow
             [
                 new FilePickerFileType("Map Files") { Patterns = ["*.gck", "*.bin"] },
                 new FilePickerFileType("GCK Archives") { Patterns = ["*.gck"] },
-                new FilePickerFileType("BIN Files") { Patterns = ["*.bin"] }
+                new FilePickerFileType("BIN Files") { Patterns = ["*.bin"] },
+                new FilePickerFileType("GZP archive") { Patterns = ["*.gzp"] }
             ]
         });
 
@@ -63,6 +64,8 @@ public partial class MainWindow
                     CloseOwnedWindows();
                     if (path.EndsWith(".gck", StringComparison.OrdinalIgnoreCase))
                         _vm.Document.LoadGck(path);
+                    else if (path.EndsWith(".gzp", StringComparison.OrdinalIgnoreCase))
+                        _vm.Document.LoadGzp(path);
                     else
                         _vm.Document.LoadWorld(path);
                     StatusText.Text = $"Loaded: {System.IO.Path.GetFileName(path)}";

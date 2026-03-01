@@ -211,6 +211,49 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Opens a .gzp archive (custom zip containing w_*.bin + *.gti).
+    /// </summary>
+    public void LoadGzp(string gzpPath)
+    {
+        var entries = GzpArchive.BuildIndex(gzpPath);
+
+        // Find the w_*.bin entry
+        string binName = Path.ChangeExtension(Path.GetFullPath(gzpPath), ".bin");
+        string? binPath = Path.Exists(binName) ? binName : null;
+
+        // Find the *.gti entry
+        GzpArchiveEntry? gtiEntry = entries.FirstOrDefault(e =>
+            e.Key.EndsWith(".gti", StringComparison.OrdinalIgnoreCase)).Value;
+
+        if (binPath != null)
+        {
+            byte[] binData = File.ReadAllBytes(binPath);
+            var reader = new BinWorldReader();
+            _worldRoot = reader.Load(binData);
+            GckBinEntryName = binPath;
+        }
+
+        if (gtiEntry != null)
+        {
+            byte[]? gtiData = GzpArchive.ExtractEntry(gtiEntry);
+            if (gtiData != null)
+            {
+                LoadTerrainFromBytes(gtiData);
+            }
+            GckGtiEntryName = gtiEntry.Name;
+        }
+
+
+        FilePath = gzpPath;
+        MapBinName = binPath != null ? Path.GetFileName(binPath) : string.Empty;
+        TerrainPath = null;
+        IsModified = false;
+        WorldChanged?.Invoke();
+    }
+
+
+
+    /// <summary>
     /// Saves the current world. If the path is .gck, saves as a GCK archive
     /// (ZIP containing w_*.bin + *.gti + *.gmm). Otherwise saves raw .bin.
     /// </summary>
