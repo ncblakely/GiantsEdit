@@ -8,6 +8,7 @@ public partial class PreferencesDialog : Window
 {
     public string GamePath { get; private set; } = "";
     public ControlScheme ControlScheme { get; private set; } = ControlScheme.Default;
+    public string ThemeName { get; private set; } = "Light";
     public bool Confirmed { get; private set; }
 
     public PreferencesDialog()
@@ -16,6 +17,9 @@ public partial class PreferencesDialog : Window
 
         CmbControlScheme.ItemsSource = new[] { "Default (UE5-style)", "Classic (original)" };
         CmbControlScheme.SelectedIndex = 0;
+
+        CmbTheme.ItemsSource = new[] { "Light", "Dark" };
+        CmbTheme.SelectedIndex = 0;
 
         BtnBrowse.Click += async (_, _) =>
         {
@@ -33,6 +37,7 @@ public partial class PreferencesDialog : Window
         {
             GamePath = TxtGamePath.Text ?? "";
             ControlScheme = CmbControlScheme.SelectedIndex == 1 ? ControlScheme.Classic : ControlScheme.Default;
+            ThemeName = CmbTheme.SelectedIndex == 1 ? "Dark" : "Light";
             Confirmed = true;
             Close();
         };
@@ -40,9 +45,10 @@ public partial class PreferencesDialog : Window
         BtnCancel.Click += (_, _) => Close();
     }
 
-    public void SetInitialValues(string gamePath, ControlScheme scheme)
+    public void SetInitialValues(string gamePath, ControlScheme scheme, string theme)
     {
         TxtGamePath.Text = gamePath;
         CmbControlScheme.SelectedIndex = scheme == ControlScheme.Classic ? 1 : 0;
+        CmbTheme.SelectedIndex = theme == "Dark" ? 1 : 0;
     }
 }

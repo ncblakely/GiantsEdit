@@ -7,13 +7,16 @@
     <StackPanel Margin="16" Spacing="12">
         <TextBlock Text="Preferences" FontSize="14" FontWeight="Bold" />
 
-        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Game path:" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtGamePath" IsReadOnly="True" />
             <Button Grid.Row="0" Grid.Column="2" x:Name="BtnBrowse" Content="Browse..." Margin="8,0,0,0" />
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Control scheme:" VerticalAlignment="Center" Margin="0,0,8,0" />
             <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CmbControlScheme" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Theme:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="CmbTheme" />
         </Grid>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">

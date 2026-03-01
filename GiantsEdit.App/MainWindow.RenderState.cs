@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using Avalonia.Styling;
 using GiantsEdit.App.Dialogs;
 using GiantsEdit.Core.DataModel;
 using GiantsEdit.Core.Formats;
@@ -178,15 +179,17 @@ public partial class MainWindow
     private async Task ShowPreferencesAsync()
     {
         var dlg = new PreferencesDialog();
-        dlg.SetInitialValues(_prefs.GamePath, _prefs.ControlScheme);
+        dlg.SetInitialValues(_prefs.GamePath, _prefs.ControlScheme, _prefs.Theme);
         await dlg.ShowDialog(this);
 
         if (!dlg.Confirmed) return;
 
         _prefs.GamePath = dlg.GamePath;
         _prefs.ControlScheme = dlg.ControlScheme;
+        _prefs.Theme = dlg.ThemeName;
         _prefs.Save();
         _modelManager.SetGamePath(dlg.GamePath);
+        ApplyTheme(_prefs.Theme);
 
         StatusText.Text = _modelManager.HasGameData
             ? $"Game path set — {dlg.GamePath}"
@@ -195,6 +198,12 @@ public partial class MainWindow
         // Reload dome with game textures if a world is loaded
         if (_modelManager.HasGameData && _vm.Document.WorldRoot != null)
             LoadDomeFromGameData();
+    }
+
+    private void ApplyTheme(string theme)
+    {
+        if (Avalonia.Application.Current is { } app)
+            app.RequestedThemeVariant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
     }
 
     private async Task ToggleDrawRealObjectsAsync()

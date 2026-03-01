@@ -30,6 +30,8 @@ public class AppPreferences
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ControlScheme ControlScheme { get; set; } = ControlScheme.Default;
 
+    public string Theme { get; set; } = "Light";
+
     public void Save()
     {
         Directory.CreateDirectory(PrefsDir);

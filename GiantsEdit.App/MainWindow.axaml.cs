@@ -56,6 +56,7 @@ public partial class MainWindow : Window
             _modelManager.SetGamePath(_prefs.GamePath);
 
         InitializeComponent();
+        ApplyTheme(_prefs.Theme);
         DataContext = _vm;
 
         // === File menu ===
