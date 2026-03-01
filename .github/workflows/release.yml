@@ -15,7 +15,16 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: GiantsEdit-win-x64.zip
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: GiantsEdit-linux-x64.zip
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,25 +40,45 @@ jobs:
         run: dotnet test GiantsEdit.Core.Tests --no-restore --verbosity normal
 
       - name: Publish
-        run: dotnet publish GiantsEdit.App -c Release -o publish
+        run: dotnet publish GiantsEdit.App -c Release -r ${{ matrix.rid }} -o publish
 
-      - name: Zip release
-        run: Compress-Archive -Path publish\* -DestinationPath GiantsEdit-win-x64.zip
+      - name: Zip release (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path publish\* -DestinationPath ${{ matrix.artifact }}
+
+      - name: Zip release (Linux)
+        if: runner.os == 'Linux'
+        run: cd publish && zip -r ../${{ matrix.artifact }} .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.rid }}
+          path: ${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
       - name: Determine tag
         id: tag
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            echo "TAG=${{ github.event.inputs.tag }}" >> $env:GITHUB_OUTPUT
-          } else {
-            $ref = "${{ github.ref }}" -replace '^refs/tags/', ''
-            echo "TAG=$ref" >> $env:GITHUB_OUTPUT
-          }
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.TAG }}
           name: GiantsEdit ${{ steps.tag.outputs.TAG }}
-          files: GiantsEdit-win-x64.zip
+          files: artifacts/*
           generate_release_notes: true
