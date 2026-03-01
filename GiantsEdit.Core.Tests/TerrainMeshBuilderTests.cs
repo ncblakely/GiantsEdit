@@ -17,7 +17,7 @@ public class TerrainMeshBuilderTests
         var mesh = TerrainMeshBuilder.Build(terrain);
 
         Assert.AreEqual(16, mesh.VertexCount); // 4x4
-        Assert.AreEqual(16 * 3, mesh.Positions.Length); // 3 floats per vertex
+        Assert.HasCount(16 * 3, mesh.Positions); // 3 floats per vertex
     }
 
     [TestMethod]

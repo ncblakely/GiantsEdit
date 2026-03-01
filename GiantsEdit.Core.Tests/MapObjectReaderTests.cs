@@ -28,9 +28,9 @@ public class MapObjectReaderTests
         var reader = new MapObjectReader();
         reader.Load(lines);
 
-        Assert.AreEqual(1, reader.Objects.Count);
+        Assert.HasCount(1, reader.Objects);
         Assert.AreEqual("roof_1", reader.Objects[0].Name);
-        Assert.AreEqual(1, reader.Objects[0].Triangles.Count);
+        Assert.HasCount(1, reader.Objects[0].Triangles);
 
         // Check vertex colors
         var tri = reader.Objects[0].Triangles[0];
@@ -94,7 +94,7 @@ public class MapObjectReaderTests
         var reader = new MapObjectReader();
         reader.Load(lines);
 
-        Assert.AreEqual(1, reader.Objects.Count);
+        Assert.HasCount(1, reader.Objects);
         Assert.AreEqual(5, reader.ObjectWrap.Keys.First());
     }
 }

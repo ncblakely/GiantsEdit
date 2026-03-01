@@ -42,7 +42,7 @@ public class WorldDocumentTests
         doc.AddObject(60, -5f, -10f, 0f);
 
         var instances = doc.GetObjectInstances();
-        Assert.AreEqual(2, instances.Count);
+        Assert.HasCount(2, instances);
         Assert.AreEqual(50, instances[0].ModelId);
         Assert.AreEqual(10f, instances[0].Position.X);
     }
@@ -58,7 +58,7 @@ public class WorldDocumentTests
         doc.RemoveSelectedObject();
 
         Assert.IsNull(doc.SelectedObject);
-        Assert.AreEqual(0, doc.GetObjectInstances().Count);
+        Assert.IsEmpty(doc.GetObjectInstances());
     }
 
     [TestMethod]
@@ -76,7 +76,7 @@ public class WorldDocumentTests
             10f);
         float after = doc.Terrain.GetHeight(8, 8);
 
-        Assert.IsTrue(after > before, $"Height should increase: before={before}, after={after}");
+        Assert.IsGreaterThan(before, after, $"Height should increase: before={before}, after={after}");
     }
 
     [TestMethod]
@@ -92,6 +92,6 @@ public class WorldDocumentTests
 
         Assert.IsNotNull(renderData);
         Assert.AreEqual(16, renderData!.VertexCount);
-        Assert.IsTrue(renderData.IndexCount > 0);
+        Assert.IsGreaterThan(0, renderData.IndexCount);
     }
 }

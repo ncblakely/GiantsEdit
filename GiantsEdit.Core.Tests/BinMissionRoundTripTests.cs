@@ -38,7 +38,7 @@ public class BinMissionRoundTripTests
 
         Assert.IsNotNull(loaded);
         var objs = loaded!.GetChildNode("<Objects>").EnumerateNodes().ToList();
-        Assert.AreEqual(2, objs.Count);
+        Assert.HasCount(2, objs);
 
         Assert.AreEqual(50, objs[0].GetChildLeaf("Type").Int32Value);
         Assert.AreEqual(0.5f, objs[0].GetChildLeaf("DirFacing").SingleValue);

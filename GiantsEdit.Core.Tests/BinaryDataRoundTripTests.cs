@@ -38,7 +38,7 @@ public class BinaryDataRoundTripTests
         var w = new BinaryDataWriter();
         w.WriteString16("hello");
         var data = w.ToArray();
-        Assert.AreEqual(16, data.Length);
+        Assert.HasCount(16, data);
         var r = new BinaryDataReader(data);
         Assert.AreEqual("hello", r.ReadString16());
     }

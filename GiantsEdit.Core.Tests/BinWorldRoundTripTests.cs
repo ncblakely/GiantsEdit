@@ -79,7 +79,7 @@ public class BinWorldRoundTripTests
 
         var loadedObjs = loaded!.GetChildNode("<Objects>");
         var nodes = loadedObjs.EnumerateNodes().ToList();
-        Assert.AreEqual(2, nodes.Count);
+        Assert.HasCount(2, nodes);
 
         // First object (1-angle)
         Assert.AreEqual(102, nodes[0].GetChildLeaf("Type").Int32Value);

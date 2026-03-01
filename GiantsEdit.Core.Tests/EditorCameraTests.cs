@@ -44,7 +44,7 @@ public class EditorCameraTests
         var after = cam.Position;
 
         float dist = Vector3.Distance(before, after);
-        Assert.IsTrue(dist > 0.1f, $"Camera should have moved, but distance was {dist}");
+        Assert.IsGreaterThan(0.1f, dist, $"Camera should have moved, but distance was {dist}");
     }
 
     [TestMethod]
@@ -56,7 +56,7 @@ public class EditorCameraTests
         var after = cam.Position;
 
         float dist = Vector3.Distance(before, after);
-        Assert.IsTrue(dist > 1f);
+        Assert.IsGreaterThan(1f, dist);
     }
 
     [TestMethod]
@@ -68,7 +68,7 @@ public class EditorCameraTests
         var after = cam.Position;
 
         // Should move in the +X direction (forward)
-        Assert.IsTrue(after.X > before.X, "Scroll up should zoom in (move forward)");
+        Assert.IsGreaterThan(before.X, after.X, "Scroll up should zoom in (move forward)");
     }
 
     [TestMethod]
@@ -92,7 +92,7 @@ public class EditorCameraTests
         // Camera should be pointing roughly toward origin
         var toTarget = Vector3.Normalize(-cam.Position);
         float dot = Vector3.Dot(cam.Forward, toTarget);
-        Assert.IsTrue(dot > 0.9f, $"Camera should face target, dot={dot}");
+        Assert.IsGreaterThan(0.9f, dot, $"Camera should face target, dot={dot}");
     }
 
     [TestMethod]
@@ -108,7 +108,7 @@ public class EditorCameraTests
         cam.Zoom(-0.001f); // small move triggers clamp
 
         float r = cam.Position.Length();
-        Assert.IsTrue(r <= 100f * 0.8f + 1f, $"Position should be clamped, but r={r}");
+        Assert.IsLessThanOrEqualTo(100f * 0.8f + 1f, r, $"Position should be clamped, but r={r}");
     }
 
     [TestMethod]
@@ -123,7 +123,7 @@ public class EditorCameraTests
         cam.Position = new Vector3(0, 0, -100);
         cam.Pan(0, 0.001f); // triggers clamp
 
-        Assert.IsTrue(cam.Position.Z >= 0, $"Z should be >= 0, but was {cam.Position.Z}");
+        Assert.IsGreaterThanOrEqualTo(0f, cam.Position.Z, $"Z should be >= 0, but was {cam.Position.Z}");
     }
 
     [TestMethod]
@@ -135,6 +135,6 @@ public class EditorCameraTests
         for (int i = 0; i < 200; i++)
             cam.Rotate(0, 50f);
 
-        Assert.IsTrue(cam.Up.Z > 0, $"Up.Z should remain positive, but was {cam.Up.Z}");
+        Assert.IsGreaterThan(0f, cam.Up.Z, $"Up.Z should remain positive, but was {cam.Up.Z}");
     }
 }

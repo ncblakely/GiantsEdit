@@ -13,9 +13,9 @@ public class GtiFormatTests
         Assert.AreEqual(64, terrain.Width);
         Assert.AreEqual(32, terrain.Height);
         Assert.AreEqual("test.tga", terrain.TextureName);
-        Assert.AreEqual(64 * 32, terrain.Heights.Length);
-        Assert.AreEqual(64 * 32, terrain.Triangles.Length);
-        Assert.AreEqual(64 * 32 * 3, terrain.LightMap.Length);
+        Assert.HasCount(64 * 32, terrain.Heights);
+        Assert.HasCount(64 * 32, terrain.Triangles);
+        Assert.HasCount(64 * 32 * 3, terrain.LightMap);
     }
 
     [TestMethod]

@@ -58,8 +58,8 @@ public class TerrainEditorTests
         float centerHeight = terrain.Heights[1 * 4 + 1];
         float edgeHeight = terrain.Heights[0 * 4 + 0];
 
-        Assert.IsTrue(centerHeight > 0f, "Center cell should be raised");
-        Assert.IsTrue(centerHeight > edgeHeight,
+        Assert.IsGreaterThan(0f, centerHeight, "Center cell should be raised");
+        Assert.IsGreaterThan(edgeHeight, centerHeight,
             $"Center ({centerHeight}) should be affected more than edge ({edgeHeight})");
     }
 

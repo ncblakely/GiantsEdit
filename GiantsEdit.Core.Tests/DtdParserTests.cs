@@ -18,10 +18,10 @@ public class DtdParserTests
 
         var nodes = DtdParser.Parse(lines);
 
-        Assert.AreEqual(1, nodes.Count);
+        Assert.HasCount(1, nodes);
         Assert.AreEqual("Root", nodes[0].Name);
-        Assert.AreEqual(0, nodes[0].SubNodes.Count);
-        Assert.AreEqual(2, nodes[0].SubLeaves.Count);
+        Assert.IsEmpty(nodes[0].SubNodes);
+        Assert.HasCount(2, nodes[0].SubLeaves);
 
         Assert.AreEqual("Name", nodes[0].SubLeaves[0].Name);
         Assert.AreEqual(DtdBasicType.String, nodes[0].SubLeaves[0].BasicType);
@@ -48,8 +48,8 @@ public class DtdParserTests
 
         var nodes = DtdParser.Parse(lines);
 
-        Assert.AreEqual(2, nodes.Count);
-        Assert.AreEqual(1, nodes[0].SubNodes.Count);
+        Assert.HasCount(2, nodes);
+        Assert.HasCount(1, nodes[0].SubNodes);
         Assert.AreEqual("ChildEntry", nodes[0].SubNodes[0].Name);
         Assert.AreEqual(DtdCount.Any, nodes[0].SubNodes[0].Count);
         Assert.IsNotNull(nodes[0].SubNodes[0].Node);
@@ -132,8 +132,8 @@ public class DtdParserTests
         };
 
         var nodes = DtdParser.Parse(lines);
-        Assert.AreEqual(1, nodes.Count);
-        Assert.AreEqual(1, nodes[0].SubLeaves.Count);
+        Assert.HasCount(1, nodes);
+        Assert.HasCount(1, nodes[0].SubLeaves);
     }
 
     [TestMethod]

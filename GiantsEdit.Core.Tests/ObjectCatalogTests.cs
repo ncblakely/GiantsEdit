@@ -18,10 +18,10 @@ public class ObjectCatalogTests
 
         var catalog = ObjectCatalog.LoadFromTsv(lines);
 
-        Assert.AreEqual(2, catalog.Entries.Count);
-        Assert.AreEqual(1, catalog.GetById(1).Count);
-        Assert.AreEqual(1, catalog.GetById(11).Count);
-        Assert.AreEqual(0, catalog.GetById(999).Count);
+        Assert.HasCount(2, catalog.Entries);
+        Assert.HasCount(1, catalog.GetById(1));
+        Assert.HasCount(1, catalog.GetById(11));
+        Assert.IsEmpty(catalog.GetById(999));
     }
 
     [TestMethod]
@@ -32,7 +32,7 @@ public class ObjectCatalogTests
         catalog.Add(new ObjectCatalogEntry(42, "TestObj2", "model2.gbs"));
 
         var entries = catalog.GetById(42);
-        Assert.AreEqual(2, entries.Count);
+        Assert.HasCount(2, entries);
         Assert.AreEqual("TestObj", entries[0].Name);
         Assert.AreEqual("TestObj2", entries[1].Name);
     }
@@ -49,6 +49,6 @@ public class ObjectCatalogTests
         };
 
         var catalog = ObjectCatalog.LoadFromTsv(lines);
-        Assert.AreEqual(1, catalog.Entries.Count);
+        Assert.HasCount(1, catalog.Entries);
     }
 }

@@ -79,12 +79,12 @@ public class TreeNodeWithDtdTests
         }
 
         var nodes = DtdParser.LoadFromFile(dtdPath);
-        Assert.IsTrue(nodes.Count > 0, "Expected at least one DTD node.");
+        Assert.IsNotEmpty(nodes, "Expected at least one DTD node.");
 
         // Verify MapData root is present
         var mapData = nodes.FirstOrDefault(n => n.Name == "MapData");
         Assert.IsNotNull(mapData, "Expected MapData node in w.dtd.");
-        Assert.IsTrue(mapData.SubNodes.Count > 0, "MapData should have sub-nodes.");
+        Assert.IsNotEmpty(mapData.SubNodes, "MapData should have sub-nodes.");
     }
 
     public TestContext TestContext { get; set; } = null!;
