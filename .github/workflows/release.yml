@@ -42,6 +42,10 @@ jobs:
       - name: Publish
         run: dotnet publish GiantsEdit.App -c Release -r ${{ matrix.rid }} -o publish
 
+      - name: Remove PDBs
+        shell: bash
+        run: rm -f publish/*.pdb
+
       - name: Zip release (Windows)
         if: runner.os == 'Windows'
         run: Compress-Archive -Path publish\* -DestinationPath ${{ matrix.artifact }}
