@@ -1,4 +1,5 @@
 using GiantsEdit.App.Dialogs;
+using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Services;
 
 namespace GiantsEdit.App;
@@ -43,7 +44,7 @@ public partial class MainWindow
         win.NodeSelected += node =>
         {
             // If in object editing mode and an Object node is selected, select it in the viewport
-            if (_vm.Document.CurrentMode == EditMode.ObjectEdit && node.Name == "Object")
+            if (_vm.Document.CurrentMode == EditMode.ObjectEdit && node.Name == BinFormatConstants.NodeObject)
             {
                 SelectObject(node);
                 InvalidateViewport();
@@ -85,7 +86,7 @@ public partial class MainWindow
 
         foreach (var obj in root.EnumerateNodes())
         {
-            if (obj.Name != "Object") continue;
+            if (obj.Name != BinFormatConstants.NodeObject) continue;
 
             var xLeaf = obj.FindChildLeaf("X");
             var yLeaf = obj.FindChildLeaf("Y");

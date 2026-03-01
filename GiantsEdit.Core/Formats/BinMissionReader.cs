@@ -26,7 +26,7 @@ public class BinMissionReader
             return null;
 
         var root = new TreeNode("Mission data");
-        var objects = root.AddNode("<Objects>");
+        var objects = root.AddNode(BinFormatConstants.GroupObjects);
 
         _currentObject = objects;
 
@@ -223,7 +223,7 @@ public class BinMissionWriter
             WriteOptions(w, options);
 
         // Write objects
-        var objects = root.FindChildNode("<Objects>");
+        var objects = root.FindChildNode(BinFormatConstants.GroupObjects);
         if (objects != null)
         {
             foreach (var obj in objects.EnumerateNodes())

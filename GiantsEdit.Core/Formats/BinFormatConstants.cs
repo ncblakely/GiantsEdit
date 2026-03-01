@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace GiantsEdit.Core.Formats;
 
 /// <summary>
@@ -29,6 +31,76 @@ public static class BinFormatConstants
     public const string GroupPreObjects = "<PreObjects>";
     public const string GroupMissions = "<Missions>";
     public const string GroupScenerios = "<Scenerios>";
+
+    // Node names — root-level properties
+    public const string NodeTiling = "Tiling";
+    public const string NodeSeaSpeed = "SeaSpeed";
+    public const string NodeFog = "Fog";
+    public const string NodeWaterFog = "WaterFog";
+    public const string NodeStartWeather = "StartWeather";
+    public const string NodeObjEditStart = "ObjEditStart";
+    public const string NodeObjEditEnd = "ObjEditEnd";
+    public const string NodeBumpClampValue = "BumpClampValue";
+    public const string NodeNoScenerios = "NoScenerios";
+    public const string NodeLandAngles = "LandAngles";
+    public const string NodeLandTexFade = "LandTexFade";
+    public const string NodeWaterColor = "WaterColor";
+    public const string NodeScenario = "Scenario";
+    public const string NodeMusic = "Music";
+    public const string NodeAmbient = "Ambient";
+    public const string NodeMultiAmbient = "MultiAmbient";
+    public const string NodeArmyBin = "ArmyBin";
+    public const string NodeVoPath = "VoPath";
+    public const string NodeAmbientColor = "AmbientColor";
+    public const string NodeBlendWater = "BlendWater";
+    public const string NodeWaterMaterial = "WaterMaterial";
+    public const string NodeWorldGrid = "WorldGrid";
+    public const string NodeWorldNoLighting = "WorldNoLighting";
+    public const string NodeMusicSuspense = "MusicSuspense";
+    public const string NodeMusicLight = "MusicLight";
+    public const string NodeMusicWin = "MusicWin";
+    public const string NodeMusicHeavy = "MusicHeavy";
+    public const string NodeMusicFailure = "MusicFailure";
+    public const string NodeMusicSuccess = "MusicSuccess";
+
+    // Node names — group children
+    public const string NodeTeleport = "Teleport";
+    public const string NodeStartLoc = "StartLoc";
+    public const string NodeSunColor = "SunColor";
+    public const string NodeSunFxName = "SunFxName";
+    public const string NodeSunflare1 = "Sunflare1";
+    public const string NodeSunflare2 = "Sunflare2";
+    public const string NodeObject = "Object";
+    public const string NodeSmokeGen = "SmokeGen";
+    public const string NodeAreaAlien = "AreaAlien";
+    public const string NodeScenerio = "Scenerio";
+    public const string NodeFlick = "Flick";
+
+    // Node names — 44-byte texture entries (name32 + wrap + offsetX + offsetY)
+    public const string NodeGroundTexture = "GroundTexture";
+    public const string NodeSlopeTexture = "SlopeTexture";
+    public const string NodeWallTexture = "WallTexture";
+    public const string NodeGroundBumpTexture = "GroundBumpTexture";
+    public const string NodeSlopeBumpTexture = "SlopeBumpTexture";
+    public const string NodeWallBumpTexture = "WallBumpTexture";
+    public const string NodeGroundDetailTexture = "GroundDetailTexture";
+    public const string NodeSlopeDetailTexture = "SlopeDetailTexture";
+    public const string NodeWallDetailTexture = "WallDetailTexture";
+    public const string NodeGroundNormalTexture = "GroundNormalTexture";
+    public const string NodeSlopeNormalTexture = "SlopeNormalTexture";
+    public const string NodeWallNormalTexture = "WallNormalTexture";
+
+    // Leaf names — 16-byte texture entries (name16)
+    public const string LeafOutDomeTex = "OutDomeTex";
+    public const string LeafDomeTex = "DomeTex";
+    public const string LeafDomeEdgeTex = "DomeEdgeTex";
+    public const string LeafWFall1Tex = "WFall1Tex";
+    public const string LeafWFall2Tex = "WFall2Tex";
+    public const string LeafWFall3Tex = "WFall3Tex";
+    public const string LeafSpaceLineTex = "SpaceLineTex";
+    public const string LeafSpaceTex = "SpaceTex";
+    public const string LeafSeaTex = "SeaTex";
+    public const string LeafGlowTex = "GlowTex";
 
     // Opcodes — object attributes
     public const byte OpAnimType = 0x13;
@@ -132,4 +204,52 @@ public static class BinFormatConstants
     public const byte OpMusicHeavy = 0x6F;
     public const byte OpMusicFailure = 0x70;
     public const byte OpMusicSuccess = 0x71;
+
+    /// <summary>
+    /// Maps opcode → node name for 44-byte texture entries (name32 + wrap + offsetX + offsetY).
+    /// </summary>
+    public static readonly FrozenDictionary<byte, string> NodeTextureOpcodeToName = new Dictionary<byte, string>
+    {
+        [OpGroundTexture] = NodeGroundTexture,
+        [OpSlopeTexture] = NodeSlopeTexture,
+        [OpWallTexture] = NodeWallTexture,
+        [OpGroundBumpTexture] = NodeGroundBumpTexture,
+        [OpSlopeBumpTexture] = NodeSlopeBumpTexture,
+        [OpWallBumpTexture] = NodeWallBumpTexture,
+        [OpGroundDetailTexture] = NodeGroundDetailTexture,
+        [OpSlopeDetailTexture] = NodeSlopeDetailTexture,
+        [OpWallDetailTexture] = NodeWallDetailTexture,
+        [OpGroundNormalTexture] = NodeGroundNormalTexture,
+        [OpSlopeNormalTexture] = NodeSlopeNormalTexture,
+        [OpWallNormalTexture] = NodeWallNormalTexture,
+    }.ToFrozenDictionary();
+
+    /// <summary>
+    /// Maps node name → opcode for 44-byte texture entries.
+    /// </summary>
+    public static readonly FrozenDictionary<string, byte> NodeTextureNameToOpcode =
+        NodeTextureOpcodeToName.ToFrozenDictionary(kv => kv.Value, kv => kv.Key);
+
+    /// <summary>
+    /// Maps opcode → leaf name for 16-byte texture entries (name16).
+    /// </summary>
+    public static readonly FrozenDictionary<byte, string> LeafTextureOpcodeToName = new Dictionary<byte, string>
+    {
+        [OpOutDomeTex] = LeafOutDomeTex,
+        [OpDomeTex] = LeafDomeTex,
+        [OpDomeEdgeTex] = LeafDomeEdgeTex,
+        [OpWFall1Tex] = LeafWFall1Tex,
+        [OpWFall2Tex] = LeafWFall2Tex,
+        [OpWFall3Tex] = LeafWFall3Tex,
+        [OpSpaceLineTex] = LeafSpaceLineTex,
+        [OpSpaceTex] = LeafSpaceTex,
+        [OpSeaTex] = LeafSeaTex,
+        [OpGlowTex] = LeafGlowTex,
+    }.ToFrozenDictionary();
+
+    /// <summary>
+    /// Maps leaf name → opcode for 16-byte texture entries.
+    /// </summary>
+    public static readonly FrozenDictionary<string, byte> LeafTextureNameToOpcode =
+        LeafTextureOpcodeToName.ToFrozenDictionary(kv => kv.Value, kv => kv.Key);
 }

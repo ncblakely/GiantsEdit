@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Avalonia.Platform.Storage;
 using GiantsEdit.App.Dialogs;
-using GiantsEdit.Core.Rendering;
+using GiantsEdit.Core.Formats;
 
 namespace GiantsEdit.App;
 
@@ -127,7 +127,7 @@ public partial class MainWindow
         var root = _vm.Document.WorldRoot;
         if (root == null) return;
 
-        root.RemoveNodesByName("Object");
+        root.RemoveNodesByName(BinFormatConstants.NodeObject);
         InvalidateViewport();
         StatusText.Text = "Objects cleared";
     }
@@ -225,7 +225,7 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("BIN Files") { Patterns = ["*.bin"] }]
         });
 
-         if (file != null)
+        if (file != null)
         {
             var path = file.TryGetLocalPath();
             if (path != null)

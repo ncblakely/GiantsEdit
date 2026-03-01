@@ -5,7 +5,6 @@ using GiantsEdit.App.Dialogs;
 using GiantsEdit.Core.DataModel;
 using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Rendering;
-using GiantsEdit.Core.Services;
 
 namespace GiantsEdit.App;
 
@@ -54,20 +53,20 @@ public partial class MainWindow
         if (_modelManager.HasGameData)
         {
             var texInfo = new TerrainTextureInfo();
-            LoadTerrainTexture("GroundTexture", v => { texInfo.GroundImage = v.img; texInfo.GroundWrap = v.wrap; });
-            LoadTerrainTexture("SlopeTexture", v => { texInfo.SlopeImage = v.img; texInfo.SlopeWrap = v.wrap; });
-            LoadTerrainTexture("WallTexture", v => { texInfo.WallImage = v.img; texInfo.WallWrap = v.wrap; });
+            LoadTerrainTexture(BinFormatConstants.NodeGroundTexture, v => { texInfo.GroundImage = v.img; texInfo.GroundWrap = v.wrap; });
+            LoadTerrainTexture(BinFormatConstants.NodeSlopeTexture, v => { texInfo.SlopeImage = v.img; texInfo.SlopeWrap = v.wrap; });
+            LoadTerrainTexture(BinFormatConstants.NodeWallTexture, v => { texInfo.WallImage = v.img; texInfo.WallWrap = v.wrap; });
 
             // Normal maps (try normal textures first, fall back to bump textures)
-            LoadTerrainTexture("GroundNormalTexture", v => { texInfo.GroundNormalImage = v.img; texInfo.GroundNormalWrap = v.wrap; });
+            LoadTerrainTexture(BinFormatConstants.NodeGroundNormalTexture, v => { texInfo.GroundNormalImage = v.img; texInfo.GroundNormalWrap = v.wrap; });
             if (texInfo.GroundNormalImage == null)
-                LoadTerrainTexture("GroundBumpTexture", v => { texInfo.GroundNormalImage = v.img; texInfo.GroundNormalWrap = v.wrap; });
-            LoadTerrainTexture("SlopeNormalTexture", v => { texInfo.SlopeNormalImage = v.img; texInfo.SlopeNormalWrap = v.wrap; });
+                LoadTerrainTexture(BinFormatConstants.NodeGroundBumpTexture, v => { texInfo.GroundNormalImage = v.img; texInfo.GroundNormalWrap = v.wrap; });
+            LoadTerrainTexture(BinFormatConstants.NodeSlopeNormalTexture, v => { texInfo.SlopeNormalImage = v.img; texInfo.SlopeNormalWrap = v.wrap; });
             if (texInfo.SlopeNormalImage == null)
-                LoadTerrainTexture("SlopeBumpTexture", v => { texInfo.SlopeNormalImage = v.img; texInfo.SlopeNormalWrap = v.wrap; });
-            LoadTerrainTexture("WallNormalTexture", v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
+                LoadTerrainTexture(BinFormatConstants.NodeSlopeBumpTexture, v => { texInfo.SlopeNormalImage = v.img; texInfo.SlopeNormalWrap = v.wrap; });
+            LoadTerrainTexture(BinFormatConstants.NodeWallNormalTexture, v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
             if (texInfo.WallNormalImage == null)
-                LoadTerrainTexture("WallBumpTexture", v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
+                LoadTerrainTexture(BinFormatConstants.NodeWallBumpTexture, v => { texInfo.WallNormalImage = v.img; texInfo.WallNormalWrap = v.wrap; });
 
             if (texInfo.GroundImage != null || texInfo.SlopeImage != null || texInfo.WallImage != null)
             {

@@ -1,6 +1,5 @@
 using System.Numerics;
 using GiantsEdit.Core.DataModel;
-using GiantsEdit.Core.Formats;
 
 namespace GiantsEdit.Core.Rendering;
 

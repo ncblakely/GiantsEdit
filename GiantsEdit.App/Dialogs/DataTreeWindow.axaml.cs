@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GiantsEdit.Core.DataModel;
+using GiantsEdit.Core.Formats;
 
 namespace GiantsEdit.App.Dialogs;
 
@@ -127,14 +128,15 @@ public partial class DataTreeWindow : Window
 /// </summary>
 public class DataTreeNodeVm
 {
-    private static readonly HashSet<string> HiddenSections = ["[sfx]", "[objdefs]", "ObjEditStart", "ObjEditEnd"];
+    private static readonly HashSet<string> HiddenSections =
+        [BinFormatConstants.SectionSfx, BinFormatConstants.SectionObjDefs, BinFormatConstants.NodeObjEditStart, BinFormatConstants.NodeObjEditEnd];
 
     public DataTreeNodeVm(TreeNode node)
     {
         Model = node;
 
         // Show object name instead of generic "Object" for entries in the objects array
-        if (node.Name == "Object")
+        if (node.Name == BinFormatConstants.NodeObject)
         {
             var typeLeaf = node.FindChildLeaf("Type");
             Name = typeLeaf != null

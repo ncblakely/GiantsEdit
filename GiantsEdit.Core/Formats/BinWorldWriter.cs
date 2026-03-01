@@ -49,95 +49,95 @@ public class BinWorldWriter
                 case BinFormatConstants.SectionIncludeFiles:
                     break;
 
-                case "Tiling": SaveTiling(child); break;
-                case "<Textures>": SaveTextures(child); break;
-                case "SeaSpeed": SaveSeaSpeed(child); break;
-                case "<Teleports>": SaveTeleport(child); break;
-                case "<StartLocs>": SaveStartLoc(child); break;
-                case "<Sun>": SaveSun(child); break;
-                case "<Flicks>": SaveFlicks(child); break;
-                case "<PreObjects>": SaveAllObjects(child); break;
+                case BinFormatConstants.NodeTiling: SaveTiling(child); break;
+                case BinFormatConstants.GroupTextures: SaveTextures(child); break;
+                case BinFormatConstants.NodeSeaSpeed: SaveSeaSpeed(child); break;
+                case BinFormatConstants.GroupTeleports: SaveTeleport(child); break;
+                case BinFormatConstants.GroupStartLocs: SaveStartLoc(child); break;
+                case BinFormatConstants.GroupSun: SaveSun(child); break;
+                case BinFormatConstants.GroupFlicks: SaveFlicks(child); break;
+                case BinFormatConstants.GroupPreObjects: SaveAllObjects(child); break;
 
-                case "StartWeather":
+                case BinFormatConstants.NodeStartWeather:
                     _w.WriteByte(BinFormatConstants.OpStartWeather);
                     _w.WriteString0(child.GetChildLeaf("Name").StringValue);
                     break;
 
-                case "ObjEditStart": _w.WriteByte(BinFormatConstants.OpObjEditStart); break;
-                case "ObjEditEnd": _w.WriteByte(BinFormatConstants.OpObjEditEnd); break;
+                case BinFormatConstants.NodeObjEditStart: _w.WriteByte(BinFormatConstants.OpObjEditStart); break;
+                case BinFormatConstants.NodeObjEditEnd: _w.WriteByte(BinFormatConstants.OpObjEditEnd); break;
 
-                case "Fog": SaveFog(child); break;
-                case "WaterFog": SaveWaterFog(child); break;
+                case BinFormatConstants.NodeFog: SaveFog(child); break;
+                case BinFormatConstants.NodeWaterFog: SaveWaterFog(child); break;
 
-                case "BumpClampValue":
+                case BinFormatConstants.NodeBumpClampValue:
                     _w.WriteByte(BinFormatConstants.OpBumpClampValue);
                     WriteLeaf(child.GetChildLeaf("Value"));
                     break;
-                case "NoScenerios":
+                case BinFormatConstants.NodeNoScenerios:
                     _w.WriteByte(BinFormatConstants.OpNoScenerios);
                     WriteLeaf(child.GetChildLeaf("Value"));
                     break;
-                case "LandAngles":
+                case BinFormatConstants.NodeLandAngles:
                     _w.WriteByte(BinFormatConstants.OpLandAngles);
                     WriteLeaf(child.GetChildLeaf("SlopeAngle"));
                     WriteLeaf(child.GetChildLeaf("WallAngle"));
                     break;
-                case "LandTexFade":
+                case BinFormatConstants.NodeLandTexFade:
                     _w.WriteByte(BinFormatConstants.OpLandTexFade);
                     WriteLeaf(child.GetChildLeaf("Falloff0"));
                     WriteLeaf(child.GetChildLeaf("Falloff1"));
                     WriteLeaf(child.GetChildLeaf("Falloff2"));
                     break;
-                case "WaterColor": SaveWaterColor(child); break;
-                case "<Missions>": SaveMissions(child); break;
-                case "<Scenerios>": SaveScenerios(child); break;
-                case "<Objects>": SaveAllObjects(child); break;
+                case BinFormatConstants.NodeWaterColor: SaveWaterColor(child); break;
+                case BinFormatConstants.GroupMissions: SaveMissions(child); break;
+                case BinFormatConstants.GroupScenerios: SaveScenerios(child); break;
+                case BinFormatConstants.GroupObjects: SaveAllObjects(child); break;
 
-                case "Scenario":
+                case BinFormatConstants.NodeScenario:
                     _w.WriteByte(BinFormatConstants.OpScenario);
                     WriteLeaf(child.GetChildLeaf("Value"));
                     break;
-                case "Music":
+                case BinFormatConstants.NodeMusic:
                     _w.WriteByte(BinFormatConstants.OpMusic);
                     _w.WriteString32(child.GetChildLeaf("Name").StringValue);
                     break;
-                case "Ambient":
+                case BinFormatConstants.NodeAmbient:
                     _w.WriteByte(BinFormatConstants.OpAmbient);
                     _w.WriteString32(child.GetChildLeaf("Name").StringValue);
                     break;
-                case "MultiAmbient":
+                case BinFormatConstants.NodeMultiAmbient:
                     _w.WriteByte(BinFormatConstants.OpMultiAmbient);
                     WriteLeaf(child.GetChildLeaf("Value"));
                     break;
-                case "ArmyBin":
+                case BinFormatConstants.NodeArmyBin:
                     _w.WriteByte(BinFormatConstants.OpArmyBin);
                     _w.WriteString32(child.GetChildLeaf("Name").StringValue);
                     break;
-                case "VoPath":
+                case BinFormatConstants.NodeVoPath:
                     _w.WriteByte(BinFormatConstants.OpVoPath);
                     _w.WriteString0(child.GetChildLeaf("Name").StringValue);
                     break;
-                case "AmbientColor":
+                case BinFormatConstants.NodeAmbientColor:
                     _w.WriteByte(BinFormatConstants.OpAmbientColor);
                     WriteLeaf(child.GetChildLeaf("R"));
                     WriteLeaf(child.GetChildLeaf("G"));
                     WriteLeaf(child.GetChildLeaf("B"));
                     break;
-                case "BlendWater":
+                case BinFormatConstants.NodeBlendWater:
                     _w.WriteByte(BinFormatConstants.OpBlendWater);
                     WriteLeaf(child.GetChildLeaf("FogScale"));
                     WriteLeaf(child.GetChildLeaf("RenderFog"));
                     break;
-                case "WaterMaterial": SaveWaterMaterial(child); break;
-                case "WorldGrid": SaveWorldGrid(child); break;
-                case "WorldNoLighting": _w.WriteByte(BinFormatConstants.OpWorldNoLighting); break;
+                case BinFormatConstants.NodeWaterMaterial: SaveWaterMaterial(child); break;
+                case BinFormatConstants.NodeWorldGrid: SaveWorldGrid(child); break;
+                case BinFormatConstants.NodeWorldNoLighting: _w.WriteByte(BinFormatConstants.OpWorldNoLighting); break;
 
-                case "MusicSuspense": SaveGenericMusic(child, BinFormatConstants.OpMusicSuspense); break;
-                case "MusicLight": SaveGenericMusic(child, BinFormatConstants.OpMusicLight); break;
-                case "MusicWin": SaveGenericMusic(child, BinFormatConstants.OpMusicWin); break;
-                case "MusicHeavy": SaveGenericMusic(child, BinFormatConstants.OpMusicHeavy); break;
-                case "MusicFailure": SaveSingleMusic(child, BinFormatConstants.OpMusicFailure); break;
-                case "MusicSuccess": SaveSingleMusic(child, BinFormatConstants.OpMusicSuccess); break;
+                case BinFormatConstants.NodeMusicSuspense: SaveGenericMusic(child, BinFormatConstants.OpMusicSuspense); break;
+                case BinFormatConstants.NodeMusicLight: SaveGenericMusic(child, BinFormatConstants.OpMusicLight); break;
+                case BinFormatConstants.NodeMusicWin: SaveGenericMusic(child, BinFormatConstants.OpMusicWin); break;
+                case BinFormatConstants.NodeMusicHeavy: SaveGenericMusic(child, BinFormatConstants.OpMusicHeavy); break;
+                case BinFormatConstants.NodeMusicFailure: SaveSingleMusic(child, BinFormatConstants.OpMusicFailure); break;
+                case BinFormatConstants.NodeMusicSuccess: SaveSingleMusic(child, BinFormatConstants.OpMusicSuccess); break;
             }
         }
 
@@ -216,26 +216,10 @@ public class BinWorldWriter
 
     private void SaveTextures(TreeNode n)
     {
-        // Write node textures (44-byte entries) first, then leaf textures (16-byte entries)
+        // Node textures (44-byte entries)
         foreach (var child in n.EnumerateNodes())
         {
-            byte code = child.Name switch
-            {
-                "GroundTexture" => BinFormatConstants.OpGroundTexture,
-                "SlopeTexture" => BinFormatConstants.OpSlopeTexture,
-                "WallTexture" => BinFormatConstants.OpWallTexture,
-                "GroundBumpTexture" => BinFormatConstants.OpGroundBumpTexture,
-                "SlopeBumpTexture" => BinFormatConstants.OpSlopeBumpTexture,
-                "WallBumpTexture" => BinFormatConstants.OpWallBumpTexture,
-                "GroundDetailTexture" => BinFormatConstants.OpGroundDetailTexture,
-                "SlopeDetailTexture" => BinFormatConstants.OpSlopeDetailTexture,
-                "WallDetailTexture" => BinFormatConstants.OpWallDetailTexture,
-                "GroundNormalTexture" => BinFormatConstants.OpGroundNormalTexture,
-                "SlopeNormalTexture" => BinFormatConstants.OpSlopeNormalTexture,
-                "WallNormalTexture" => BinFormatConstants.OpWallNormalTexture,
-                _ => 0
-            };
-            if (code != 0)
+            if (BinFormatConstants.NodeTextureNameToOpcode.TryGetValue(child.Name, out byte code))
             {
                 _w.WriteByte(code);
                 _w.WriteString32(child.GetChildLeaf("Name").StringValue);
@@ -245,23 +229,10 @@ public class BinWorldWriter
             }
         }
 
+        // Leaf textures (16-byte entries)
         foreach (var leaf in n.EnumerateLeaves())
         {
-            byte code = leaf.Name switch
-            {
-                "DomeTex" => BinFormatConstants.OpDomeTex,
-                "SeaTex" => BinFormatConstants.OpSeaTex,
-                "GlowTex" => BinFormatConstants.OpGlowTex,
-                "OutDomeTex" => BinFormatConstants.OpOutDomeTex,
-                "DomeEdgeTex" => BinFormatConstants.OpDomeEdgeTex,
-                "WFall1Tex" => BinFormatConstants.OpWFall1Tex,
-                "WFall2Tex" => BinFormatConstants.OpWFall2Tex,
-                "WFall3Tex" => BinFormatConstants.OpWFall3Tex,
-                "SpaceLineTex" => BinFormatConstants.OpSpaceLineTex,
-                "SpaceTex" => BinFormatConstants.OpSpaceTex,
-                _ => 0
-            };
-            if (code != 0)
+            if (BinFormatConstants.LeafTextureNameToOpcode.TryGetValue(leaf.Name, out byte code))
             {
                 _w.WriteByte(code);
                 _w.WriteString16(leaf.StringValue);
@@ -308,14 +279,14 @@ public class BinWorldWriter
     {
         foreach (var child in n.EnumerateNodes())
         {
-            if (child.Name == "SunColor")
+            if (child.Name == BinFormatConstants.NodeSunColor)
             {
                 _w.WriteByte(BinFormatConstants.OpSunColor);
                 WriteLeaf(child.GetChildLeaf("Red"));
                 WriteLeaf(child.GetChildLeaf("Green"));
                 WriteLeaf(child.GetChildLeaf("Blue"));
             }
-            else if (child.Name == "SunFxName")
+            else if (child.Name == BinFormatConstants.NodeSunFxName)
             {
                 _w.WriteByte(BinFormatConstants.OpSunFxName);
                 _w.WriteString0(child.GetChildLeaf("Name").StringValue);
@@ -325,9 +296,9 @@ public class BinWorldWriter
                 WriteLeaf(child.GetChildLeaf("Exponent"));
                 WriteLeaf(child.GetChildLeaf("Factor"));
             }
-            else if (child.Name is "Sunflare1" or "Sunflare2")
+            else if (child.Name is BinFormatConstants.NodeSunflare1 or BinFormatConstants.NodeSunflare2)
             {
-                _w.WriteByte(child.Name == "Sunflare1" ? BinFormatConstants.OpSunflare1 : BinFormatConstants.OpSunflare2);
+                _w.WriteByte(child.Name == BinFormatConstants.NodeSunflare1 ? BinFormatConstants.OpSunflare1 : BinFormatConstants.OpSunflare2);
                 WriteLeaf(child.GetChildLeaf("Type"));
                 WriteLeaf(child.GetChildLeaf("Base0"));
                 WriteLeaf(child.GetChildLeaf("Exponent0"));
@@ -350,9 +321,9 @@ public class BinWorldWriter
         {
             switch (obj.Name)
             {
-                case "Object": SaveObjectRef(obj); break;
-                case "SmokeGen": SaveSmokeGen(obj); break;
-                case "AreaAlien": SaveAreaAlien(obj); break;
+                case BinFormatConstants.NodeObject: SaveObjectRef(obj); break;
+                case BinFormatConstants.NodeSmokeGen: SaveSmokeGen(obj); break;
+                case BinFormatConstants.NodeAreaAlien: SaveAreaAlien(obj); break;
             }
         }
     }
@@ -469,7 +440,7 @@ public class BinWorldWriter
         // Directions is only meaningful when used on an already-placed object to override orientation.
 
         // HerdScale (only for regular Objects, not AreaAlien which uses 0x41 instead)
-        if (obj.Name != "AreaAlien")
+        if (obj.Name != BinFormatConstants.NodeAreaAlien)
         {
             var minScale = obj.FindChildLeaf("MinScale");
             if (minScale != null)
@@ -653,7 +624,7 @@ public class BinWorldWriter
 
     private void SaveWaterColor(TreeNode n)
     {
-        _w.WriteByte(0x79);
+        _w.WriteByte(BinFormatConstants.OpWaterColor);
         WriteLeaf(n.GetChildLeaf("ColorR"));
         WriteLeaf(n.GetChildLeaf("ColorG"));
         WriteLeaf(n.GetChildLeaf("ColorB"));
@@ -674,7 +645,7 @@ public class BinWorldWriter
     {
         foreach (var child in n.EnumerateNodes())
         {
-            if (child.Name == "Flick")
+            if (child.Name == BinFormatConstants.NodeFlick)
             {
                 _w.WriteByte(BinFormatConstants.OpFlick);
                 _w.WriteString32(child.GetChildLeaf("Name").StringValue);

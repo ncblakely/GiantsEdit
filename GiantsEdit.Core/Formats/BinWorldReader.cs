@@ -185,19 +185,25 @@ public class BinWorldReader
                 _entry.AddSingle("Scale", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpOutDomeTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("OutDomeTex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpDomeTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("DomeTex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpDomeEdgeTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("DomeEdgeTex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpWFall1Tex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("WFall1Tex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpWFall2Tex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("WFall2Tex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpWFall3Tex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("WFall3Tex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpSpaceLineTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("SpaceLineTex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpSpaceTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("SpaceTex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpSeaTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("SeaTex", _r.ReadString16(), 16); break;
-            case BinFormatConstants.OpGlowTex: Group(BinFormatConstants.GroupTextures); _entry.AddStringL("GlowTex", _r.ReadString16(), 16); break;
+            case BinFormatConstants.OpOutDomeTex:
+            case BinFormatConstants.OpDomeTex:
+            case BinFormatConstants.OpDomeEdgeTex:
+            case BinFormatConstants.OpWFall1Tex:
+            case BinFormatConstants.OpWFall2Tex:
+            case BinFormatConstants.OpWFall3Tex:
+            case BinFormatConstants.OpSpaceLineTex:
+            case BinFormatConstants.OpSpaceTex:
+            case BinFormatConstants.OpSeaTex:
+            case BinFormatConstants.OpGlowTex:
+            {
+                string leafName = BinFormatConstants.LeafTextureOpcodeToName[chunkType];
+                Group(BinFormatConstants.GroupTextures);
+                _entry.AddStringL(leafName, _r.ReadString16(), 16);
+                break;
+            }
 
-            case BinFormatConstants.OpTeleport: // Teleport
-                Group(BinFormatConstants.GroupTeleports, "Teleport");
+            case BinFormatConstants.OpTeleport:
+                Group(BinFormatConstants.GroupTeleports, BinFormatConstants.NodeTeleport);
                 _entry.AddByte("Index", _r.ReadByte());
                 _entry.AddSingle("X", _r.ReadSingle());
                 _entry.AddSingle("Y", _r.ReadSingle());
@@ -205,18 +211,18 @@ public class BinWorldReader
                 _entry.AddSingle("DirFacing", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpSunColor: // SunColor
-                Group(BinFormatConstants.GroupSun, "SunColor");
+            case BinFormatConstants.OpSunColor:
+                Group(BinFormatConstants.GroupSun, BinFormatConstants.NodeSunColor);
                 _entry.AddByte("Red", _r.ReadByte());
                 _entry.AddByte("Green", _r.ReadByte());
                 _entry.AddByte("Blue", _r.ReadByte());
                 break;
 
-            case BinFormatConstants.OpFog: // Fog
+            case BinFormatConstants.OpFog:
             {
-                var existing = _base.FindChildNode("Fog");
+                var existing = _base.FindChildNode(BinFormatConstants.NodeFog);
                 if (existing != null) _base.RemoveNode(existing);
-                Hint("Fog");
+                Hint(BinFormatConstants.NodeFog);
                 _entry.AddSingle("FogMin", _r.ReadSingle());
                 _entry.AddSingle("FogMax", _r.ReadSingle());
                 _entry.AddByte("Red", _r.ReadByte());
@@ -225,8 +231,8 @@ public class BinWorldReader
                 break;
             }
 
-            case BinFormatConstants.OpObjectRef: // ObjectRef
-                Group(BinFormatConstants.GroupObjects, "Object");
+            case BinFormatConstants.OpObjectRef:
+                Group(BinFormatConstants.GroupObjects, BinFormatConstants.NodeObject);
                 _entry.AddInt32("Type", _r.ReadInt32());
                 _entry.AddSingle("X", _r.ReadSingle());
                 _entry.AddSingle("Y", _r.ReadSingle());
@@ -240,8 +246,8 @@ public class BinWorldReader
                 _entry.AddSingle("AnimTime", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpMusic: // Music (obsolete)
-                Hint("Music");
+            case BinFormatConstants.OpMusic:
+                Hint(BinFormatConstants.NodeMusic);
                 _entry.AddString("Name", _r.ReadString32());
                 break;
 
@@ -254,8 +260,8 @@ public class BinWorldReader
                 break;
             }
 
-            case BinFormatConstants.OpSeaSpeed: // SeaSpeed
-                Hint("SeaSpeed");
+            case BinFormatConstants.OpSeaSpeed:
+                Hint(BinFormatConstants.NodeSeaSpeed);
                 _entry.AddSingle("Cycle", _r.ReadSingle());
                 _entry.AddSingle("Speed", _r.ReadSingle());
                 _entry.AddSingle("Trans", _r.ReadSingle());
@@ -265,8 +271,8 @@ public class BinWorldReader
                 _r.Skip(4 + 6 * 4); // int + 6 floats
                 break;
 
-            case BinFormatConstants.OpStartLoc: // StartLoc
-                Group(BinFormatConstants.GroupStartLocs, "StartLoc");
+            case BinFormatConstants.OpStartLoc:
+                Group(BinFormatConstants.GroupStartLocs, BinFormatConstants.NodeStartLoc);
                 _entry.AddByte("Type", _r.ReadByte());
                 _entry.AddByte("StartNumber", _r.ReadByte());
                 _entry.AddSingle("X", _r.ReadSingle());
@@ -290,16 +296,10 @@ public class BinWorldReader
                 _r.Skip(32 + 4);
                 break;
 
-            case BinFormatConstants.OpGroundTexture: // GroundTexture
-                Group(BinFormatConstants.GroupTextures, "GroundTexture");
-                ReadTexture();
-                break;
-            case BinFormatConstants.OpSlopeTexture: // SlopeTexture
-                Group(BinFormatConstants.GroupTextures, "SlopeTexture");
-                ReadTexture();
-                break;
-            case BinFormatConstants.OpWallTexture: // WallTexture
-                Group(BinFormatConstants.GroupTextures, "WallTexture");
+            case BinFormatConstants.OpGroundTexture:
+            case BinFormatConstants.OpSlopeTexture:
+            case BinFormatConstants.OpWallTexture:
+                Group(BinFormatConstants.GroupTextures, BinFormatConstants.NodeTextureOpcodeToName[chunkType]);
                 ReadTexture();
                 break;
 
@@ -310,8 +310,8 @@ public class BinWorldReader
                 _r.Skip(32 + 4);
                 break;
 
-            case BinFormatConstants.OpTiling: // Tiling
-                Hint("Tiling");
+            case BinFormatConstants.OpTiling:
+                Hint(BinFormatConstants.NodeTiling);
                 _entry.AddSingle("Obsolete0", _r.ReadSingle());
                 _entry.AddSingle("Obsolete1", _r.ReadSingle());
                 _entry.AddSingle("Obsolete2", _r.ReadSingle());
@@ -350,8 +350,8 @@ public class BinWorldReader
                 _entry.AddSingle("MaxScale", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpAreaAlien: // AreaAlien
-                Group(BinFormatConstants.GroupObjects, "AreaAlien");
+            case BinFormatConstants.OpAreaAlien:
+                Group(BinFormatConstants.GroupObjects, BinFormatConstants.NodeAreaAlien);
                 _entry.AddInt32("Type", _r.ReadInt32());
                 _entry.AddByte("Count", _r.ReadByte());
                 _entry.AddSingle("X", _r.ReadSingle());
@@ -368,8 +368,8 @@ public class BinWorldReader
                 _entry.AddSingle("MaxScale", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpSmokeGen: // SmokeGen
-                Group(BinFormatConstants.GroupObjects, "SmokeGen");
+            case BinFormatConstants.OpSmokeGen:
+                Group(BinFormatConstants.GroupObjects, BinFormatConstants.NodeSmokeGen);
                 _entry.AddInt32("Type", _r.ReadInt32());
                 _entry.AddSingle("X", _r.ReadSingle());
                 _entry.AddSingle("Y", _r.ReadSingle());
@@ -399,15 +399,15 @@ public class BinWorldReader
             case 0x43: // BaseCreate (obsolete)
                 break;
 
-            case BinFormatConstants.OpObjEditStart: // ObjEditStart
-                Hint("ObjEditStart");
+            case BinFormatConstants.OpObjEditStart:
+                Hint(BinFormatConstants.NodeObjEditStart);
                 break;
-            case BinFormatConstants.OpObjEditEnd: // ObjEditEnd
-                Hint("ObjEditEnd");
+            case BinFormatConstants.OpObjEditEnd:
+                Hint(BinFormatConstants.NodeObjEditEnd);
                 break;
 
-            case BinFormatConstants.OpObjectRef6: // ObjectRef6
-                Group(BinFormatConstants.GroupObjects, "Object");
+            case BinFormatConstants.OpObjectRef6:
+                Group(BinFormatConstants.GroupObjects, BinFormatConstants.NodeObject);
                 _entry.AddInt32("Type", _r.ReadInt32());
                 _entry.AddSingle("X", _r.ReadSingle());
                 _entry.AddSingle("Y", _r.ReadSingle());
@@ -418,8 +418,8 @@ public class BinWorldReader
                 _lastObject = _entry;
                 break;
 
-            case BinFormatConstants.OpWorldGrid: // WorldGrid
-                Hint("WorldGrid");
+            case BinFormatConstants.OpWorldGrid:
+                Hint(BinFormatConstants.NodeWorldGrid);
                 _entry.AddSingle("GridStep", _r.ReadSingle());
                 _entry.AddSingle("GridMinX", _r.ReadSingle());
                 _entry.AddSingle("GridMaxX", _r.ReadSingle());
@@ -437,13 +437,13 @@ public class BinWorldReader
             }
                 break;
 
-            case BinFormatConstants.OpScenario: // Scenario
-                Hint("Scenario");
+            case BinFormatConstants.OpScenario:
+                Hint(BinFormatConstants.NodeScenario);
                 _entry.AddInt32("Value", _r.ReadInt32());
                 break;
 
-            case BinFormatConstants.OpWorldNoLighting: // WorldNoLighting (obsolete)
-                Hint("WorldNoLighting");
+            case BinFormatConstants.OpWorldNoLighting:
+                Hint(BinFormatConstants.NodeWorldNoLighting);
                 break;
 
             case BinFormatConstants.OpLockStart: // LockStart
@@ -463,10 +463,10 @@ public class BinWorldReader
                 _entry.AddString("FlickUsed", _r.ReadString32());
                 break;
 
-            case BinFormatConstants.OpFlick: // Flick
+            case BinFormatConstants.OpFlick:
                 Group(BinFormatConstants.GroupFlicks);
             {
-                var flick = _entry.AddNode("Flick");
+                var flick = _entry.AddNode(BinFormatConstants.NodeFlick);
                 flick.AddString("Name", _r.ReadString32());
                 flick.AddString("Trigger", _r.ReadString32());
             }
@@ -509,11 +509,11 @@ public class BinWorldReader
                 break;
             }
 
-            case BinFormatConstants.OpWaterFog: // WaterFog
+            case BinFormatConstants.OpWaterFog:
             {
-                var existing = _base.FindChildNode("WaterFog");
+                var existing = _base.FindChildNode(BinFormatConstants.NodeWaterFog);
                 if (existing != null) _base.RemoveNode(existing);
-                Hint("WaterFog");
+                Hint(BinFormatConstants.NodeWaterFog);
                 _entry.AddSingle("FogMin", _r.ReadSingle());
                 _entry.AddSingle("FogMax", _r.ReadSingle());
                 _entry.AddByte("Red", _r.ReadByte());
@@ -522,8 +522,8 @@ public class BinWorldReader
                 break;
             }
 
-            case BinFormatConstants.OpStartWeather: // StartWeather
-                Hint("StartWeather");
+            case BinFormatConstants.OpStartWeather:
+                Hint(BinFormatConstants.NodeStartWeather);
                 _entry.AddString("Name", _r.ReadPChar());
                 break;
 
@@ -541,8 +541,8 @@ public class BinWorldReader
                 _entry.AddInt32("ShowRadius", _r.ReadInt32());
                 break;
 
-            case BinFormatConstants.OpScenerio: // Scenerio
-                Group(BinFormatConstants.GroupScenerios, "Scenerio");
+            case BinFormatConstants.OpScenerio:
+                Group(BinFormatConstants.GroupScenerios, BinFormatConstants.NodeScenerio);
                 _entry.AddByte("Type", _r.ReadByte());
                 _entry.AddInt32("TriggersNeeded", _r.ReadInt32());
                 _entry.AddString("Name", _r.ReadString32());
@@ -553,8 +553,8 @@ public class BinWorldReader
                 _entry.AddString("Name", _r.ReadString32());
                 break;
 
-            case BinFormatConstants.OpAmbient: // Ambient
-                Hint("Ambient");
+            case BinFormatConstants.OpAmbient:
+                Hint(BinFormatConstants.NodeAmbient);
                 _entry.AddString("Name", _r.ReadString32());
                 break;
 
@@ -565,8 +565,8 @@ public class BinWorldReader
                 _entry.AddSingle("LightColorB", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpNoScenerios: // NoScenerios
-                Hint("NoScenerios");
+            case BinFormatConstants.OpNoScenerios:
+                Hint(BinFormatConstants.NodeNoScenerios);
                 _entry.AddInt32("Value", _r.ReadInt32());
                 break;
 
@@ -592,15 +592,15 @@ public class BinWorldReader
                 _entry.AddNode("SplineJet");
                 break;
 
-            case BinFormatConstants.OpLandTexFade: // LandTexFade
-                Hint("LandTexFade");
+            case BinFormatConstants.OpLandTexFade:
+                Hint(BinFormatConstants.NodeLandTexFade);
                 _entry.AddSingle("Falloff0", _r.ReadSingle());
                 _entry.AddSingle("Falloff1", _r.ReadSingle());
                 _entry.AddSingle("Falloff2", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpLandAngles: // LandAngles
-                Hint("LandAngles");
+            case BinFormatConstants.OpLandAngles:
+                Hint(BinFormatConstants.NodeLandAngles);
                 _entry.AddSingle("SlopeAngle", _r.ReadSingle());
                 _entry.AddSingle("WallAngle", _r.ReadSingle());
                 break;
@@ -633,24 +633,27 @@ public class BinWorldReader
                 _entry.AddInt32("KeyTime", _r.ReadInt32());
                 break;
 
-            case BinFormatConstants.OpMusicSuspense: ReadGenericMusic("MusicSuspense"); break;
-            case BinFormatConstants.OpMusicLight: ReadGenericMusic("MusicLight"); break;
-            case BinFormatConstants.OpMusicWin: ReadGenericMusic("MusicWin"); break;
-            case BinFormatConstants.OpMusicHeavy: ReadGenericMusic("MusicHeavy"); break;
-            case BinFormatConstants.OpMusicFailure: ReadSingleMusic("MusicFailure"); break;
-            case BinFormatConstants.OpMusicSuccess: ReadSingleMusic("MusicSuccess"); break;
+            case BinFormatConstants.OpMusicSuspense: ReadGenericMusic(BinFormatConstants.NodeMusicSuspense); break;
+            case BinFormatConstants.OpMusicLight: ReadGenericMusic(BinFormatConstants.NodeMusicLight); break;
+            case BinFormatConstants.OpMusicWin: ReadGenericMusic(BinFormatConstants.NodeMusicWin); break;
+            case BinFormatConstants.OpMusicHeavy: ReadGenericMusic(BinFormatConstants.NodeMusicHeavy); break;
+            case BinFormatConstants.OpMusicFailure: ReadSingleMusic(BinFormatConstants.NodeMusicFailure); break;
+            case BinFormatConstants.OpMusicSuccess: ReadSingleMusic(BinFormatConstants.NodeMusicSuccess); break;
 
-            case BinFormatConstants.OpGroundBumpTexture: Group(BinFormatConstants.GroupTextures, "GroundBumpTexture"); ReadTexture(); break;
-            case BinFormatConstants.OpSlopeBumpTexture: Group(BinFormatConstants.GroupTextures, "SlopeBumpTexture"); ReadTexture(); break;
-            case BinFormatConstants.OpWallBumpTexture: Group(BinFormatConstants.GroupTextures, "WallBumpTexture"); ReadTexture(); break;
+            case BinFormatConstants.OpGroundBumpTexture:
+            case BinFormatConstants.OpSlopeBumpTexture:
+            case BinFormatConstants.OpWallBumpTexture:
+                Group(BinFormatConstants.GroupTextures, BinFormatConstants.NodeTextureOpcodeToName[chunkType]);
+                ReadTexture();
+                break;
 
-            case BinFormatConstants.OpBumpClampValue: // BumpClampValue
-                Hint("BumpClampValue");
+            case BinFormatConstants.OpBumpClampValue:
+                Hint(BinFormatConstants.NodeBumpClampValue);
                 _entry.AddSingle("Value", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpSunFxName: // Sunfxname
-                Group(BinFormatConstants.GroupSun, "SunFxName");
+            case BinFormatConstants.OpSunFxName:
+                Group(BinFormatConstants.GroupSun, BinFormatConstants.NodeSunFxName);
                 _entry.AddString("Name", _r.ReadPChar());
                 _entry.AddSingle("ColorR", _r.ReadSingle());
                 _entry.AddSingle("ColorG", _r.ReadSingle());
@@ -659,58 +662,64 @@ public class BinWorldReader
                 _entry.AddSingle("Factor", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpSunflare1: // Sunflare1
-                Group(BinFormatConstants.GroupSun, "Sunflare1");
+            case BinFormatConstants.OpSunflare1:
+                Group(BinFormatConstants.GroupSun, BinFormatConstants.NodeSunflare1);
                 ReadSunflare();
                 break;
-            case BinFormatConstants.OpSunflare2: // Sunflare2
-                Group(BinFormatConstants.GroupSun, "Sunflare2");
+            case BinFormatConstants.OpSunflare2:
+                Group(BinFormatConstants.GroupSun, BinFormatConstants.NodeSunflare2);
                 ReadSunflare();
                 break;
 
-            case BinFormatConstants.OpWaterColor: // WaterColor
-                Hint("WaterColor");
+            case BinFormatConstants.OpWaterColor:
+                Hint(BinFormatConstants.NodeWaterColor);
                 ReadWaterColor();
                 break;
 
-            case BinFormatConstants.OpMultiAmbient: // MultiAmbient
-                Hint("MultiAmbient");
+            case BinFormatConstants.OpMultiAmbient:
+                Hint(BinFormatConstants.NodeMultiAmbient);
                 _entry.AddInt32("Value", _r.ReadInt32());
                 break;
 
-            case BinFormatConstants.OpArmyBin: // ArmyBin
-                Hint("ArmyBin");
+            case BinFormatConstants.OpArmyBin:
+                Hint(BinFormatConstants.NodeArmyBin);
                 _entry.AddString("Name", _r.ReadString32());
                 break;
 
-            case BinFormatConstants.OpVoPath: // VoPath
-                Hint("VoPath");
+            case BinFormatConstants.OpVoPath:
+                Hint(BinFormatConstants.NodeVoPath);
                 _entry.AddString("Name", _r.ReadPChar());
                 break;
 
-            case BinFormatConstants.OpGroundDetailTexture: Group(BinFormatConstants.GroupTextures, "GroundDetailTexture"); ReadTexture(); break;
-            case BinFormatConstants.OpSlopeDetailTexture: Group(BinFormatConstants.GroupTextures, "SlopeDetailTexture"); ReadTexture(); break;
-            case BinFormatConstants.OpWallDetailTexture: Group(BinFormatConstants.GroupTextures, "WallDetailTexture"); ReadTexture(); break;
+            case BinFormatConstants.OpGroundDetailTexture:
+            case BinFormatConstants.OpSlopeDetailTexture:
+            case BinFormatConstants.OpWallDetailTexture:
+                Group(BinFormatConstants.GroupTextures, BinFormatConstants.NodeTextureOpcodeToName[chunkType]);
+                ReadTexture();
+                break;
 
-            case BinFormatConstants.OpAmbientColor: // AmbientColor
-                Hint("AmbientColor");
+            case BinFormatConstants.OpAmbientColor:
+                Hint(BinFormatConstants.NodeAmbientColor);
                 _entry.AddSingle("R", _r.ReadSingle());
                 _entry.AddSingle("G", _r.ReadSingle());
                 _entry.AddSingle("B", _r.ReadSingle());
                 break;
 
-            case BinFormatConstants.OpGroundNormalTexture: Group(BinFormatConstants.GroupTextures, "GroundNormalTexture"); ReadTexture(); break;
-            case BinFormatConstants.OpSlopeNormalTexture: Group(BinFormatConstants.GroupTextures, "SlopeNormalTexture"); ReadTexture(); break;
-            case BinFormatConstants.OpWallNormalTexture: Group(BinFormatConstants.GroupTextures, "WallNormalTexture"); ReadTexture(); break;
+            case BinFormatConstants.OpGroundNormalTexture:
+            case BinFormatConstants.OpSlopeNormalTexture:
+            case BinFormatConstants.OpWallNormalTexture:
+                Group(BinFormatConstants.GroupTextures, BinFormatConstants.NodeTextureOpcodeToName[chunkType]);
+                ReadTexture();
+                break;
 
-            case BinFormatConstants.OpBlendWater: // BlendWater
-                Hint("BlendWater");
+            case BinFormatConstants.OpBlendWater:
+                Hint(BinFormatConstants.NodeBlendWater);
                 _entry.AddSingle("FogScale", _r.ReadSingle());
                 _entry.AddInt32("RenderFog", _r.ReadInt32());
                 break;
 
-            case BinFormatConstants.OpWaterMaterial: // WaterMaterial (DiffuseRGBA + Power = 5 floats)
-                Hint("WaterMaterial");
+            case BinFormatConstants.OpWaterMaterial:
+                Hint(BinFormatConstants.NodeWaterMaterial);
                 _entry.AddSingle("DiffuseR", _r.ReadSingle());
                 _entry.AddSingle("DiffuseG", _r.ReadSingle());
                 _entry.AddSingle("DiffuseB", _r.ReadSingle());

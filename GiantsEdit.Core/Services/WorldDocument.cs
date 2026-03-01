@@ -318,9 +318,9 @@ public class WorldDocument
         fs.AddString("Box", "newmap");
         fs.AddString("GtiName", "newmap.gti");
 
-        _worldRoot.AddNode("Tiling");
-        _worldRoot.AddNode("Fog");
-        _worldRoot.AddNode("WaterFog");
+        _worldRoot.AddNode(BinFormatConstants.NodeTiling);
+        _worldRoot.AddNode(BinFormatConstants.NodeFog);
+        _worldRoot.AddNode(BinFormatConstants.NodeWaterFog);
         _worldRoot.AddNode(BinFormatConstants.SectionTextures);
         _worldRoot.AddNode(BinFormatConstants.SectionSfx);
         _worldRoot.AddNode("[unknown]");
@@ -349,7 +349,7 @@ public class WorldDocument
 
         foreach (var obj in objNode.EnumerateNodes())
         {
-            if (obj.Name != "Object") continue;
+            if (obj.Name != BinFormatConstants.NodeObject) continue;
 
             var typeLeaf = obj.FindChildLeaf("Type");
             if (typeLeaf == null) continue;
@@ -410,7 +410,7 @@ public class WorldDocument
 
         foreach (var obj in objNode.EnumerateNodes())
         {
-            if (obj.Name != "Object") continue;
+            if (obj.Name != BinFormatConstants.NodeObject) continue;
 
             int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
             if (typeId != LightTypeId) continue;
@@ -463,7 +463,7 @@ public class WorldDocument
     /// </summary>
     public Vector3 GetWorldAmbientColor()
     {
-        var node = _worldRoot?.FindChildNode("AmbientColor");
+        var node = _worldRoot?.FindChildNode(BinFormatConstants.NodeAmbientColor);
         if (node == null) return Vector3.Zero;
 
         float r = node.FindChildLeaf("R")?.SingleValue ?? 0f;
@@ -492,7 +492,7 @@ public class WorldDocument
 
             foreach (var obj in objContainer.EnumerateNodes())
             {
-                if (obj.Name != "Object") continue;
+                if (obj.Name != BinFormatConstants.NodeObject) continue;
                 int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
                 if (typeId != SplineTypeId && typeId != SplineType2Id) continue;
 
@@ -580,7 +580,7 @@ public class WorldDocument
         var toLight = sunDir.HasValue ? -sunDir.Value : (Vector3?)null;
 
         // Read bump clamp value — ensures bump detail is visible even on shaded surfaces
-        float bumpClampValue = _worldRoot?.FindChildNode("BumpClampValue")
+        float bumpClampValue = _worldRoot?.FindChildNode(BinFormatConstants.NodeBumpClampValue)
             ?.FindChildLeaf("Value")?.SingleValue ?? 0f;
 
         var data = TerrainMeshBuilder.Build(_terrain, toLight, bumpClampValue);
@@ -608,7 +608,7 @@ public class WorldDocument
     public string? GetDomeTextureName()
     {
         var texNode = _worldRoot?.FindChildNode(BinFormatConstants.GroupTextures);
-        return texNode?.FindChildLeaf("DomeTex")?.StringValue;
+        return texNode?.FindChildLeaf(BinFormatConstants.LeafDomeTex)?.StringValue;
     }
 
     /// <summary>
@@ -616,7 +616,7 @@ public class WorldDocument
     /// </summary>
     public (float C0, float C1, float C2) GetTerrainMipFalloff()
     {
-        var node = _worldRoot?.FindChildNode("LandTexFade");
+        var node = _worldRoot?.FindChildNode(BinFormatConstants.NodeLandTexFade);
         if (node == null) return (1.0f, -0.1f, -0.05f);
 
         float c0 = node.FindChildLeaf("Falloff0")?.SingleValue ?? 1.0f;
@@ -721,7 +721,7 @@ public class WorldDocument
         var objContainer = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
         if (objContainer == null) return null;
 
-        var obj = objContainer.AddNode("Object");
+        var obj = objContainer.AddNode(BinFormatConstants.NodeObject);
         obj.AddInt32("Type", typeId);
         obj.AddSingle("X", x);
         obj.AddSingle("Y", y);
@@ -793,7 +793,7 @@ public class WorldDocument
 
         foreach (var node in _worldRoot.EnumerateNodes())
         {
-            if (node.Name != "Object") continue;
+            if (node.Name != BinFormatConstants.NodeObject) continue;
             int type = node.FindChildLeaf("Type")?.Int32Value ?? 0;
             if (type != MarkerTypeId) continue;
 
@@ -858,8 +858,15 @@ public class WorldDocument
         // Known sections that the writer handles
         var handledSections = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "[FileStart]", "<Objects>", "<PreObjects>", "[textures]",
-            "[fx]", "[scenerios]", "[includefiles]", "[sfx]", "[objdefs]"
+            BinFormatConstants.SectionFileStart,
+            BinFormatConstants.GroupObjects,
+            BinFormatConstants.GroupPreObjects,
+            BinFormatConstants.SectionTextures,
+            BinFormatConstants.SectionFx,
+            BinFormatConstants.SectionScenerios,
+            BinFormatConstants.SectionIncludeFiles,
+            BinFormatConstants.SectionSfx,
+            BinFormatConstants.SectionObjDefs,
         };
 
         var unhandled = new List<string>();

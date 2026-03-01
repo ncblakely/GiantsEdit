@@ -1,4 +1,3 @@
-using System.Numerics;
 using GiantsEdit.Core.Formats;
 using Silk.NET.OpenGL;
 

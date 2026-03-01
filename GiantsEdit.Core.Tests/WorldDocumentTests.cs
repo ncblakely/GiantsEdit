@@ -1,3 +1,4 @@
+using GiantsEdit.Core.Formats;
 using GiantsEdit.Core.Services;
 
 namespace GiantsEdit.Core.Tests;
@@ -16,7 +17,7 @@ public class WorldDocumentTests
         Assert.AreEqual(64, doc.Terrain!.Width);
         Assert.IsTrue(doc.IsModified);
 
-        var objNode = doc.WorldRoot!.FindChildNode("<Objects>");
+        var objNode = doc.WorldRoot!.FindChildNode(BinFormatConstants.GroupObjects);
         Assert.IsNotNull(objNode);
     }
 

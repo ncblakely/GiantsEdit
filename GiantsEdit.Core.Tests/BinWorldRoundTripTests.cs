@@ -20,30 +20,30 @@ public class BinWorldRoundTripTests
         Assert.IsNotNull(loaded);
 
         // Verify [FileStart]
-        var fileStart = loaded!.GetChildNode("[FileStart]");
+        var fileStart = loaded!.GetChildNode(BinFormatConstants.SectionFileStart);
         Assert.AreEqual("box01", fileStart.GetChildLeaf("Box").StringValue);
         Assert.AreEqual("test.gti", fileStart.GetChildLeaf("GtiName").StringValue);
 
         // Verify Tiling
-        var tiling = loaded.GetChildNode("Tiling");
+        var tiling = loaded.GetChildNode(BinFormatConstants.NodeTiling);
         Assert.AreEqual(1.0f, tiling.GetChildLeaf("Obsolete0").SingleValue);
 
         // Verify Fog
-        var fog = loaded.GetChildNode("Fog");
+        var fog = loaded.GetChildNode(BinFormatConstants.NodeFog);
         Assert.AreEqual(100.0f, fog.GetChildLeaf("FogMin").SingleValue);
         Assert.AreEqual(500.0f, fog.GetChildLeaf("FogMax").SingleValue);
         Assert.AreEqual((byte)128, fog.GetChildLeaf("Red").ByteValue);
 
         // Verify [sfx]
-        var sfx = loaded.GetChildNode("[sfx]");
+        var sfx = loaded.GetChildNode(BinFormatConstants.SectionSfx);
         Assert.AreEqual(42, sfx.GetChildLeaf("NumOrVersion").Int32Value);
 
         // Verify [textures]
-        var tex = loaded.GetChildNode("[textures]");
+        var tex = loaded.GetChildNode(BinFormatConstants.SectionTextures);
         Assert.AreEqual(1, tex.NodeCount);
 
         // Verify [includefiles]
-        var inc = loaded.GetChildNode("[includefiles]");
+        var inc = loaded.GetChildNode(BinFormatConstants.SectionIncludeFiles);
         Assert.AreEqual(1, inc.LeafCount);
     }
 
@@ -53,15 +53,15 @@ public class BinWorldRoundTripTests
         var root = BuildMinimalWorld();
 
         // Add objects
-        var objects = root.AddNode("<Objects>");
-        var obj1 = objects.AddNode("Object");
+        var objects = root.AddNode(BinFormatConstants.GroupObjects);
+        var obj1 = objects.AddNode(BinFormatConstants.NodeObject);
         obj1.AddInt32("Type", 102);
         obj1.AddSingle("X", 10.0f);
         obj1.AddSingle("Y", 20.0f);
         obj1.AddSingle("Z", 30.0f);
         obj1.AddSingle("DirFacing", 1.57f);
 
-        var obj2 = objects.AddNode("Object");
+        var obj2 = objects.AddNode(BinFormatConstants.NodeObject);
         obj2.AddInt32("Type", 200);
         obj2.AddSingle("X", -5.0f);
         obj2.AddSingle("Y", -10.0f);
@@ -77,7 +77,7 @@ public class BinWorldRoundTripTests
         var loaded = reader.Load(data);
         Assert.IsNotNull(loaded);
 
-        var loadedObjs = loaded!.GetChildNode("<Objects>");
+        var loadedObjs = loaded!.GetChildNode(BinFormatConstants.GroupObjects);
         var nodes = loadedObjs.EnumerateNodes().ToList();
         Assert.HasCount(2, nodes);
 
@@ -95,11 +95,11 @@ public class BinWorldRoundTripTests
     {
         var root = new DataModel.TreeNode("Map data");
 
-        var fs = root.AddNode("[FileStart]");
+        var fs = root.AddNode(BinFormatConstants.SectionFileStart);
         fs.AddString("Box", "box01");
         fs.AddString("GtiName", "test.gti");
 
-        var tiling = root.AddNode("Tiling");
+        var tiling = root.AddNode(BinFormatConstants.NodeTiling);
         tiling.AddSingle("Obsolete0", 1.0f);
         tiling.AddSingle("Obsolete1", 2.0f);
         tiling.AddSingle("Obsolete2", 3.0f);
@@ -108,42 +108,42 @@ public class BinWorldRoundTripTests
         tiling.AddSingle("MixNearBlend", 6.0f);
         tiling.AddSingle("MixFarBlend", 7.0f);
 
-        var fog = root.AddNode("Fog");
+        var fog = root.AddNode(BinFormatConstants.NodeFog);
         fog.AddSingle("FogMin", 100.0f);
         fog.AddSingle("FogMax", 500.0f);
         fog.AddByte("Red", 128);
         fog.AddByte("Green", 200);
         fog.AddByte("Blue", 255);
 
-        var wfog = root.AddNode("WaterFog");
+        var wfog = root.AddNode(BinFormatConstants.NodeWaterFog);
         wfog.AddSingle("FogMin", 50.0f);
         wfog.AddSingle("FogMax", 300.0f);
         wfog.AddByte("Red", 0);
         wfog.AddByte("Green", 100);
         wfog.AddByte("Blue", 200);
 
-        var tex = root.AddNode("[textures]");
+        var tex = root.AddNode(BinFormatConstants.SectionTextures);
         var t1 = tex.AddNode("texture");
         t1.AddByte("Unknown", 0);
         t1.AddByte("IsSkyDome", 1);
         t1.AddString("Name", "sky.tga");
 
-        var sfx = root.AddNode("[sfx]");
+        var sfx = root.AddNode(BinFormatConstants.SectionSfx);
         sfx.AddInt32("NumOrVersion", 42);
         sfx.AddInt32("SfxVersion", 43);
         sfx.AddInt32("Count", 44);
         sfx.AddInt32("EntrySize", 45);
         sfx.AddInt32("DataSize", 46);
 
-        var obj = root.AddNode("[objdefs]");
+        var obj = root.AddNode(BinFormatConstants.SectionObjDefs);
         obj.AddByte("data", 0);
 
-        var fx = root.AddNode("[fx]");
+        var fx = root.AddNode(BinFormatConstants.SectionFx);
         fx.AddInt32("EnvironmentType", 1);
 
-        var scen = root.AddNode("[scenerios]");
+        var scen = root.AddNode(BinFormatConstants.SectionScenerios);
 
-        var inc = root.AddNode("[includefiles]");
+        var inc = root.AddNode(BinFormatConstants.SectionIncludeFiles);
         inc.AddString("Name", "default.inc");
 
         return root;

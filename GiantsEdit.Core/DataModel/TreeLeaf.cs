@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace GiantsEdit.Core.DataModel;
 
 /// <summary>
