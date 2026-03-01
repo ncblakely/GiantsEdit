@@ -1,89 +1,48 @@
+using System.Text;
+
 namespace GiantsEdit.Core.Formats;
 
 /// <summary>
-/// Low-level binary writing helpers for Giants game file formats.
-/// Builds a byte array sequentially, matching the original Delphi write pattern.
-/// All multi-byte values are little-endian.
+/// Little-endian binary writer with game-specific string helpers.
+/// Extends <see cref="BinaryWriter"/> over a <see cref="MemoryStream"/>.
 /// </summary>
-public class BinaryDataWriter
+public class BinaryDataWriter : BinaryWriter
 {
-    private byte[] _data;
-    private int _pos;
-
     public BinaryDataWriter(int initialCapacity = 65536)
-    {
-        _data = new byte[initialCapacity];
-        _pos = 0;
-    }
+        : base(new MemoryStream(initialCapacity), Encoding.ASCII, leaveOpen: false) { }
 
     public int Position
     {
-        get => _pos;
-        set => _pos = value;
+        get => (int)BaseStream.Position;
+        set => BaseStream.Position = value;
     }
 
-    public byte[] ToArray()
-    {
-        var result = new byte[_pos];
-        Array.Copy(_data, result, _pos);
-        return result;
-    }
+    public byte[] ToArray() => ((MemoryStream)BaseStream).ToArray();
 
-    private void EnsureCapacity(int additional)
-    {
-        int needed = _pos + additional;
-        if (needed <= _data.Length) return;
-        int newSize = Math.Max(_data.Length * 2, needed);
-        Array.Resize(ref _data, newSize);
-    }
+    public void WriteByte(byte value) => Write(value);
 
-    public void WriteByte(byte value)
-    {
-        EnsureCapacity(1);
-        _data[_pos++] = value;
-    }
+    public void WriteInt32(int value) => Write(value);
 
-    public void WriteInt32(int value)
-    {
-        EnsureCapacity(4);
-        BitConverter.TryWriteBytes(_data.AsSpan(_pos), value);
-        _pos += 4;
-    }
+    public void WriteSingle(float value) => Write(value);
 
-    public void WriteSingle(float value)
-    {
-        EnsureCapacity(4);
-        BitConverter.TryWriteBytes(_data.AsSpan(_pos), value);
-        _pos += 4;
-    }
-
-    public void WriteWord(ushort value)
-    {
-        EnsureCapacity(2);
-        BitConverter.TryWriteBytes(_data.AsSpan(_pos), value);
-        _pos += 2;
-    }
+    public void WriteWord(ushort value) => Write(value);
 
     /// <summary>
     /// Writes a null-terminated string.
-    /// Equivalent to Delphi's WriteString0.
     /// </summary>
     public void WriteString0(string s)
     {
-        var bytes = System.Text.Encoding.ASCII.GetBytes(s);
-        EnsureCapacity(bytes.Length + 1);
-        Array.Copy(bytes, 0, _data, _pos, bytes.Length);
-        _pos += bytes.Length;
-        _data[_pos++] = 0;
+        byte[] bytes = Encoding.ASCII.GetBytes(s);
+        Write(bytes);
+        Write((byte)0);
     }
 
     /// <summary>
     /// Writes a length byte + string + null terminator.
-    /// Equivalent to Delphi's WriteLString0.
     /// </summary>
     public void WriteLString0(string s)
     {
-        WriteByte((byte)(s.Length + 1)); // length includes null terminator
+        WriteByte((byte)(s.Length + 1));
         WriteString0(s);
     }
 
@@ -92,14 +51,11 @@ public class BinaryDataWriter
     /// </summary>
     public void WriteFixedString(string s, int length)
     {
-        var bytes = System.Text.Encoding.ASCII.GetBytes(s);
-        EnsureCapacity(length);
+        byte[] bytes = Encoding.ASCII.GetBytes(s);
         int copyLen = Math.Min(bytes.Length, length);
-        Array.Copy(bytes, 0, _data, _pos, copyLen);
-        // Zero-fill remainder
+        Write(bytes, 0, copyLen);
         for (int i = copyLen; i < length; i++)
-            _data[_pos + i] = 0;
-        _pos += length;
+            Write((byte)0);
     }
 
     public void WriteString16(string s) => WriteFixedString(s, 16);
@@ -108,17 +64,12 @@ public class BinaryDataWriter
 
     public void WriteRgb(byte r, byte g, byte b)
     {
-        WriteByte(r);
-        WriteByte(g);
-        WriteByte(b);
+        Write(r);
+        Write(g);
+        Write(b);
     }
 
-    public void WriteBytes(byte[] bytes)
-    {
-        EnsureCapacity(bytes.Length);
-        Array.Copy(bytes, 0, _data, _pos, bytes.Length);
-        _pos += bytes.Length;
-    }
+    public void WriteBytes(byte[] bytes) => Write(bytes);
 
     /// <summary>
     /// Overwrites an int32 at a specific position without advancing the current position.
@@ -126,6 +77,9 @@ public class BinaryDataWriter
     /// </summary>
     public void PatchInt32(int position, int value)
     {
-        BitConverter.TryWriteBytes(_data.AsSpan(position), value);
+        long saved = BaseStream.Position;
+        BaseStream.Position = position;
+        Write(value);
+        BaseStream.Position = saved;
     }
 }

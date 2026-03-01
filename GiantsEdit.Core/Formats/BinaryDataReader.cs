@@ -1,88 +1,36 @@
+using System.Text;
+
 namespace GiantsEdit.Core.Formats;
 
 /// <summary>
-/// Low-level binary reading helpers for Giants game file formats.
-/// Wraps a byte array with a sequential read pointer, matching the
-/// original Delphi data/dataptr pattern in bin_w_read.pas.
-/// All multi-byte values are little-endian.
+/// Little-endian binary reader with game-specific string helpers.
+/// Extends <see cref="BinaryReader"/> over a <see cref="MemoryStream"/>.
 /// </summary>
-public class BinaryDataReader
+public class BinaryDataReader : BinaryReader
 {
-    private readonly byte[] _data;
-    private int _pos;
-
     public BinaryDataReader(byte[] data)
-    {
-        _data = data;
-        _pos = 0;
-    }
+        : base(new MemoryStream(data, writable: false), Encoding.ASCII, leaveOpen: false) { }
 
     public int Position
     {
-        get => _pos;
-        set => _pos = value;
+        get => (int)BaseStream.Position;
+        set => BaseStream.Position = value;
     }
 
-    public int Length => _data.Length;
-    public bool HasMore => _pos < _data.Length;
+    public int Length => (int)BaseStream.Length;
+    public bool HasMore => BaseStream.Position < BaseStream.Length;
 
-    private void EnsureAvailable(int count)
-    {
-        if (_pos + count > _data.Length)
-            throw new InvalidDataException(
-                $"Attempted to read {count} byte(s) at position {_pos}, but only {_data.Length - _pos} byte(s) remain (total length: {_data.Length}).");
-    }
-
-    public byte ReadByte()
-    {
-        EnsureAvailable(1);
-        return _data[_pos++];
-    }
-
-    public int ReadInt32()
-    {
-        EnsureAvailable(4);
-        int value = BitConverter.ToInt32(_data, _pos);
-        _pos += 4;
-        return value;
-    }
-
-    public float ReadSingle()
-    {
-        EnsureAvailable(4);
-        float value = BitConverter.ToSingle(_data, _pos);
-        _pos += 4;
-        return value;
-    }
-
-    public ushort ReadWord()
-    {
-        EnsureAvailable(2);
-        ushort value = BitConverter.ToUInt16(_data, _pos);
-        _pos += 2;
-        return value;
-    }
-
-    public uint ReadUInt32()
-    {
-        EnsureAvailable(4);
-        uint value = BitConverter.ToUInt32(_data, _pos);
-        _pos += 4;
-        return value;
-    }
+    public ushort ReadWord() => ReadUInt16();
 
     /// <summary>
-    /// Reads a fixed-length string (null-padded). Advances by exactly <paramref name="length"/> bytes.
+    /// Reads a fixed-length null-padded string. Advances by exactly <paramref name="length"/> bytes.
     /// </summary>
     public string ReadFixedString(int length)
     {
-        EnsureAvailable(length);
-        int end = _pos + length;
-        int nullIdx = Array.IndexOf(_data, (byte)0, _pos, length);
-        int strLen = nullIdx >= 0 ? nullIdx - _pos : length;
-        string s = System.Text.Encoding.ASCII.GetString(_data, _pos, strLen);
-        _pos = end;
-        return s;
+        byte[] bytes = ReadBytes(length);
+        int nullIdx = Array.IndexOf(bytes, (byte)0);
+        int strLen = nullIdx >= 0 ? nullIdx : length;
+        return Encoding.ASCII.GetString(bytes, 0, strLen);
     }
 
     public string ReadString16() => ReadFixedString(16);
@@ -91,26 +39,25 @@ public class BinaryDataReader
 
     /// <summary>
     /// Reads a null-terminated string (variable length). Advances past the null byte.
-    /// Equivalent to Delphi's ReadPChar.
     /// </summary>
     public string ReadPChar()
     {
-        int start = _pos;
-        while (_pos < _data.Length && _data[_pos] != 0)
-            _pos++;
-        string s = System.Text.Encoding.ASCII.GetString(_data, start, _pos - start);
-        if (_pos < _data.Length) _pos++; // skip null terminator
-        return s;
+        var sb = new StringBuilder();
+        while (HasMore)
+        {
+            byte b = ReadByte();
+            if (b == 0) break;
+            sb.Append((char)b);
+        }
+        return sb.ToString();
     }
 
     /// <summary>
     /// Reads a BLString: skips 1 byte, then reads null-terminated string.
-    /// Equivalent to Delphi's ReadBLString.
     /// </summary>
     public string ReadBLString()
     {
-        EnsureAvailable(1);
-        _pos++; // skip length byte
+        ReadByte(); // skip length byte
         return ReadPChar();
     }
 
@@ -119,25 +66,11 @@ public class BinaryDataReader
     /// </summary>
     public (byte R, byte G, byte B) ReadRgb()
     {
-        EnsureAvailable(3);
-        byte r = _data[_pos++];
-        byte g = _data[_pos++];
-        byte b = _data[_pos++];
+        byte r = ReadByte();
+        byte g = ReadByte();
+        byte b = ReadByte();
         return (r, g, b);
     }
 
-    public byte[] ReadBytes(int count)
-    {
-        EnsureAvailable(count);
-        var result = new byte[count];
-        Array.Copy(_data, _pos, result, 0, count);
-        _pos += count;
-        return result;
-    }
-
-    public void Skip(int count)
-    {
-        EnsureAvailable(count);
-        _pos += count;
-    }
+    public void Skip(int count) => BaseStream.Position += count;
 }

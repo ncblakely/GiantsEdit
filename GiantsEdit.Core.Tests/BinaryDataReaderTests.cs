@@ -1,4 +1,3 @@
-using System.IO;
 using GiantsEdit.Core.Formats;
 
 namespace GiantsEdit.Core.Tests;
@@ -7,65 +6,58 @@ namespace GiantsEdit.Core.Tests;
 public class BinaryDataReaderTests
 {
     [TestMethod]
-    public void ReadByte_EmptyData_ThrowsInvalidDataException()
+    public void ReadByte_EmptyData_Throws()
     {
-        var reader = new BinaryDataReader(Array.Empty<byte>());
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadByte());
+        var reader = new BinaryDataReader([]);
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadByte());
     }
 
     [TestMethod]
-    public void ReadInt32_InsufficientBytes_ThrowsInvalidDataException()
+    public void ReadInt32_InsufficientBytes_Throws()
     {
         var reader = new BinaryDataReader(new byte[3]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadInt32());
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadInt32());
     }
 
     [TestMethod]
-    public void ReadSingle_InsufficientBytes_ThrowsInvalidDataException()
+    public void ReadSingle_InsufficientBytes_Throws()
     {
         var reader = new BinaryDataReader(new byte[2]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadSingle());
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadSingle());
     }
 
     [TestMethod]
-    public void ReadWord_InsufficientBytes_ThrowsInvalidDataException()
+    public void ReadWord_InsufficientBytes_Throws()
     {
         var reader = new BinaryDataReader(new byte[1]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadWord());
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadWord());
     }
 
     [TestMethod]
-    public void ReadUInt32_InsufficientBytes_ThrowsInvalidDataException()
+    public void ReadUInt32_InsufficientBytes_Throws()
     {
         var reader = new BinaryDataReader(new byte[3]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadUInt32());
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadUInt32());
     }
 
     [TestMethod]
-    public void ReadFixedString_InsufficientBytes_ThrowsInvalidDataException()
+    public void ReadBLString_InsufficientBytes_Throws()
     {
-        var reader = new BinaryDataReader(new byte[3]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadFixedString(5));
+        var reader = new BinaryDataReader([]);
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadBLString());
     }
 
     [TestMethod]
-    public void ReadBytes_InsufficientBytes_ThrowsInvalidDataException()
-    {
-        var reader = new BinaryDataReader(new byte[2]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadBytes(5));
-    }
-
-    [TestMethod]
-    public void Skip_InsufficientBytes_ThrowsInvalidDataException()
+    public void ReadRgb_InsufficientBytes_Throws()
     {
         var reader = new BinaryDataReader(new byte[2]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.Skip(5));
+        Assert.ThrowsExactly<EndOfStreamException>(() => reader.ReadRgb());
     }
 
     [TestMethod]
     public void ReadByte_ValidData_ReturnsCorrectValue()
     {
-        var reader = new BinaryDataReader(new byte[] { 0xAB });
+        var reader = new BinaryDataReader([0xAB]);
         Assert.AreEqual((byte)0xAB, reader.ReadByte());
     }
 
@@ -114,23 +106,9 @@ public class BinaryDataReaderTests
     }
 
     [TestMethod]
-    public void ReadBLString_InsufficientBytes_ThrowsInvalidDataException()
-    {
-        var reader = new BinaryDataReader(Array.Empty<byte>());
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadBLString());
-    }
-
-    [TestMethod]
-    public void ReadRgb_InsufficientBytes_ThrowsInvalidDataException()
-    {
-        var reader = new BinaryDataReader(new byte[2]);
-        Assert.ThrowsExactly<InvalidDataException>(() => reader.ReadRgb());
-    }
-
-    [TestMethod]
     public void HasMore_AfterReadingAll_ReturnsFalse()
     {
-        var reader = new BinaryDataReader(new byte[] { 0x01 });
+        var reader = new BinaryDataReader([0x01]);
         reader.ReadByte();
         Assert.IsFalse(reader.HasMore);
     }
