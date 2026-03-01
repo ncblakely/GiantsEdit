@@ -71,6 +71,7 @@ public class WorldDocument
     // Map metadata (matches Delphi 'map' record)
     public string MapBinName { get; set; } = string.Empty;
     public string UserMessage { get; set; } = string.Empty;
+    public string WorldName { get; set; } = string.Empty;
     public int MapType { get; set; }
 
     public event Action? WorldChanged;
@@ -286,6 +287,9 @@ public class WorldDocument
 
         if (!string.IsNullOrEmpty(UserMessage))
             sb.AppendLine($"Modinfo_UserMessage={UserMessage}");
+
+        if (!string.IsNullOrEmpty(WorldName))
+            sb.AppendLine($"Modinfo_WorldName={WorldName}");
 
         return sb.ToString();
     }
@@ -786,6 +790,9 @@ public class WorldDocument
                     break;
                 case "Modinfo_BinName":
                     MapBinName = value;
+                    break;
+                case "Modinfo_WorldName":
+                    WorldName = value;
                     break;
             }
         }
