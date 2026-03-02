@@ -115,10 +115,34 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Resets all document state so a fresh map can be loaded without leftover data.
+    /// </summary>
+    private void ResetState()
+    {
+        _worldRoot = null;
+        _terrain = null;
+        _missions.Clear();
+        _otherGckFiles.Clear();
+        _activeMissionIndex = null;
+        SelectedObject = null;
+        FilePath = null;
+        TerrainPath = null;
+        MapBinName = string.Empty;
+        UserMessage = string.Empty;
+        WorldName = string.Empty;
+        MapType = 0;
+        GckBinEntryName = "w_default.bin";
+        GckGtiEntryName = "default.gti";
+        GckGmmEntryName = "default.gmm";
+        IsModified = false;
+    }
+
+    /// <summary>
     /// Loads a world .bin file and its associated terrain .gti.
     /// </summary>
     public void LoadWorld(string binPath)
     {
+        ResetState();
         byte[] binData = File.ReadAllBytes(binPath);
         var reader = new BinWorldReader();
         _worldRoot = reader.Load(binData);
@@ -170,6 +194,7 @@ public class WorldDocument
     /// </summary>
     public void LoadGck(string gckPath)
     {
+        ResetState();
         var entries = GckArchive.ListEntries(gckPath);
 
         // Find the w_*.bin entry
@@ -215,7 +240,6 @@ public class WorldDocument
         }
 
         // Preserve any extra files (e.g. .abx) for round-trip saving
-        _otherGckFiles.Clear();
         foreach (var entry in entries)
         {
             if (entry == binEntry || entry == gtiEntry || entry == gmmEntry)
@@ -241,6 +265,7 @@ public class WorldDocument
     /// </summary>
     public void LoadGzp(string gzpPath)
     {
+        ResetState();
         var entries = GzpArchive.BuildIndex(gzpPath);
 
         // Find the w_*.bin entry
@@ -529,6 +554,7 @@ public class WorldDocument
     public void NewWorld(int terrainWidth, int terrainHeight, MapFillType fillType = MapFillType.Filled,
         string mapName = "", int mapType = 0)
     {
+        ResetState();
         _worldRoot = new TreeNode("Map data");
         var fs = _worldRoot.AddNode(BinFormatConstants.SectionFileStart);
         fs.AddString("Box", "newmap");

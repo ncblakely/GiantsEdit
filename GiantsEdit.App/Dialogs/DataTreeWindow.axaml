@@ -15,6 +15,11 @@
         <Grid ColumnDefinitions="*,4,300">
             <!-- Tree -->
             <TreeView x:Name="DataTree" Grid.Column="0" Margin="4">
+                <TreeView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="MnuInsertProperty" Header="Insert Property..." />
+                    </ContextMenu>
+                </TreeView.ContextMenu>
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate x:DataType="dlg:DataTreeNodeVm"
                                       ItemsSource="{Binding Children}">

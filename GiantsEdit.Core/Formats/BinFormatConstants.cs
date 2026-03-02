@@ -17,9 +17,9 @@ public static class BinFormatConstants
     public const string SectionTextures = "[textures]";
     public const string SectionSfx = "[sfx]";
     public const string SectionObjDefs = "[objdefs]";
-    public const string SectionFx = "[fx]";
+    public const string SectionFx = "FxBin";
     public const string SectionScenerios = "[scenerios]";
-    public const string SectionIncludeFiles = "[includefiles]";
+    public const string SectionIncludeFiles = "[IncludeFiles]";
 
     // Mission file prefix
     public const string MissionFilePrefix = "wm_";

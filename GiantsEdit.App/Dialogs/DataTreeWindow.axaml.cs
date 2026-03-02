@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GiantsEdit.Core.DataModel;
@@ -29,7 +31,7 @@ public partial class DataTreeWindow : Window
     /// <summary>
     /// Nodes whose leaves can be added/removed via the list edit panel.
     /// </summary>
-    private static readonly HashSet<string> EditableListNodes = ["[includefiles]"];
+    private static readonly HashSet<string> EditableListNodes = [BinFormatConstants.SectionIncludeFiles];
 
     /// <summary>
     /// Leaf names that represent an object type ID and should show a browse dropdown.
@@ -41,6 +43,7 @@ public partial class DataTreeWindow : Window
         InitializeComponent();
 
         BtnAddEntry.Click += (_, _) => AddIncludeFile();
+        MnuInsertProperty.Click += (_, _) => InsertProperty();
         Closing += (_, _) => ApplyCurrentProperties();
 
         // Object type search popup
@@ -124,6 +127,20 @@ public partial class DataTreeWindow : Window
                 ListEditPanel.IsVisible = EditableListNodes.Contains(vm.Model.Name);
                 NodeSelected?.Invoke(vm.Model);
             }
+        };
+
+        // Single-click expands nodes with children; collapse only via the toggle button
+        DataTree.Tapped += (_, e) =>
+        {
+            if (e.Source is not Control source) return;
+
+            // If the user clicked the expander toggle, let the default behavior handle it
+            if (source.FindAncestorOfType<ToggleButton>(includeSelf: true) != null)
+                return;
+
+            var tvi = source.FindAncestorOfType<TreeViewItem>();
+            if (tvi?.DataContext is DataTreeNodeVm vm && vm.Children.Count > 0 && !tvi.IsExpanded)
+                tvi.IsExpanded = true;
         };
     }
 
@@ -253,7 +270,7 @@ public partial class DataTreeWindow : Window
 
     private async void AddIncludeFile()
     {
-        if (_selectedNode == null || _selectedNode.Name != "[includefiles]") return;
+        if (_selectedNode == null || _selectedNode.Name != BinFormatConstants.SectionIncludeFiles) return;
 
         int currentCount = _selectedNode.LeafCount;
         if (currentCount >= MaxIncludeFiles)
@@ -276,6 +293,30 @@ public partial class DataTreeWindow : Window
             ShowProperties(_selectedNode);
             StatusText.Text = $"Added include file: {result}";
         }
+    }
+
+    private async void InsertProperty()
+    {
+        if (_rootNode == null) return;
+
+        var dlg = new InsertPropertyDialog();
+        var existing = WorldPropertyCatalog.GetExistingPropertyNames(_rootNode);
+        dlg.SetExistingProperties(existing);
+
+        await dlg.ShowDialog(this);
+
+        if (!dlg.Confirmed || dlg.SelectedProperty == null) return;
+
+        var result = WorldPropertyCatalog.Insert(dlg.SelectedProperty, _rootNode);
+        if (result == null)
+        {
+            StatusText.Text = $"{dlg.SelectedProperty.Name} already exists";
+            return;
+        }
+
+        // Refresh the tree
+        LoadTree(_rootNode, Title!);
+        StatusText.Text = $"Inserted: {dlg.SelectedProperty.Name}";
     }
 
 }
