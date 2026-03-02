@@ -36,14 +36,17 @@ public class WorldDocument
     // Object type IDs
     private const int MarkerTypeId = 679;
     private const int LightTypeId = 1004;
-    private const int SplineTypeId = 1052;
-    private const int SplineType2Id = 1162;
+    private const int SplineTypeId = 1052;    // marker_spline
+    private const int SplineType2Id = 1162;   // army_spline
+    private const int SplineType3Id = 1098;   // buoy_spline
 
     // Spline group ranges
     private const int SplineGroup1Start = 0;
     private const int SplineGroup1End = 255;
     private const int SplineGroup2Start = 256;
     private const int SplineGroup2End = 511;
+    private const int SplineGroup3Start = 512;
+    private const int SplineGroup3End = 767;
 
     private TreeNode? _worldRoot;
     private TerrainData? _terrain;
@@ -768,9 +771,15 @@ public class WorldDocument
             {
                 if (obj.Name != BinFormatConstants.NodeObject) continue;
                 int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
-                if (typeId != SplineTypeId && typeId != SplineType2Id) continue;
+                if (typeId != SplineTypeId && typeId != SplineType2Id && typeId != SplineType3Id) continue;
 
-                int groupBase = typeId == SplineTypeId ? SplineGroup1Start : SplineGroup2Start;
+                int groupBase = typeId switch
+                {
+                    SplineTypeId => SplineGroup1Start,
+                    SplineType2Id => SplineGroup2Start,
+                    SplineType3Id => SplineGroup3Start,
+                    _ => SplineGroup1Start
+                };
                 int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
                 int groupId = groupBase + aiMode;
                 int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
@@ -789,12 +798,15 @@ public class WorldDocument
         }
 
         CollectFrom(_worldRoot);
+        if (_activeMissionIndex is int mi && mi >= 0 && mi < _missions.Count)
+            CollectFrom(_missions[mi]);
 
         var result = new List<SplineLine>();
 
         // Build line segments for each color group
         BuildSplineGroup(splinePoints, SplineGroup1Start, SplineGroup1End, new Vector3(1f, 1f, 1f), result);
         BuildSplineGroup(splinePoints, SplineGroup2Start, SplineGroup2End, new Vector3(1f, 0.75f, 0.5f), result);
+        BuildSplineGroup(splinePoints, SplineGroup3Start, SplineGroup3End, new Vector3(0.5f, 0.75f, 1f), result);
 
         return result;
     }
