@@ -36,9 +36,9 @@ public class WorldDocument
     // Object type IDs
     private const int MarkerTypeId = 679;
     private const int LightTypeId = 1004;
-    private const int SplineTypeId = 1052;    // marker_spline
-    private const int SplineType2Id = 1162;   // army_spline
-    private const int SplineType3Id = 1098;   // buoy_spline
+
+    private readonly List<int> SplineTypes1 = [679, 1052, 1162];
+    private readonly List<int> SplineTypes2 = [];
 
     // Spline group ranges
     private const int SplineGroup1Start = 0;
@@ -759,6 +759,64 @@ public class WorldDocument
     /// </summary>
     public List<SplineLine> GetSplineLines()
     {
+        var result = new List<SplineLine>();
+        var nodes = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects)?.EnumerateNodes();
+        if (nodes == null) return result;
+
+        // objsplines[objtype][aimode][teamid] = obj position
+        var objsplines = new Dictionary<int, Dictionary<int, SortedDictionary<int, Vector3>>>();
+
+        foreach (var obj in nodes)
+        {
+            if (obj.Name != BinFormatConstants.NodeObject) continue;
+
+            int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+            if (!SplineTypes1.Contains(typeId) && !SplineTypes2.Contains(typeId)) continue;
+
+            int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+            int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
+
+            float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
+            float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
+            float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+
+            objsplines[typeId][aiMode][teamId] = new Vector3(x, y, z);
+        }
+
+        // remove nodes with a single teamid
+        foreach(var objtypedict in objsplines)
+        {
+            foreach (var aimodedict in objtypedict.Value)
+            {
+                if (aimodedict.Value.Count <= -1)
+                {
+                    objtypedict.Value.Remove(aimodedict.Key);
+                    continue;
+                }
+            }
+        }
+
+        // now build the spline lines
+        foreach(var aimodedict in objsplines.Values)
+        {
+            foreach(var teamiddict in aimodedict.Values)
+            {
+                var verts = new List<float>();
+
+                foreach(var vec in teamiddict.Values)
+                {
+                    verts.Add(vec.X);
+                }
+                result.Add(new SplineLine({
+                        Vertices = verts.ToArray(),
+                        PointCount = verts.Count / 3,
+                        Color = color
+                }));
+            }
+        }
+
+
+
         // splineids[0..511]: each slot is a list of points indexed by TeamID
         var splinePoints = new Dictionary<int, SortedDictionary<int, Vector3>>();
 
@@ -771,15 +829,9 @@ public class WorldDocument
             {
                 if (obj.Name != BinFormatConstants.NodeObject) continue;
                 int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
-                if (typeId != SplineTypeId && typeId != SplineType2Id && typeId != SplineType3Id) continue;
+                if (!SplineTypes1.Contains(typeId) && !SplineTypes2.Contains(typeId)) continue;
 
-                int groupBase = typeId switch
-                {
-                    SplineTypeId => SplineGroup1Start,
-                    SplineType2Id => SplineGroup2Start,
-                    SplineType3Id => SplineGroup3Start,
-                    _ => SplineGroup1Start
-                };
+                int groupBase = SplineTypes1.Contains(typeId) ? SplineGroup1Start : SplineGroup2Start;
                 int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
                 int groupId = groupBase + aiMode;
                 int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
@@ -801,7 +853,6 @@ public class WorldDocument
         if (_activeMissionIndex is int mi && mi >= 0 && mi < _missions.Count)
             CollectFrom(_missions[mi]);
 
-        var result = new List<SplineLine>();
 
         // Build line segments for each color group
         BuildSplineGroup(splinePoints, SplineGroup1Start, SplineGroup1End, new Vector3(1f, 1f, 1f), result);
