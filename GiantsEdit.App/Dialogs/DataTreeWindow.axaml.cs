@@ -11,6 +11,9 @@ public partial class DataTreeWindow : Window
 {
     private TreeNode? _rootNode;
     private TreeNode? _selectedNode;
+    private LeafPropertyVm? _browsingLeaf;
+    private ObservableCollection<DataTreeNodeVm>? _items;
+    private readonly IReadOnlyList<string> _allObjNames = ObjectNames.GetAllDisplayNames();
 
     /// <summary>
     /// Fired when a node is selected in the tree view.
@@ -27,27 +30,76 @@ public partial class DataTreeWindow : Window
     /// </summary>
     private static readonly HashSet<string> EditableListNodes = ["[includefiles]"];
 
+    /// <summary>
+    /// Leaf names that represent an object type ID and should show a browse dropdown.
+    /// </summary>
+    private static readonly HashSet<string> ObjectTypeLeafNames = ["Type", "Character"];
+
     public DataTreeWindow()
     {
         InitializeComponent();
 
         BtnAddEntry.Click += (_, _) => AddIncludeFile();
         Closing += (_, _) => ApplyCurrentProperties();
+
+        // Object type search popup
+        LstObjTypes.ItemsSource = _allObjNames;
+        TxtObjTypeSearch.TextChanged += (_, _) =>
+        {
+            var filter = TxtObjTypeSearch.Text;
+            LstObjTypes.ItemsSource = string.IsNullOrEmpty(filter)
+                ? _allObjNames
+                : ObjectNames.Search(filter);
+        };
+        LstObjTypes.SelectionChanged += (_, _) =>
+        {
+            if (_browsingLeaf != null && LstObjTypes.SelectedItem is string selected)
+            {
+                _browsingLeaf.Value = selected;
+                ObjTypePopup.IsOpen = false;
+                _browsingLeaf = null;
+            }
+        };
+    }
+
+    private void OpenObjTypeBrowser(LeafPropertyVm leaf)
+    {
+        _browsingLeaf = leaf;
+        TxtObjTypeSearch.Text = "";
+        LstObjTypes.ItemsSource = _allObjNames;
+        LstObjTypes.SelectedItem = null;
+        ObjTypePopup.PlacementTarget = this;
+        ObjTypePopup.IsOpen = true;
+        TxtObjTypeSearch.Focus();
     }
 
     public void LoadTree(TreeNode root, string title)
     {
-        _rootNode = root;
         Title = title;
-        var rootVm = new DataTreeNodeVm(root);
-        var items = new ObservableCollection<DataTreeNodeVm> { rootVm };
+        var items = new ObservableCollection<DataTreeNodeVm> { new(root) };
+        InitTree(items);
+    }
+
+    public void LoadForest(IEnumerable<TreeNode> roots, string title)
+    {
+        Title = title;
+        var items = new ObservableCollection<DataTreeNodeVm>();
+        foreach (var root in roots)
+            items.Add(new DataTreeNodeVm(root));
+        InitTree(items);
+    }
+
+    private void InitTree(ObservableCollection<DataTreeNodeVm> items)
+    {
+        _items = items;
+        _rootNode = items.Count == 1 ? items[0].Model : null;
         DataTree.ItemsSource = items;
 
-        // Expand root node once the tree has rendered
         DataTree.Loaded += (_, _) =>
         {
-            if (DataTree.ContainerFromItem(rootVm) is TreeViewItem rootItem)
-                rootItem.IsExpanded = true;
+            foreach (var vm in items)
+                if (DataTree.ContainerFromItem(vm) is TreeViewItem item)
+                    item.IsExpanded = true;
         };
 
         DataTree.SelectionChanged += (_, _) =>
@@ -62,6 +114,67 @@ public partial class DataTreeWindow : Window
                 NodeSelected?.Invoke(vm.Model);
             }
         };
+    }
+
+    /// <summary>
+    /// Expands the tree path to the given node and selects it.
+    /// </summary>
+    public void SelectNode(TreeNode target)
+    {
+        if (_items == null) return;
+        var path = FindPath(_items, target);
+        if (path == null) return;
+
+        // Expand each ancestor, then select the final node
+        DataTree.Loaded += (_, _) => ExpandAndSelect(path, 0);
+        // If already loaded, try immediately
+        ExpandAndSelect(path, 0);
+    }
+
+    private void ExpandAndSelect(List<DataTreeNodeVm> path, int depth)
+    {
+        if (depth >= path.Count) return;
+
+        var vm = path[depth];
+        if (depth == path.Count - 1)
+        {
+            DataTree.SelectedItem = vm;
+            return;
+        }
+
+        if (DataTree.ContainerFromItem(vm) is TreeViewItem tvi)
+        {
+            tvi.IsExpanded = true;
+            // After expanding, continue down the path
+            tvi.ContainerPrepared += (_, _) => ExpandAndSelect(path, depth + 1);
+            ExpandAndSelect(path, depth + 1);
+        }
+    }
+
+    private static List<DataTreeNodeVm>? FindPath(
+        IEnumerable<DataTreeNodeVm> roots, TreeNode target)
+    {
+        foreach (var root in roots)
+        {
+            var path = new List<DataTreeNodeVm>();
+            if (FindPathRecursive(root, target, path))
+                return path;
+        }
+        return null;
+    }
+
+    private static bool FindPathRecursive(
+        DataTreeNodeVm current, TreeNode target, List<DataTreeNodeVm> path)
+    {
+        path.Add(current);
+        if (current.Model == target) return true;
+
+        foreach (var child in current.Children)
+            if (FindPathRecursive(child, target, path))
+                return true;
+
+        path.RemoveAt(path.Count - 1);
+        return false;
     }
 
     private void ApplyCurrentProperties()
@@ -79,7 +192,8 @@ public partial class DataTreeWindow : Window
         var props = new ObservableCollection<LeafPropertyVm>();
         foreach (var leaf in node.EnumerateLeaves())
         {
-            var vm = new LeafPropertyVm(leaf, editable);
+            bool isObjType = ObjectTypeLeafNames.Contains(leaf.Name) && leaf.PropertyType == PropertyType.Int32;
+            var vm = new LeafPropertyVm(leaf, canDelete: editable, isObjectType: isObjType);
             if (editable)
             {
                 vm.DeleteRequested += () =>
@@ -89,6 +203,8 @@ public partial class DataTreeWindow : Window
                     StatusText.Text = $"Removed: {leaf.StringValue}";
                 };
             }
+            if (isObjType)
+                vm.BrowseRequested += () => OpenObjTypeBrowser(vm);
             props.Add(vm);
         }
         PropertiesList.ItemsSource = props;
@@ -168,11 +284,11 @@ public partial class LeafPropertyVm : ObservableObject
     private readonly TreeLeaf _leaf;
     private readonly bool _isObjectType;
 
-    public LeafPropertyVm(TreeLeaf leaf, bool canDelete = false)
+    public LeafPropertyVm(TreeLeaf leaf, bool canDelete = false, bool isObjectType = false)
     {
         _leaf = leaf;
         Name = leaf.Name;
-        _isObjectType = leaf.Name == "Type" && leaf.PropertyType == PropertyType.Int32;
+        _isObjectType = isObjectType || (leaf.Name == "Type" && leaf.PropertyType == PropertyType.Int32);
         Value = _isObjectType
             ? ObjectNames.GetDisplayName(leaf.Int32Value)
             : leaf.PropertyType switch
@@ -185,8 +301,10 @@ public partial class LeafPropertyVm : ObservableObject
                 _ => "?"
             };
         IsReadOnly = leaf.PropertyType == PropertyType.Void;
+        IsObjectType = _isObjectType;
         CanDelete = canDelete;
         DeleteCommand = new RelayCommand(() => DeleteRequested?.Invoke());
+        BrowseCommand = new RelayCommand(() => BrowseRequested?.Invoke());
     }
 
     public string Name { get; }
@@ -195,10 +313,13 @@ public partial class LeafPropertyVm : ObservableObject
     private string _value = "";
 
     public bool IsReadOnly { get; }
+    public bool IsObjectType { get; }
     public bool CanDelete { get; }
     public IRelayCommand DeleteCommand { get; }
+    public IRelayCommand BrowseCommand { get; }
 
     public event Action? DeleteRequested;
+    public event Action? BrowseRequested;
 
     /// <summary>
     /// Applies the edited value back to the underlying leaf.

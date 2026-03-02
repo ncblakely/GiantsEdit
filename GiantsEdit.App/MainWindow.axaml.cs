@@ -106,10 +106,12 @@ public partial class MainWindow : Window
         // === Map menu ===
         MenuMapNames.Click += async (_, _) => await ShowMapNamesAsync();
         MenuMapObjTree.Click += (_, _) => ShowWorldObjectsTree();
-        MenuMissions.Click += (_, _) =>
+        MenuMissions.Click += async (_, _) =>
         {
             var dlg = new MissionsDialog(_vm.Document);
-            dlg.Show(this);
+            var result = await dlg.ShowDialog<MissionEditRequest?>(this);
+            if (result != null)
+                ShowMissionObjectsTree(result.MissionIndex);
         };
         MenuMissionObjTree.Click += (_, _) => ShowMissionObjectsTree();
         MenuMarkerReport.Click += async (_, _) => await ShowMarkerReportAsync();

@@ -46,29 +46,29 @@ public class BinMissionReader
         switch (chunkId)
         {
             case 0x03: // 1-angled object
-            {
-                var obj = objects.AddNode("Object");
-                _currentObject = obj;
-                obj.AddInt32("Type", _r.ReadInt32());
-                obj.AddSingle("X", _r.ReadSingle());
-                obj.AddSingle("Y", _r.ReadSingle());
-                obj.AddSingle("Z", _r.ReadSingle());
-                obj.AddSingle("DirFacing", _r.ReadSingle());
-                break;
-            }
+                {
+                    var obj = objects.AddNode("Object");
+                    _currentObject = obj;
+                    obj.AddInt32("Type", _r.ReadInt32());
+                    obj.AddSingle("X", _r.ReadSingle());
+                    obj.AddSingle("Y", _r.ReadSingle());
+                    obj.AddSingle("Z", _r.ReadSingle());
+                    obj.AddSingle("DirFacing", _r.ReadSingle());
+                    break;
+                }
             case 0x04: // 3-angled object
-            {
-                var obj = objects.AddNode("Object");
-                _currentObject = obj;
-                obj.AddInt32("Type", _r.ReadInt32());
-                obj.AddSingle("X", _r.ReadSingle());
-                obj.AddSingle("Y", _r.ReadSingle());
-                obj.AddSingle("Z", _r.ReadSingle());
-                obj.AddSingle("DirFacing", _r.ReadSingle());
-                obj.AddSingle("TiltForward", _r.ReadSingle());
-                obj.AddSingle("TiltLeft", _r.ReadSingle());
-                break;
-            }
+                {
+                    var obj = objects.AddNode("Object");
+                    _currentObject = obj;
+                    obj.AddInt32("Type", _r.ReadInt32());
+                    obj.AddSingle("X", _r.ReadSingle());
+                    obj.AddSingle("Y", _r.ReadSingle());
+                    obj.AddSingle("Z", _r.ReadSingle());
+                    obj.AddSingle("DirFacing", _r.ReadSingle());
+                    obj.AddSingle("TiltForward", _r.ReadSingle());
+                    obj.AddSingle("TiltLeft", _r.ReadSingle());
+                    break;
+                }
             case 0x05:
                 _currentObject.AddByte("AIMode", _r.ReadByte());
                 break;
@@ -87,35 +87,37 @@ public class BinMissionReader
                 _currentObject.AddSingle("Scale", _r.ReadSingle());
                 break;
             case 0x0A:
-            {
-                int count = _r.ReadByte();
-                for (int i = 0; i < count; i++)
-                    _currentObject.AddSingle("AIData", _r.ReadSingle());
-                break;
-            }
+                {
+                    int count = _r.ReadByte();
+                    _currentObject.AddByte("AIDataCount", (byte)count);
+                    for (int i = 0; i < count; i++)
+                        _currentObject.AddSingle("AIData", _r.ReadSingle());
+                    break;
+                }
             case 0x0B:
-            {
-                var opts = root.GetOrAddNode("<Options>");
-                opts.AddInt32("Character 0", _r.ReadInt32());
-                opts.AddInt32("Character 1", _r.ReadInt32());
-                opts.AddInt32("Character 2", _r.ReadInt32());
-                opts.AddInt32("Character 3", _r.ReadInt32());
-                break;
-            }
+                {
+                    var opts = root.GetOrAddNode("<Options>");
+                    opts.AddInt32("Character", _r.ReadInt32());
+                    opts.AddInt32("TeamMembers", _r.ReadInt32());
+                    opts.AddInt32("MarkerID", _r.ReadInt32());
+                    opts.AddInt32("KabutoSize", _r.ReadInt32());
+                    break;
+                }
             case 0x0C:
                 root.GetOrAddNode("<Options>").AddInt32("SmartieType", _r.ReadInt32());
                 break;
             case 0x0D:
-                _currentObject.AddInt32("SpecialText", _r.ReadInt32());
+                root.GetOrAddNode("<Options>").AddInt32("SpecialText", _r.ReadInt32());
                 break;
             case 0x0E:
-            {
-                var opts = root.GetOrAddNode("<Options>");
-                int count = _r.ReadInt32();
-                for (int i = 0; i < count; i++)
-                    opts.AddInt32("Icons", _r.ReadInt32());
-                break;
-            }
+                {
+                    var opts = root.GetOrAddNode("<Options>");
+                    int count = _r.ReadInt32();
+                    opts.AddInt32("IconCount", count);
+                    for (int i = 0; i < count; i++)
+                        opts.AddInt32("Icons", _r.ReadInt32());
+                    break;
+                }
             case 0x0F:
                 root.GetOrAddNode("<Options>").AddInt32("VimpMeat", _r.ReadInt32());
                 break;
@@ -124,6 +126,9 @@ public class BinMissionReader
                 break;
             case 0x11:
                 root.GetOrAddNode("<Options>").AddInt32("NoJetpack", _r.ReadInt32());
+                break;
+            case 0x12: // FailTime
+                root.GetOrAddNode("<Options>").AddInt32("FailTime", _r.ReadInt32());
                 break;
             case 0x13:
                 root.GetOrAddNode("<Options>").AddString("FailFlick", _r.ReadString32());
@@ -135,14 +140,14 @@ public class BinMissionReader
                 root.GetOrAddNode("<Options>").AddString("StartFlick", _r.ReadString32());
                 break;
             case 0x16:
-            {
-                var lockNode = _currentObject.AddNode("Lock");
-                _currentObject = lockNode;
-                lockNode.AddInt32("Type", _r.ReadInt32());
-                lockNode.AddByte("LockRefSrc", _r.ReadByte());
-                lockNode.AddByte("LockRefDst", _r.ReadByte());
-                break;
-            }
+                {
+                    var lockNode = _currentObject.AddNode("Lock");
+                    _currentObject = lockNode;
+                    lockNode.AddInt32("Type", _r.ReadInt32());
+                    lockNode.AddByte("LockRefSrc", _r.ReadByte());
+                    lockNode.AddByte("LockRefDst", _r.ReadByte());
+                    break;
+                }
             case 0x17: // Pop lock
                 if (_currentObject.Parent != null)
                     _currentObject = _currentObject.Parent;
@@ -159,23 +164,32 @@ public class BinMissionReader
                 _currentObject.AddSingle("SplineScale 0", _r.ReadSingle());
                 _currentObject.AddSingle("SplineScale 1", _r.ReadSingle());
                 break;
+            case 0x1B: // SplineTangents
+                _currentObject.AddSingle("SplineTangent 0", _r.ReadSingle());
+                _currentObject.AddSingle("SplineTangent 1", _r.ReadSingle());
+                break;
             case 0x1C:
                 _currentObject.AddVoid("SplinePath3D");
                 break;
+            case 0x1D: // SplineJet
+                _currentObject.AddVoid("SplineJet");
+                break;
             case 0x1E:
-            {
-                int count = _r.ReadInt32();
-                for (int i = 0; i < count; i++)
-                    _currentObject.AddInt32("MinishopRIcon", _r.ReadInt32());
-                break;
-            }
+                {
+                    int count = _r.ReadInt32();
+                    _currentObject.AddInt32("MinishopRIconCount", count);
+                    for (int i = 0; i < count; i++)
+                        _currentObject.AddInt32("MinishopRIcon", _r.ReadInt32());
+                    break;
+                }
             case 0x1F:
-            {
-                int count = _r.ReadInt32();
-                for (int i = 0; i < count; i++)
-                    _currentObject.AddInt32("MinishopMIcon", _r.ReadInt32());
-                break;
-            }
+                {
+                    int count = _r.ReadInt32();
+                    _currentObject.AddInt32("MinishopMIconCount", count);
+                    for (int i = 0; i < count; i++)
+                        _currentObject.AddInt32("MinishopMIcon", _r.ReadInt32());
+                    break;
+                }
             case 0x20:
                 _currentObject.AddByte("SplineStartID", _r.ReadByte());
                 break;
@@ -185,19 +199,22 @@ public class BinMissionReader
             case 0x22:
                 root.GetOrAddNode("<Options>").AddVoid("JetskiRace");
                 break;
-            case 0x24:
-                root.GetOrAddNode("<Options>").AddVoid("DiscardVimpMeat");
+            case 0x23: // BumpClampValue
+                root.GetOrAddNode("<Options>").AddSingle("BumpClampValue", _r.ReadSingle());
+                break;
+            case 0x24: // ZeroVimpMeat
+                root.GetOrAddNode("<Options>").AddVoid("ZeroVimpMeat");
                 break;
             case 0x25:
                 root.GetOrAddNode("<Options>").AddVoid("GrabSmartie");
                 break;
             case 0x26:
-            {
-                var opts = root.GetOrAddNode("<Options>");
-                opts.AddSingle("SuccessDelay 0", _r.ReadSingle());
-                opts.AddSingle("SuccessDelay 1", _r.ReadSingle());
-                break;
-            }
+                {
+                    var opts = root.GetOrAddNode("<Options>");
+                    opts.AddSingle("SuccessDelay 0", _r.ReadSingle());
+                    opts.AddSingle("SuccessDelay 1", _r.ReadSingle());
+                    break;
+                }
             default:
                 throw new FormatException($"Unknown mission chunk ID: 0x{chunkId:X2}");
         }
@@ -217,11 +234,6 @@ public class BinMissionWriter
         w.WriteInt32(4);
         w.WriteByte(1);
 
-        // Write options if present
-        var options = root.FindChildNode("<Options>");
-        if (options != null)
-            WriteOptions(w, options);
-
         // Write objects
         var objects = root.FindChildNode(BinFormatConstants.GroupObjects);
         if (objects != null)
@@ -229,6 +241,11 @@ public class BinMissionWriter
             foreach (var obj in objects.EnumerateNodes())
                 WriteObject(w, obj);
         }
+
+        // Write options after objects
+        var options = root.FindChildNode("<Options>");
+        if (options != null)
+            WriteOptions(w, options);
 
         // Terminator
         w.WriteByte(0x02);
@@ -238,19 +255,42 @@ public class BinMissionWriter
 
     private void WriteOptions(BinaryDataWriter w, TreeNode options)
     {
-        foreach (var leaf in options.EnumerateLeaves())
+        var leaves = options.EnumerateLeaves().ToList();
+
+        foreach (var leaf in leaves)
         {
+            // Skip TeamMembers/MarkerID/KabutoSize, written with Character
+            if (leaf.Name is "TeamMembers" or "MarkerID" or "KabutoSize") continue;
+            // Skip SuccessDelay 1, written with SuccessDelay 0
+            if (leaf.Name == "SuccessDelay 1") continue;
+
             switch (leaf.Name)
             {
-                case "Character 0":
+                case "Character":
                     w.WriteByte(0x0B);
                     w.WriteInt32(leaf.Int32Value);
-                    // Consume next 3 character leaves
+                    w.WriteInt32(options.GetChildLeaf("TeamMembers").Int32Value);
+                    w.WriteInt32(options.GetChildLeaf("MarkerID").Int32Value);
+                    w.WriteInt32(options.GetChildLeaf("KabutoSize").Int32Value);
                     break;
                 case "SmartieType":
                     w.WriteByte(0x0C);
                     w.WriteInt32(leaf.Int32Value);
                     break;
+                case "SpecialText":
+                    w.WriteByte(0x0D);
+                    w.WriteInt32(leaf.Int32Value);
+                    break;
+                case "IconCount":
+                    {
+                        w.WriteByte(0x0E);
+                        w.WriteInt32(leaf.Int32Value);
+                        foreach (var icon in leaves.Where(l => l.Name == "Icons"))
+                            w.WriteInt32(icon.Int32Value);
+                    }
+                    break;
+                case "Icons":
+                    break; // written with IconCount
                 case "VimpMeat":
                     w.WriteByte(0x0F);
                     w.WriteInt32(leaf.Int32Value);
@@ -261,6 +301,10 @@ public class BinMissionWriter
                     break;
                 case "NoJetpack":
                     w.WriteByte(0x11);
+                    w.WriteInt32(leaf.Int32Value);
+                    break;
+                case "FailTime":
+                    w.WriteByte(0x12);
                     w.WriteInt32(leaf.Int32Value);
                     break;
                 case "FailFlick":
@@ -278,39 +322,22 @@ public class BinMissionWriter
                 case "JetskiRace":
                     w.WriteByte(0x22);
                     break;
-                case "DiscardVimpMeat":
+                case "BumpClampValue":
+                    w.WriteByte(0x23);
+                    w.WriteSingle(leaf.SingleValue);
+                    break;
+                case "ZeroVimpMeat":
                     w.WriteByte(0x24);
                     break;
                 case "GrabSmartie":
                     w.WriteByte(0x25);
                     break;
+                case "SuccessDelay 0":
+                    w.WriteByte(0x26);
+                    w.WriteSingle(leaf.SingleValue);
+                    w.WriteSingle(options.GetChildLeaf("SuccessDelay 1").SingleValue);
+                    break;
             }
-        }
-
-        // Handle grouped leaves (Characters, Icons, SuccessDelay)
-        var leaves = options.EnumerateLeaves().ToList();
-        var characters = leaves.Where(l => l.Name.StartsWith("Character ")).ToList();
-        if (characters.Count == 4)
-        {
-            // Already written above as part of Character 0 case
-            // Need to output remaining 3 values
-        }
-
-        var icons = leaves.Where(l => l.Name == "Icons").ToList();
-        if (icons.Count > 0)
-        {
-            w.WriteByte(0x0E);
-            w.WriteInt32(icons.Count);
-            foreach (var icon in icons)
-                w.WriteInt32(icon.Int32Value);
-        }
-
-        var successDelay = leaves.Where(l => l.Name.StartsWith("SuccessDelay ")).ToList();
-        if (successDelay.Count == 2)
-        {
-            w.WriteByte(0x26);
-            w.WriteSingle(successDelay[0].SingleValue);
-            w.WriteSingle(successDelay[1].SingleValue);
         }
     }
 
@@ -339,78 +366,8 @@ public class BinMissionWriter
             w.WriteSingle(obj.GetChildLeaf("DirFacing").SingleValue);
         }
 
-        // Write optional attributes
-        WriteLeafIfPresent(w, obj, "AIMode", 0x05, LeafWriteKind.Byte);
-        WriteLeafIfPresent(w, obj, "TeamID", 0x07, LeafWriteKind.Int32);
-        WriteLeafIfPresent(w, obj, "TriggerType", 0x08, LeafWriteKind.Byte);
-        WriteLeafIfPresent(w, obj, "Scale", 0x09, LeafWriteKind.Single);
-        WriteLeafIfPresent(w, obj, "SpecialText", 0x0D, LeafWriteKind.Int32);
-        WriteLeafIfPresent(w, obj, "FlickUsed", 0x14, LeafWriteKind.String32);
-        WriteLeafIfPresent(w, obj, "SplineStartID", 0x20, LeafWriteKind.Byte);
-        WriteLeafIfPresent(w, obj, "KeyTime", 0x21, LeafWriteKind.Int32);
-
-        // OData ($06)
-        var odata1 = obj.FindChildLeaf("OData1");
-        if (odata1 != null)
-        {
-            w.WriteByte(0x06);
-            w.WriteSingle(odata1.SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("OData2").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("OData3").SingleValue);
-        }
-
-        // Directions ($18)
-        var dir0 = obj.FindChildLeaf("Directions 0");
-        if (dir0 != null)
-        {
-            w.WriteByte(0x18);
-            w.WriteSingle(dir0.SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Directions 1").SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("Directions 2").SingleValue);
-        }
-
-        // SplineScale ($1A)
-        var ss0 = obj.FindChildLeaf("SplineScale 0");
-        if (ss0 != null)
-        {
-            w.WriteByte(0x1A);
-            w.WriteSingle(ss0.SingleValue);
-            w.WriteSingle(obj.GetChildLeaf("SplineScale 1").SingleValue);
-        }
-
-        // SplinePath3D ($1C)
-        if (obj.FindChildLeaf("SplinePath3D") != null)
-            w.WriteByte(0x1C);
-
-        // AIData ($0A)
-        var aiData = obj.EnumerateLeaves().Where(l => l.Name == "AIData").ToList();
-        if (aiData.Count > 0)
-        {
-            w.WriteByte(0x0A);
-            w.WriteByte((byte)aiData.Count);
-            foreach (var ai in aiData)
-                w.WriteSingle(ai.SingleValue);
-        }
-
-        // MinishopRIcon ($1E)
-        var rIcons = obj.EnumerateLeaves().Where(l => l.Name == "MinishopRIcon").ToList();
-        if (rIcons.Count > 0)
-        {
-            w.WriteByte(0x1E);
-            w.WriteInt32(rIcons.Count);
-            foreach (var icon in rIcons)
-                w.WriteInt32(icon.Int32Value);
-        }
-
-        // MinishopMIcon ($1F)
-        var mIcons = obj.EnumerateLeaves().Where(l => l.Name == "MinishopMIcon").ToList();
-        if (mIcons.Count > 0)
-        {
-            w.WriteByte(0x1F);
-            w.WriteInt32(mIcons.Count);
-            foreach (var icon in mIcons)
-                w.WriteInt32(icon.Int32Value);
-        }
+        var headerNames = new HashSet<string> { "Type", "X", "Y", "Z", "DirFacing", "TiltForward", "TiltLeft" };
+        WriteAttributeLeaves(w, obj, headerNames);
 
         // Locks (recursive)
         foreach (var child in obj.EnumerateNodes())
@@ -420,12 +377,90 @@ public class BinMissionWriter
         }
     }
 
+    /// <summary>
+    /// Writes non-header attribute leaves from a node, preserving tree order.
+    /// Shared between object and lock writing.
+    /// </summary>
+    private void WriteAttributeLeaves(BinaryDataWriter w, TreeNode node, HashSet<string> skipNames)
+    {
+        var leaves = node.EnumerateLeaves().ToList();
+
+        foreach (var leaf in leaves)
+        {
+            if (skipNames.Contains(leaf.Name)) continue;
+
+            // Skip individual values, written with their count sentinel
+            if (leaf.Name is "AIData" or "MinishopRIcon" or "MinishopMIcon") continue;
+
+            switch (leaf.Name)
+            {
+                case "AIMode": w.WriteByte(0x05); w.WriteByte(leaf.ByteValue); break;
+                case "OData1":
+                    w.WriteByte(0x06);
+                    w.WriteSingle(leaf.SingleValue);
+                    w.WriteSingle(node.GetChildLeaf("OData2").SingleValue);
+                    w.WriteSingle(node.GetChildLeaf("OData3").SingleValue);
+                    break;
+                case "OData2": case "OData3": break;
+                case "TeamID": w.WriteByte(0x07); w.WriteInt32(leaf.Int32Value); break;
+                case "TriggerType": w.WriteByte(0x08); w.WriteByte(leaf.ByteValue); break;
+                case "Scale": w.WriteByte(0x09); w.WriteSingle(leaf.SingleValue); break;
+                case "AIDataCount":
+                    w.WriteByte(0x0A);
+                    w.WriteByte(leaf.ByteValue);
+                    foreach (var ai in leaves.Where(l => l.Name == "AIData"))
+                        w.WriteSingle(ai.SingleValue);
+                    break;
+                case "FlickUsed": w.WriteByte(0x14); w.WriteString32(leaf.StringValue); break;
+                case "Directions 0":
+                    w.WriteByte(0x18);
+                    w.WriteSingle(leaf.SingleValue);
+                    w.WriteSingle(node.GetChildLeaf("Directions 1").SingleValue);
+                    w.WriteSingle(node.GetChildLeaf("Directions 2").SingleValue);
+                    break;
+                case "Directions 1": case "Directions 2": break;
+                case "SplineScale 0":
+                    w.WriteByte(0x1A);
+                    w.WriteSingle(leaf.SingleValue);
+                    w.WriteSingle(node.GetChildLeaf("SplineScale 1").SingleValue);
+                    break;
+                case "SplineScale 1": break;
+                case "SplineTangent 0":
+                    w.WriteByte(0x1B);
+                    w.WriteSingle(leaf.SingleValue);
+                    w.WriteSingle(node.GetChildLeaf("SplineTangent 1").SingleValue);
+                    break;
+                case "SplineTangent 1": break;
+                case "SplinePath3D": w.WriteByte(0x1C); break;
+                case "SplineJet": w.WriteByte(0x1D); break;
+                case "MinishopRIconCount":
+                    w.WriteByte(0x1E);
+                    w.WriteInt32(leaf.Int32Value);
+                    foreach (var icon in leaves.Where(l => l.Name == "MinishopRIcon"))
+                        w.WriteInt32(icon.Int32Value);
+                    break;
+                case "MinishopMIconCount":
+                    w.WriteByte(0x1F);
+                    w.WriteInt32(leaf.Int32Value);
+                    foreach (var icon in leaves.Where(l => l.Name == "MinishopMIcon"))
+                        w.WriteInt32(icon.Int32Value);
+                    break;
+                case "SplineStartID": w.WriteByte(0x20); w.WriteByte(leaf.ByteValue); break;
+                case "KeyTime": w.WriteByte(0x21); w.WriteInt32(leaf.Int32Value); break;
+            }
+        }
+    }
+
     private void WriteLock(BinaryDataWriter w, TreeNode lockNode)
     {
         w.WriteByte(0x16);
         w.WriteInt32(lockNode.GetChildLeaf("Type").Int32Value);
         w.WriteByte(lockNode.GetChildLeaf("LockRefSrc").ByteValue);
         w.WriteByte(lockNode.GetChildLeaf("LockRefDst").ByteValue);
+
+        // Write attribute leaves inside the lock using the same logic as objects
+        var headerNames = new HashSet<string> { "Type", "LockRefSrc", "LockRefDst" };
+        WriteAttributeLeaves(w, lockNode, headerNames);
 
         // Write nested objects/locks
         foreach (var child in lockNode.EnumerateNodes())
@@ -437,22 +472,5 @@ public class BinMissionWriter
         }
 
         w.WriteByte(0x17); // Pop lock
-    }
-
-    private enum LeafWriteKind { Byte, Int32, Single, String32 }
-
-    private void WriteLeafIfPresent(BinaryDataWriter w, TreeNode node, string leafName, byte chunkId, LeafWriteKind kind)
-    {
-        var leaf = node.FindChildLeaf(leafName);
-        if (leaf == null) return;
-
-        w.WriteByte(chunkId);
-        switch (kind)
-        {
-            case LeafWriteKind.Byte: w.WriteByte(leaf.ByteValue); break;
-            case LeafWriteKind.Int32: w.WriteInt32(leaf.Int32Value); break;
-            case LeafWriteKind.Single: w.WriteSingle(leaf.SingleValue); break;
-            case LeafWriteKind.String32: w.WriteString32(leaf.StringValue); break;
-        }
     }
 }

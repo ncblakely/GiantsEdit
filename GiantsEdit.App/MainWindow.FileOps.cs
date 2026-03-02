@@ -44,10 +44,7 @@ public partial class MainWindow
             SuggestedStartLocation = startFolder,
             FileTypeFilter =
             [
-                new FilePickerFileType("Map Files") { Patterns = ["*.gck", "*.bin"] },
-                new FilePickerFileType("GCK Archives") { Patterns = ["*.gck"] },
-                new FilePickerFileType("BIN Files") { Patterns = ["*.bin"] },
-                new FilePickerFileType("GZP archive") { Patterns = ["*.gzp"] }
+                new FilePickerFileType("Map files") { Patterns = ["*.gck", "*.bin", "*.gzp"] }
             ]
         });
 
@@ -56,7 +53,7 @@ public partial class MainWindow
             var path = files[0].TryGetLocalPath();
             if (path != null)
             {
-                _prefs.LastOpenFolder = System.IO.Path.GetDirectoryName(path) ?? "";
+                _prefs.LastOpenFolder = Path.GetDirectoryName(path) ?? "";
                 _prefs.Save();
 
                 try
@@ -68,7 +65,7 @@ public partial class MainWindow
                         _vm.Document.LoadGzp(path);
                     else
                         _vm.Document.LoadWorld(path);
-                    StatusText.Text = $"Loaded: {System.IO.Path.GetFileName(path)}";
+                    StatusText.Text = $"Loaded: {Path.GetFileName(path)}";
                 }
                 catch (Exception ex)
                 {
@@ -99,7 +96,7 @@ public partial class MainWindow
                 try
                 {
                     _vm.Document.SaveWorld(path);
-                    StatusText.Text = $"Saved: {System.IO.Path.GetFileName(path)}";
+                    StatusText.Text = $"Saved: {Path.GetFileName(path)}";
                 }
                 catch (Exception ex)
                 {
@@ -157,7 +154,7 @@ public partial class MainWindow
                     UploadTerrainToGpu();
                     InvalidateViewport();
                     var t = _vm.Document.Terrain;
-                    StatusText.Text = $"Imported terrain: {System.IO.Path.GetFileName(path)} ({t?.Width}x{t?.Height})";
+                    StatusText.Text = $"Imported terrain: {Path.GetFileName(path)} ({t?.Width}x{t?.Height})";
                 }
                 catch (Exception ex)
                 {
@@ -213,7 +210,7 @@ public partial class MainWindow
                 try
                 {
                     _vm.Document.SaveTerrain(path);
-                    StatusText.Text = $"Terrain exported: {System.IO.Path.GetFileName(path)}";
+                    StatusText.Text = $"Terrain exported: {Path.GetFileName(path)}";
                 }
                 catch (Exception ex)
                 {
@@ -252,10 +249,10 @@ public partial class MainWindow
                     }
                     else
                     {
-                        console.AppendLine($"Objects exported successfully to {System.IO.Path.GetFileName(path)}");
+                        console.AppendLine($"Objects exported successfully to {Path.GetFileName(path)}");
                     }
                     console.Show(this);
-                    StatusText.Text = $"Objects exported: {System.IO.Path.GetFileName(path)}";
+                    StatusText.Text = $"Objects exported: {Path.GetFileName(path)}";
                 }
                 catch (Exception ex)
                 {
@@ -326,7 +323,7 @@ public partial class MainWindow
 
         // Write as simple 32-bit BMP
         WriteBmp32(path, w, h, pixels);
-        StatusText.Text = $"Exported {kind}: {System.IO.Path.GetFileName(path)}";
+        StatusText.Text = $"Exported {kind}: {Path.GetFileName(path)}";
     }
 
     private static void WriteBmp32(string path, int w, int h, byte[] rgba)

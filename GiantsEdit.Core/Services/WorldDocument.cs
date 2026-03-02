@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using GiantsEdit.Core.DataModel;
 using GiantsEdit.Core.Formats;
@@ -51,6 +52,23 @@ public class WorldDocument
     public TreeNode? WorldRoot => _worldRoot;
     public TerrainData? Terrain => _terrain;
     public IReadOnlyList<TreeNode> Missions => _missions;
+
+    /// <summary>
+    /// Index of the mission currently shown in the viewport, or null if none.
+    /// </summary>
+    public int? ActiveMissionIndex
+    {
+        get => _activeMissionIndex;
+        set
+        {
+            if (_activeMissionIndex != value)
+            {
+                _activeMissionIndex = value;
+                WorldChanged?.Invoke();
+            }
+        }
+    }
+    private int? _activeMissionIndex;
 
     // Editing state
     public EditMode CurrentMode { get; set; } = EditMode.Camera;
@@ -119,6 +137,9 @@ public class WorldDocument
             if (File.Exists(gtiPath))
                 LoadTerrain(gtiPath);
         }
+
+        // Auto-import mission files from the same directory
+        AutoImportMissions(Path.GetDirectoryName(binPath) ?? ".");
 
         WorldChanged?.Invoke();
     }
@@ -207,6 +228,10 @@ public class WorldDocument
         MapBinName = binEntry != null ? Path.GetFileName(binEntry) : string.Empty;
         TerrainPath = null;
         IsModified = false;
+
+        // Auto-import mission files from the same directory as the .gck
+        AutoImportMissions(Path.GetDirectoryName(gckPath) ?? ".");
+
         WorldChanged?.Invoke();
     }
 
@@ -248,6 +273,10 @@ public class WorldDocument
         MapBinName = binPath != null ? Path.GetFileName(binPath) : string.Empty;
         TerrainPath = null;
         IsModified = false;
+
+        // Auto-import mission files from the same directory as the .gzp
+        AutoImportMissions(Path.GetDirectoryName(gzpPath) ?? ".");
+
         WorldChanged?.Invoke();
     }
 
@@ -364,6 +393,95 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Extracts mission names from the world data's [scenerios] section
+    /// and imports any matching wm_*.bin files found in the given directory.
+    /// </summary>
+    public int AutoImportMissions(string searchDirectory)
+    {
+        if (_worldRoot == null) return 0;
+
+        var names = GetMissionNamesFromWorld();
+        if (names.Count == 0) return 0;
+
+        int imported = 0;
+        foreach (string name in names)
+        {
+            // Skip if already imported
+            if (_missions.Any(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            string binPath = Path.Combine(searchDirectory, $"wm_{name}.bin");
+            if (!File.Exists(binPath)) continue;
+
+            try
+            {
+                byte[] data = File.ReadAllBytes(binPath);
+                var reader = new BinMissionReader();
+                var mission = reader.Load(data);
+                if (mission != null)
+                {
+                    mission.Name = name;
+                    _missions.Add(mission);
+                    imported++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[WorldDocument] Failed to import mission '{name}': {ex.Message}");
+            }
+        }
+
+        return imported;
+    }
+
+    /// <summary>
+    /// Extracts mission names from the [scenerios] section of the world data.
+    /// </summary>
+    public List<string> GetMissionNamesFromWorld()
+    {
+        var names = new List<string>();
+        if (_worldRoot == null) return names;
+
+        var sceneriosSection = _worldRoot.FindChildNode(BinFormatConstants.SectionScenerios);
+        if (sceneriosSection == null) return names;
+
+        foreach (var sc in sceneriosSection.EnumerateNodes())
+        {
+            var nameLeaf = sc.FindChildLeaf("Name");
+            if (nameLeaf != null && !string.IsNullOrWhiteSpace(nameLeaf.StringValue))
+            {
+                string missionName = nameLeaf.StringValue;
+                if (!names.Contains(missionName, StringComparer.OrdinalIgnoreCase))
+                    names.Add(missionName);
+            }
+        }
+
+        return names;
+    }
+
+    /// <summary>
+    /// Updates the scenerios section when a mission is renamed, so the map
+    /// still references the correct mission file.
+    /// </summary>
+    public void RenameMissionInScenerios(string oldName, string newName)
+    {
+        if (_worldRoot == null) return;
+
+        var scenerios = _worldRoot.FindChildNode(BinFormatConstants.SectionScenerios);
+        if (scenerios == null) return;
+
+        foreach (var sc in scenerios.EnumerateNodes())
+        {
+            var nameLeaf = sc.FindChildLeaf("Name");
+            if (nameLeaf != null &&
+                string.Equals(nameLeaf.StringValue, oldName, StringComparison.OrdinalIgnoreCase))
+            {
+                nameLeaf.StringValue = newName;
+            }
+        }
+    }
+
+    /// <summary>
     /// Creates a new empty world with the given terrain dimensions.
     /// </summary>
     public void NewWorld(int terrainWidth, int terrainHeight, MapFillType fillType = MapFillType.Filled,
@@ -419,9 +537,22 @@ public class WorldDocument
     {
         var result = new List<ObjectInstance>();
         var objNode = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
-        if (objNode == null) return result;
+        if (objNode != null)
+            CollectObjects(objNode, result);
 
-        foreach (var obj in objNode.EnumerateNodes())
+        // Include active mission objects
+        if (_activeMissionIndex is int idx && idx >= 0 && idx < _missions.Count)
+        {
+            var missionObjNode = _missions[idx].FindChildNode(BinFormatConstants.GroupObjects);
+            if (missionObjNode != null)
+                CollectObjects(missionObjNode, result);
+        }
+
+        return result;
+    }
+
+    private void CollectObjects(TreeNode objNode, List<ObjectInstance> result)
+    {        foreach (var obj in objNode.EnumerateNodes())
         {
             if (obj.Name != BinFormatConstants.NodeObject
                 && obj.Name != BinFormatConstants.NodeSmokeGen
@@ -470,8 +601,6 @@ public class WorldDocument
                 SourceNode = obj
             });
         }
-
-        return result;
     }
 
     /// <summary>
@@ -791,11 +920,17 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Adds a new object to the world.
+    /// Adds a new object to the world or the active mission.
     /// </summary>
     public TreeNode? AddObject(int typeId, float x, float y, float z, float angle = 0f)
     {
-        var objContainer = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
+        TreeNode? objContainer;
+
+        if (_activeMissionIndex is int idx && idx >= 0 && idx < _missions.Count)
+            objContainer = _missions[idx].FindChildNode(BinFormatConstants.GroupObjects);
+        else
+            objContainer = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects);
+
         if (objContainer == null) return null;
 
         var obj = objContainer.AddNode(BinFormatConstants.NodeObject);
@@ -811,14 +946,29 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Removes the selected object from the world.
+    /// Removes the selected object from the world or active mission.
     /// </summary>
     public void RemoveSelectedObject()
     {
-        if (SelectedObject == null || _worldRoot == null) return;
+        if (SelectedObject == null) return;
 
-        var objContainer = _worldRoot.FindChildNode(BinFormatConstants.GroupObjects);
-        objContainer?.RemoveNode(SelectedObject);
+        bool removed = false;
+
+        // Try active mission first
+        if (_activeMissionIndex is int idx && idx >= 0 && idx < _missions.Count)
+        {
+            var missionObjs = _missions[idx].FindChildNode(BinFormatConstants.GroupObjects);
+            if (missionObjs != null)
+                removed = missionObjs.RemoveNode(SelectedObject);
+        }
+
+        // Fall back to world objects
+        if (!removed && _worldRoot != null)
+        {
+            var objContainer = _worldRoot.FindChildNode(BinFormatConstants.GroupObjects);
+            objContainer?.RemoveNode(SelectedObject);
+        }
+
         SelectedObject = null;
         IsModified = true;
         WorldChanged?.Invoke();
@@ -913,9 +1063,22 @@ public class WorldDocument
     {
         if (index >= 0 && index < _missions.Count)
         {
+            if (_activeMissionIndex == index)
+                _activeMissionIndex = null;
+            else if (_activeMissionIndex > index)
+                _activeMissionIndex--;
             _missions.RemoveAt(index);
             IsModified = true;
         }
+    }
+
+    /// <summary>
+    /// Imports an already-parsed mission TreeNode.
+    /// </summary>
+    public void ImportMission(TreeNode mission)
+    {
+        _missions.Add(mission);
+        IsModified = true;
     }
 
     private static string RandomChars(int count)

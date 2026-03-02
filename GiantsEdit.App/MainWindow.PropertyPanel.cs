@@ -767,7 +767,7 @@ public partial class MainWindow
         // Remove existing
         RemoveIndexedLeaves(obj, prefix);
         if (string.IsNullOrWhiteSpace(text)) return;
-        var parts = text.Split(',', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
+        var parts = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < parts.Length; i++)
         {
             if (float.TryParse(parts[i], out float v))
@@ -779,7 +779,7 @@ public partial class MainWindow
     {
         RemoveIndexedLeaves(obj, prefix);
         if (string.IsNullOrWhiteSpace(text)) return;
-        var parts = text.Split(',', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
+        var parts = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < parts.Length; i++)
         {
             if (int.TryParse(parts[i], out int v))
@@ -794,10 +794,10 @@ public partial class MainWindow
             obj.RemoveNode(hp);
 
         if (string.IsNullOrWhiteSpace(text)) return;
-        var lines = text.Split('\n', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
+        var lines = text.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in lines)
         {
-            var parts = line.Split(',', System.StringSplitOptions.TrimEntries);
+            var parts = line.Split(',', StringSplitOptions.TrimEntries);
             if (parts.Length >= 3
                 && float.TryParse(parts[0], out float hx)
                 && float.TryParse(parts[1], out float hy)

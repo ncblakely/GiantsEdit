@@ -58,17 +58,25 @@ public partial class MainWindow
         win.Show(this);
     }
 
-    private void ShowMissionObjectsTree()
+    private void ShowMissionObjectsTree(int? selectMissionIndex = null)
     {
         if (_vm.Document.Missions.Count == 0)
         {
-            StatusText.Text = "No missions loaded — go to Missions and select one first";
+            StatusText.Text = "No missions loaded — go to Missions and import some first";
             return;
         }
 
-        // Show the first (active) mission tree
         var win = new DataTreeWindow();
-        win.LoadTree(_vm.Document.Missions[0], "Mission Objects Tree View");
+        win.LoadForest(_vm.Document.Missions, "Mission Objects Tree View");
+
+        if (selectMissionIndex is int idx && idx >= 0 && idx < _vm.Document.Missions.Count)
+        {
+            var mission = _vm.Document.Missions[idx];
+            var optionsNode = mission.FindChildNode("<Options>");
+            if (optionsNode != null)
+                win.SelectNode(optionsNode);
+        }
+
         win.Show(this);
     }
 

@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="GiantsEdit.App.Dialogs.MissionsDialog"
-        Title="Missions" Width="350" Height="350"
+        Title="Missions" Width="540" Height="450"
         CanResize="True"
         WindowStartupLocation="CenterOwner">
     <DockPanel Margin="16">
@@ -9,11 +9,35 @@
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
                     Spacing="8" Margin="0,8,0,0">
+            <Button x:Name="BtnImport" Content="Import .bin..." Width="110" />
+            <Button x:Name="BtnExport" Content="Export .bin..." Width="110" />
             <Button x:Name="BtnNew" Content="New mission" Width="110" />
-            <Button x:Name="BtnDelete" Content="Delete" Width="80" />
             <Button x:Name="BtnClose" Content="Close" Width="80" />
         </StackPanel>
 
-        <ListBox x:Name="MissionList" />
+        <Grid ColumnDefinitions="*,*" Margin="0,0,0,0">
+            <ListBox x:Name="MissionList" Grid.Column="0" Margin="0,0,8,0">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="MenuRename" Header="Rename..." />
+                        <MenuItem x:Name="MenuEditProps" Header="Edit Properties" />
+                        <Separator />
+                        <MenuItem x:Name="MenuDelete" Header="Delete" />
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+            </ListBox>
+
+            <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8">
+                <StackPanel x:Name="DetailPanel" Spacing="4">
+                    <TextBlock x:Name="TxtMissionName" FontWeight="SemiBold" Text="(no selection)" />
+                    <TextBlock x:Name="TxtObjectCount" Text="" />
+                    <TextBlock x:Name="TxtOptions" Text="" TextWrapping="Wrap" />
+
+                    <Separator Margin="0,8" />
+
+                    <CheckBox x:Name="ChkShowInViewport" Content="Set as active" IsEnabled="False" />
+                </StackPanel>
+            </Border>
+        </Grid>
     </DockPanel>
 </Window>

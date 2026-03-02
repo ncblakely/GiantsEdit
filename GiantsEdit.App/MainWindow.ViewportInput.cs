@@ -69,7 +69,7 @@ public partial class MainWindow
 
         // Default scheme: quick RMB click (no drag) in Object mode → context menu
         if (_prefs.ControlScheme == ControlScheme.Default && _isClickDown
-            && e.InitialPressMouseButton == Avalonia.Input.MouseButton.Right
+            && e.InitialPressMouseButton == MouseButton.Right
             && _vm.Document.CurrentMode == EditMode.ObjectEdit)
         {
             var pos = e.GetPosition(ViewportPanel);
@@ -816,7 +816,7 @@ public partial class MainWindow
         var popup = new Avalonia.Controls.Primitives.Popup
         {
             PlacementTarget = txtType,
-            Placement = Avalonia.Controls.PlacementMode.Bottom,
+            Placement = PlacementMode.Bottom,
             MaxHeight = 300,
             Width = 280,
             IsLightDismissEnabled = true,

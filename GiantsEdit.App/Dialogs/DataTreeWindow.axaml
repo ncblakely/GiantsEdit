@@ -37,25 +37,45 @@
                         <Button x:Name="BtnAddEntry" Content="Add" Padding="12,4" />
                     </StackPanel>
                     <ScrollViewer>
-                        <ItemsControl x:Name="PropertiesList" Margin="4">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="dlg:LeafPropertyVm">
-                                    <Grid ColumnDefinitions="Auto,120,*" Margin="0,1">
-                                        <Button Grid.Column="0" Content="✕" FontSize="10"
-                                                Padding="4,2" Margin="0,0,4,0"
-                                                MinWidth="0" MinHeight="0"
-                                                IsVisible="{Binding CanDelete}"
-                                                Command="{Binding DeleteCommand}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Name}"
-                                                   VerticalAlignment="Center"
-                                                   Margin="4,0" />
-                                        <TextBox Grid.Column="2" Text="{Binding Value, Mode=TwoWay}"
-                                                 Padding="4,2"
-                                                 IsReadOnly="{Binding IsReadOnly}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <StackPanel>
+                            <ItemsControl x:Name="PropertiesList" Margin="4">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dlg:LeafPropertyVm">
+                                        <Grid ColumnDefinitions="Auto,120,*,Auto" Margin="0,1">
+                                            <Button Grid.Column="0" Content="✕" FontSize="10"
+                                                    Padding="4,2" Margin="0,0,4,0"
+                                                    MinWidth="0" MinHeight="0"
+                                                    IsVisible="{Binding CanDelete}"
+                                                    Command="{Binding DeleteCommand}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="4,0" />
+                                            <TextBox Grid.Column="2" Text="{Binding Value, Mode=TwoWay}"
+                                                     Padding="4,2"
+                                                     IsReadOnly="{Binding IsReadOnly}" />
+                                            <Button Grid.Column="3" Content="▼" Width="24" Padding="2,0"
+                                                    MinWidth="0" MinHeight="0"
+                                                    VerticalAlignment="Stretch"
+                                                    IsVisible="{Binding IsObjectType}"
+                                                    Command="{Binding BrowseCommand}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <!-- Object type search popup (shared, positioned dynamically) -->
+                            <Popup x:Name="ObjTypePopup" Placement="Bottom"
+                                   MaxHeight="300" Width="280"
+                                   IsLightDismissEnabled="True">
+                                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                        BorderThickness="1" CornerRadius="4" Padding="4">
+                                    <StackPanel Spacing="4">
+                                        <TextBox x:Name="TxtObjTypeSearch" Watermark="Search..." />
+                                        <ListBox x:Name="LstObjTypes" MaxHeight="240" />
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
+                        </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
             </Border>
