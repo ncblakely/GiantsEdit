@@ -75,6 +75,11 @@ public partial class MainWindow
                 texInfo.MipFalloff0 = c0;
                 texInfo.MipFalloff1 = c1;
                 texInfo.MipFalloff2 = c2;
+
+                var (slopeAngle, wallAngle) = _vm.Document.GetLandAngles();
+                texInfo.SlopeAngleCos = MathF.Cos(slopeAngle * MathF.PI / 180f);
+                texInfo.WallAngleCos = MathF.Cos(wallAngle * MathF.PI / 180f);
+
                 terrainData.Textures = texInfo;
             }
         }

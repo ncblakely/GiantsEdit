@@ -41,6 +41,8 @@ internal sealed class TerrainRenderer
     private readonly int _bumpTexLoc;
     private readonly int _bumpWrapLoc;
     private readonly int _hasBumpLoc;
+    private readonly int _slopeAngleCosLoc;
+    private readonly int _wallAngleCosLoc;
     private readonly uint _shader;
 
     public TerrainRenderer(GL gl, uint shader)
@@ -58,6 +60,8 @@ internal sealed class TerrainRenderer
         _bumpTexLoc = gl.GetUniformLocation(shader, "uBumpTex");
         _bumpWrapLoc = gl.GetUniformLocation(shader, "uBumpWrap");
         _hasBumpLoc = gl.GetUniformLocation(shader, "uHasBump");
+        _slopeAngleCosLoc = gl.GetUniformLocation(shader, "uSlopeAngleCos");
+        _wallAngleCosLoc = gl.GetUniformLocation(shader, "uWallAngleCos");
     }
 
     public bool HasData => _indexCount > 0;
@@ -165,6 +169,8 @@ internal sealed class TerrainRenderer
                 _gl.Uniform1(_groundWrapLoc, tex.GroundWrap);
                 _gl.Uniform1(_slopeWrapLoc, tex.SlopeWrap);
                 _gl.Uniform1(_wallWrapLoc, tex.WallWrap);
+                _gl.Uniform1(_slopeAngleCosLoc, tex.SlopeAngleCos);
+                _gl.Uniform1(_wallAngleCosLoc, tex.WallAngleCos);
             }
 
             // Upload single bump texture (ground bump) for dot3 bump mapping

@@ -900,6 +900,17 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Gets the LandAngles (slope and wall angle thresholds in degrees) from the world tree.
+    /// </summary>
+    public (float SlopeAngle, float WallAngle) GetLandAngles()
+    {
+        var node = _worldRoot?.FindChildNode(BinFormatConstants.NodeLandAngles);
+        float slope = node?.FindChildLeaf("SlopeAngle")?.SingleValue ?? 45f;
+        float wall = node?.FindChildLeaf("WallAngle")?.SingleValue ?? 70f;
+        return (slope, wall);
+    }
+
+    /// <summary>
     /// Modifies terrain height at the given world coordinate using the current brush.
     /// </summary>
     public void PaintHeight(float worldX, float worldY, float heightDelta)

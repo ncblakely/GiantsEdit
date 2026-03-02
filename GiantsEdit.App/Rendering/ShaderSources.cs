@@ -38,6 +38,8 @@ internal static class ShaderSources
         uniform int uHasBump;
         uniform sampler2D uBumpTex;
         uniform float uBumpWrap;
+        uniform float uSlopeAngleCos;
+        uniform float uWallAngleCos;
         out vec4 FragColor;
 
         // Anti-tiling: hash function for random offsets per tile
@@ -95,20 +97,25 @@ internal static class ShaderSources
                 float steepness = abs(faceN.z);
 
                 vec2 groundUV = vWorldPos.xy / uGroundWrap;
-                vec2 slopeUV = vWorldPos.xy / uSlopeWrap;
+                // Slope and wall UVs use planar projection with Z as V axis,
+                // choosing X or Y as U axis based on the dominant normal direction.
+                vec2 slopeUV = abs(faceN.x) > abs(faceN.y)
+                    ? vWorldPos.yz / uSlopeWrap
+                    : vWorldPos.xz / uSlopeWrap;
                 vec2 wallUV = abs(faceN.x) > abs(faceN.y)
                     ? vWorldPos.yz / uWallWrap
                     : vWorldPos.xz / uWallWrap;
 
-                vec3 groundCol = textureNoTile(uGroundTex, groundUV).rgb;
-                vec3 slopeCol = textureNoTile(uSlopeTex, slopeUV).rgb;
-                vec3 wallCol = textureNoTile(uWallTex, wallUV).rgb;
-
-                float groundFactor = smoothstep(0.6, 0.8, steepness);
-                float wallFactor = smoothstep(0.4, 0.2, steepness);
-                float slopeFactor = 1.0 - groundFactor - wallFactor;
-
-                vec3 texCol = groundCol * groundFactor + slopeCol * slopeFactor + wallCol * wallFactor;
+                // Binary texture selection: ground if steepness >= slopeAngle,
+                // wall if steepness < wallAngle, slope otherwise.
+                vec3 texCol;
+                if (steepness >= uSlopeAngleCos) {
+                    texCol = textureNoTile(uGroundTex, groundUV).rgb;
+                } else if (steepness < uWallAngleCos) {
+                    texCol = textureNoTile(uWallTex, wallUV).rgb;
+                } else {
+                    texCol = textureNoTile(uSlopeTex, slopeUV).rgb;
+                }
 
                 if (uHasBump == 1) {
                     // Dot3 bump mapping: bump texture dotted with per-vertex light direction

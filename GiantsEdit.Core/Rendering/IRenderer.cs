@@ -169,6 +169,11 @@ public class TerrainTextureInfo
     public float MipFalloff0 { get; set; } = 1.0f;
     public float MipFalloff1 { get; set; } = -0.1f;
     public float MipFalloff2 { get; set; } = -0.05f;
+
+    /// <summary>Cosine of slope angle threshold (ground→slope transition). Default cos(45°).</summary>
+    public float SlopeAngleCos { get; set; } = 0.707f;
+    /// <summary>Cosine of wall angle threshold (slope→wall transition). Default cos(70°).</summary>
+    public float WallAngleCos { get; set; } = 0.342f;
 }
 
 /// <summary>
