@@ -15,6 +15,8 @@ public partial class MissionsDialog : Window
 {
     private readonly WorldDocument? _doc;
 
+    private static readonly HashSet<string> HiddenOptionLeaves = ["IconCount", "Icons"];
+
     public MissionsDialog() => InitializeComponent();
 
     public MissionsDialog(WorldDocument doc)
@@ -35,6 +37,16 @@ public partial class MissionsDialog : Window
         RefreshList();
     }
 
+    /// <summary>
+    /// Returns the selected mission index and node, or null if nothing valid is selected.
+    /// </summary>
+    private (int Index, TreeNode Mission)? GetSelectedMission()
+    {
+        int idx = MissionList.SelectedIndex;
+        if (idx < 0 || idx >= _doc!.Missions.Count) return null;
+        return (idx, _doc.Missions[idx]);
+    }
+
     private void RefreshList()
     {
         int prevIdx = MissionList.SelectedIndex;
@@ -47,8 +59,7 @@ public partial class MissionsDialog : Window
 
     private void UpdateDetails()
     {
-        int idx = MissionList.SelectedIndex;
-        if (idx < 0 || idx >= _doc!.Missions.Count)
+        if (GetSelectedMission() is not var (idx, mission))
         {
             TxtMissionName.Text = "(no selection)";
             TxtObjectCount.Text = "";
@@ -59,7 +70,6 @@ public partial class MissionsDialog : Window
             return;
         }
 
-        var mission = _doc.Missions[idx];
         TxtMissionName.Text = mission.Name;
         BtnExport.IsEnabled = true;
 
@@ -67,15 +77,14 @@ public partial class MissionsDialog : Window
         int objCount = objects?.EnumerateNodes().Count() ?? 0;
         TxtObjectCount.Text = $"Objects: {objCount}";
 
-        var options = mission.FindChildNode("<Options>");
+        var options = mission.FindChildNode(BinFormatConstants.GroupOptions);
         if (options != null)
         {
-            var hidden = new HashSet<string> { "IconCount", "Icons" };
             var parts = new List<string>();
 
             foreach (var leaf in options.EnumerateLeaves())
             {
-                if (hidden.Contains(leaf.Name)) continue;
+                if (HiddenOptionLeaves.Contains(leaf.Name)) continue;
 
                 string display = leaf.Name == "Character"
                     ? $"Character: {ObjectNames.GetDisplayName(leaf.Int32Value)}"
@@ -103,7 +112,7 @@ public partial class MissionsDialog : Window
         }
 
         ChkShowInViewport.IsEnabled = true;
-        ChkShowInViewport.IsChecked = _doc.ActiveMissionIndex == idx;
+        ChkShowInViewport.IsChecked = _doc!.ActiveMissionIndex == idx;
     }
 
     private void AddMission()
@@ -127,18 +136,15 @@ public partial class MissionsDialog : Window
 
     private void EditProperties()
     {
-        int idx = MissionList.SelectedIndex;
-        if (idx < 0 || idx >= _doc!.Missions.Count) return;
+        if (GetSelectedMission() is not var (idx, _)) return;
 
         Close(new MissionEditRequest(idx));
     }
 
     private async Task RenameMission()
     {
-        int idx = MissionList.SelectedIndex;
-        if (idx < 0 || idx >= _doc!.Missions.Count) return;
+        if (GetSelectedMission() is not var (_, mission)) return;
 
-        var mission = _doc.Missions[idx];
         var dlg = new InputDialog("Rename Mission", "New mission name:");
         var newName = await dlg.ShowDialog<string?>(this);
         if (string.IsNullOrWhiteSpace(newName)) return;
@@ -146,7 +152,7 @@ public partial class MissionsDialog : Window
         string oldName = mission.Name;
         mission.Name = newName;
 
-        _doc.RenameMissionInScenerios(oldName, newName);
+        _doc!.RenameMissionInScenerios(oldName, newName);
         RefreshList();
     }
 
@@ -175,8 +181,8 @@ public partial class MissionsDialog : Window
 
                 // Name from filename: wm_mission1.bin → mission1
                 string name = Path.GetFileNameWithoutExtension(path);
-                if (name.StartsWith("wm_", StringComparison.OrdinalIgnoreCase))
-                    name = name[3..];
+                if (name.StartsWith(BinFormatConstants.MissionFilePrefix, StringComparison.OrdinalIgnoreCase))
+                    name = name[BinFormatConstants.MissionFilePrefix.Length..];
                 mission.Name = name;
 
                 _doc!.ImportMission(mission);
@@ -193,11 +199,9 @@ public partial class MissionsDialog : Window
 
     private async Task ExportMission()
     {
-        int idx = MissionList.SelectedIndex;
-        if (idx < 0 || idx >= _doc!.Missions.Count) return;
+        if (GetSelectedMission() is not var (_, mission)) return;
 
-        var mission = _doc.Missions[idx];
-        string defaultName = $"wm_{mission.Name}.bin";
+        string defaultName = $"{BinFormatConstants.MissionFilePrefix}{mission.Name}.bin";
 
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {

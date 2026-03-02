@@ -21,7 +21,11 @@ public static class BinFormatConstants
     public const string SectionScenerios = "[scenerios]";
     public const string SectionIncludeFiles = "[includefiles]";
 
+    // Mission file prefix
+    public const string MissionFilePrefix = "wm_";
+
     // Group names
+    public const string GroupOptions = "<Options>";
     public const string GroupObjects = "<Objects>";
     public const string GroupTextures = "<Textures>";
     public const string GroupTeleports = "<Teleports>";
@@ -252,4 +256,47 @@ public static class BinFormatConstants
     /// </summary>
     public static readonly FrozenDictionary<string, byte> LeafTextureNameToOpcode =
         LeafTextureOpcodeToName.ToFrozenDictionary(kv => kv.Value, kv => kv.Key);
+
+    // Mission chunk opcodes (used by BinMissionReader / BinMissionWriter)
+    public const byte MsnTerminator = 0x02;
+    public const byte MsnObject1Angle = 0x03;
+    public const byte MsnObject3Angle = 0x04;
+    public const byte MsnAIMode = 0x05;
+    public const byte MsnOData = 0x06;
+    public const byte MsnTeamID = 0x07;
+    public const byte MsnTriggerType = 0x08;
+    public const byte MsnScale = 0x09;
+    public const byte MsnAIData = 0x0A;
+    public const byte MsnCharacter = 0x0B;
+    public const byte MsnSmartieType = 0x0C;
+    public const byte MsnSpecialText = 0x0D;
+    public const byte MsnIcons = 0x0E;
+    public const byte MsnVimpMeat = 0x0F;
+    public const byte MsnNoNitro = 0x10;
+    public const byte MsnNoJetpack = 0x11;
+    public const byte MsnFailTime = 0x12;
+    public const byte MsnFailFlick = 0x13;
+    public const byte MsnFlickUsed = 0x14;
+    public const byte MsnStartFlick = 0x15;
+    public const byte MsnLockStart = 0x16;
+    public const byte MsnLockEnd = 0x17;
+    public const byte MsnDirections = 0x18;
+    public const byte MsnEndFlick = 0x19;
+    public const byte MsnSplineScale = 0x1A;
+    public const byte MsnSplineTangent = 0x1B;
+    public const byte MsnSplinePath3D = 0x1C;
+    public const byte MsnSplineJet = 0x1D;
+    public const byte MsnMinishopRIcons = 0x1E;
+    public const byte MsnMinishopMIcons = 0x1F;
+    public const byte MsnSplineStartID = 0x20;
+    public const byte MsnKeyTime = 0x21;
+    public const byte MsnJetskiRace = 0x22;
+    public const byte MsnBumpClampValue = 0x23;
+    public const byte MsnZeroVimpMeat = 0x24;
+    public const byte MsnGrabSmartie = 0x25;
+    public const byte MsnSuccessDelay = 0x26;
+
+    // Mission file header
+    public const int MsnMagic = 4;
+    public const byte MsnVersion = 1;
 }

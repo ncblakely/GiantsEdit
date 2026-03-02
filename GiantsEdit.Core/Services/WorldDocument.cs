@@ -380,7 +380,7 @@ public class WorldDocument
         var missionWriter = new BinMissionWriter();
         foreach (var mission in Missions)
         {
-            string missionFile = $"wm_{mission.Name}.bin";
+            string missionFile = $"{BinFormatConstants.MissionFilePrefix}{mission.Name}.bin";
             byte[] data = missionWriter.Save(mission);
             File.WriteAllBytes(Path.Combine(folder, missionFile), data);
         }
@@ -452,7 +452,7 @@ public class WorldDocument
             if (_missions.Any(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 continue;
 
-            string binPath = Path.Combine(searchDirectory, $"wm_{name}.bin");
+            string binPath = Path.Combine(searchDirectory, $"{BinFormatConstants.MissionFilePrefix}{name}.bin");
             if (!File.Exists(binPath)) continue;
 
             try
@@ -1082,10 +1082,10 @@ public class WorldDocument
     /// </summary>
     public TreeNode AddMission(string? name = null)
     {
-        name ??= $"wm_defaultmission_{RandomChars(4)}";
+        name ??= $"{BinFormatConstants.MissionFilePrefix}defaultmission_{RandomChars(4)}";
         var mission = new TreeNode(name);
         mission.AddNode(BinFormatConstants.GroupObjects);
-        var options = mission.AddNode("<Options>");
+        var options = mission.AddNode(BinFormatConstants.GroupOptions);
         options.AddInt32("NoJetpack", 0);
         options.AddInt32("NoNitro", 0);
         options.AddInt32("Character 0", 0);

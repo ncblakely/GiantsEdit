@@ -72,7 +72,7 @@ public partial class MainWindow
         if (selectMissionIndex is int idx && idx >= 0 && idx < _vm.Document.Missions.Count)
         {
             var mission = _vm.Document.Missions[idx];
-            var optionsNode = mission.FindChildNode("<Options>");
+            var optionsNode = mission.FindChildNode(BinFormatConstants.GroupOptions);
             if (optionsNode != null)
                 win.SelectNode(optionsNode);
         }
