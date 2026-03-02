@@ -64,11 +64,11 @@ public class OpenGlViewport : OpenGlControlBase
         Focusable = true;
     }
 
-    protected override void OnOpenGlInit(GlInterface glInterface)
+    protected override void OnOpenGlInit(GlInterface gl)
     {
-        base.OnOpenGlInit(glInterface);
+        base.OnOpenGlInit(gl);
 
-        _gl = GL.GetApi(glInterface.GetProcAddress);
+        _gl = GL.GetApi(gl.GetProcAddress);
         _renderer = new OpenGlRenderer();
         _renderer.SetGlContext(_gl);
 

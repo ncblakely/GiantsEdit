@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia.Controls;
 using GiantsEdit.Core.DataModel;
 
@@ -60,6 +61,6 @@ public partial class ObjectSelectionDialog : Window
         return _allEntries.Where(e =>
             e.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
             e.ModelPath.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
-            e.Id.ToString().Contains(filter)).ToList();
+            e.Id.ToString(CultureInfo.InvariantCulture).Contains(filter)).ToList();
     }
 }

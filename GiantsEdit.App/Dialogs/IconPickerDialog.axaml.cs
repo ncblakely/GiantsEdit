@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using Avalonia.Controls;
 using GiantsEdit.Core.DataModel;
 
@@ -61,7 +59,7 @@ public partial class IconPickerDialog : Window
             ? _allItems
             : _allItems.Where(i =>
                 i.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || i.Id.ToString().Contains(filter)).ToList();
+                || i.Id.ToString(CultureInfo.InvariantCulture).Contains(filter)).ToList();
 
         IconList.Items.Clear();
         foreach (var item in visible)
@@ -85,7 +83,7 @@ public partial class IconPickerDialog : Window
         }
     }
 
-    private class IconItem(int id, string name, bool isSelected)
+    private sealed class IconItem(int id, string name, bool isSelected)
     {
         public int Id { get; } = id;
         public string Name { get; } = name;

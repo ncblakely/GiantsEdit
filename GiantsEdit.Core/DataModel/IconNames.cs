@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace GiantsEdit.Core.DataModel;
 
 /// <summary>
@@ -100,11 +102,11 @@ public static class IconNames
 
     /// <summary>Returns the friendly name for an icon ID, or the ID as a string if unknown.</summary>
     public static string GetName(int id) =>
-        IdToName.TryGetValue(id, out var name) ? name : id.ToString();
+        IdToName.TryGetValue(id, out var name) ? name : id.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>Returns "Name (ID)" display format.</summary>
     public static string GetDisplayName(int id) =>
-        IdToName.TryGetValue(id, out var name) ? $"{name} ({id})" : id.ToString();
+        IdToName.TryGetValue(id, out var name) ? $"{name} ({id})" : id.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Parses an icon input string. Accepts: ID number, friendly name, or "Name (ID)" format.

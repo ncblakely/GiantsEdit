@@ -101,9 +101,9 @@ public sealed class OpenGlRenderer : IRenderer
     /// <summary>
     /// Stores Avalonia's framebuffer and binds the MSAA FBO if available.
     /// </summary>
-    public void BeginRender(uint avaloniaFb)
+    public void BeginRender(uint targetFramebuffer)
     {
-        _avaloniaFbo = avaloniaFb;
+        _avaloniaFbo = targetFramebuffer;
         if (_msaaSamples > 1 && _msaaFbo != 0)
         {
             _gl.BindFramebuffer(FramebufferTarget.Framebuffer, _msaaFbo);

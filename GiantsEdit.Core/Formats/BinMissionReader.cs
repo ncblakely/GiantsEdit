@@ -226,7 +226,7 @@ public class BinMissionReader
 /// </summary>
 public class BinMissionWriter
 {
-    public byte[] Save(TreeNode root)
+    public static byte[] Save(TreeNode root)
     {
         var w = new BinaryDataWriter();
 
@@ -253,7 +253,7 @@ public class BinMissionWriter
         return w.ToArray();
     }
 
-    private void WriteOptions(BinaryDataWriter w, TreeNode options)
+    private static void WriteOptions(BinaryDataWriter w, TreeNode options)
     {
         var leaves = options.EnumerateLeaves().ToList();
 
@@ -341,7 +341,7 @@ public class BinMissionWriter
         }
     }
 
-    private void WriteObject(BinaryDataWriter w, TreeNode obj)
+    private static void WriteObject(BinaryDataWriter w, TreeNode obj)
     {
         bool hasTilt = obj.FindChildLeaf("TiltForward") != null;
 
@@ -373,7 +373,7 @@ public class BinMissionWriter
     /// Writes non-header attribute leaves from a node, preserving tree order.
     /// Shared between object and lock writing.
     /// </summary>
-    private void WriteAttributeLeaves(BinaryDataWriter w, TreeNode node, HashSet<string> skipNames)
+    private static void WriteAttributeLeaves(BinaryDataWriter w, TreeNode node, HashSet<string> skipNames)
     {
         var leaves = node.EnumerateLeaves().ToList();
 
@@ -443,7 +443,7 @@ public class BinMissionWriter
         }
     }
 
-    private void WriteLock(BinaryDataWriter w, TreeNode lockNode)
+    private static void WriteLock(BinaryDataWriter w, TreeNode lockNode)
     {
         w.WriteByte(BinFormatConstants.MsnLockStart);
         w.WriteInt32(lockNode.GetChildLeaf("Type").Int32Value);

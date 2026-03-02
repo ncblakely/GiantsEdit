@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia.Controls;
 using GiantsEdit.Core.DataModel;
 
@@ -284,7 +285,7 @@ public partial class MainWindow
         if (enabled)
         {
             obj.AddSingle(name, defaultValue);
-            textBox.Text = defaultValue.ToString("F2");
+            textBox.Text = defaultValue.ToString("F2", CultureInfo.InvariantCulture);
         }
         else
         {
@@ -303,7 +304,7 @@ public partial class MainWindow
         if (enabled)
         {
             obj.AddByte(name, defaultValue);
-            textBox.Text = defaultValue.ToString();
+            textBox.Text = defaultValue.ToString(CultureInfo.InvariantCulture);
         }
         else
         {
@@ -322,7 +323,7 @@ public partial class MainWindow
         if (enabled)
         {
             obj.AddInt32(name, defaultValue);
-            textBox.Text = defaultValue.ToString();
+            textBox.Text = defaultValue.ToString(CultureInfo.InvariantCulture);
         }
         else
         {

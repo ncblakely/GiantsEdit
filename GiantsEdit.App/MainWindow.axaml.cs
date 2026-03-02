@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -161,7 +162,7 @@ public partial class MainWindow : Window
             {
                 _heightPanelUpdating = true;
                 _currentHeight = _minimumHeight + (_maximumHeight - _minimumHeight) * (float)SliderHeight.Value / HeightSliderScale;
-                TxtCurrentHeight.Text = _currentHeight.ToString("F2");
+                TxtCurrentHeight.Text = _currentHeight.ToString("F2", CultureInfo.InvariantCulture);
                 _vm.Document.TargetHeight = _currentHeight;
                 _heightPanelUpdating = false;
             }
@@ -171,7 +172,7 @@ public partial class MainWindow : Window
             if (_heightPanelUpdating) return;
             if (!float.TryParse(TxtMinHeight.Text, out float mh)) return;
             _heightPanelUpdating = true;
-            if (mh >= _maximumHeight) { _maximumHeight = mh; TxtMaxHeight.Text = _maximumHeight.ToString("F2"); }
+            if (mh >= _maximumHeight) { _maximumHeight = mh; TxtMaxHeight.Text = _maximumHeight.ToString("F2", CultureInfo.InvariantCulture); }
             _minimumHeight = mh;
             ClampAndSyncHeightSlider();
             _heightPanelUpdating = false;
@@ -181,7 +182,7 @@ public partial class MainWindow : Window
             if (_heightPanelUpdating) return;
             if (!float.TryParse(TxtMaxHeight.Text, out float mh)) return;
             _heightPanelUpdating = true;
-            if (mh <= _minimumHeight) { _minimumHeight = mh; TxtMinHeight.Text = _minimumHeight.ToString("F2"); }
+            if (mh <= _minimumHeight) { _minimumHeight = mh; TxtMinHeight.Text = _minimumHeight.ToString("F2", CultureInfo.InvariantCulture); }
             _maximumHeight = mh;
             ClampAndSyncHeightSlider();
             _heightPanelUpdating = false;
@@ -191,8 +192,8 @@ public partial class MainWindow : Window
             if (_heightPanelUpdating) return;
             if (!float.TryParse(TxtCurrentHeight.Text, out float ch)) return;
             _heightPanelUpdating = true;
-            if (ch >= _maximumHeight) { _maximumHeight = ch; TxtMaxHeight.Text = _maximumHeight.ToString("F2"); }
-            if (ch <= _minimumHeight) { _minimumHeight = ch; TxtMinHeight.Text = _minimumHeight.ToString("F2"); }
+            if (ch >= _maximumHeight) { _maximumHeight = ch; TxtMaxHeight.Text = _maximumHeight.ToString("F2", CultureInfo.InvariantCulture); }
+            if (ch <= _minimumHeight) { _minimumHeight = ch; TxtMinHeight.Text = _minimumHeight.ToString("F2", CultureInfo.InvariantCulture); }
             _currentHeight = ch;
             _vm.Document.TargetHeight = _currentHeight;
             SyncHeightSlider();
@@ -385,11 +386,11 @@ public partial class MainWindow : Window
             {
                 PropHeader.Text = $"Object: {ObjectNames.GetDisplayName(obj.FindChildLeaf("Type")?.Int32Value ?? 0)}";
                 PropObjType.Text = ObjectNames.GetDisplayName(obj.FindChildLeaf("Type")?.Int32Value ?? 0);
-                PropObjX.Text = (obj.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2");
-                PropObjY.Text = (obj.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2");
-                PropObjZ.Text = (obj.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2");
-                PropObjAngle.Text = (obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0).ToString("F4");
-                PropObjScale.Text = (obj.FindChildLeaf("Scale")?.SingleValue ?? 1f).ToString("F4");
+                PropObjX.Text = (obj.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
+                PropObjY.Text = (obj.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
+                PropObjZ.Text = (obj.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
+                PropObjAngle.Text = (obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+                PropObjScale.Text = (obj.FindChildLeaf("Scale")?.SingleValue ?? 1f).ToString("F4", CultureInfo.InvariantCulture);
             }
             else
             {
@@ -478,8 +479,8 @@ public partial class MainWindow : Window
 
     private void ClampAndSyncHeightSlider()
     {
-        if (_currentHeight < _minimumHeight) { _currentHeight = _minimumHeight; TxtCurrentHeight.Text = _currentHeight.ToString("F2"); }
-        if (_currentHeight > _maximumHeight) { _currentHeight = _maximumHeight; TxtCurrentHeight.Text = _currentHeight.ToString("F2"); }
+        if (_currentHeight < _minimumHeight) { _currentHeight = _minimumHeight; TxtCurrentHeight.Text = _currentHeight.ToString("F2", CultureInfo.InvariantCulture); }
+        if (_currentHeight > _maximumHeight) { _currentHeight = _maximumHeight; TxtCurrentHeight.Text = _currentHeight.ToString("F2", CultureInfo.InvariantCulture); }
         _vm.Document.TargetHeight = _currentHeight;
         SyncHeightSlider();
     }
@@ -501,9 +502,9 @@ public partial class MainWindow : Window
         _paintR = (byte)Math.Clamp((int)SliderR.Value, 0, 255);
         _paintG = (byte)Math.Clamp((int)SliderG.Value, 0, 255);
         _paintB = (byte)Math.Clamp((int)SliderB.Value, 0, 255);
-        TxtColorR.Text = _paintR.ToString();
-        TxtColorG.Text = _paintG.ToString();
-        TxtColorB.Text = _paintB.ToString();
+        TxtColorR.Text = _paintR.ToString(CultureInfo.InvariantCulture);
+        TxtColorG.Text = _paintG.ToString(CultureInfo.InvariantCulture);
+        TxtColorB.Text = _paintB.ToString(CultureInfo.InvariantCulture);
         UpdateColorSwatch();
         _lightPanelUpdating = false;
     }
@@ -526,9 +527,9 @@ public partial class MainWindow : Window
         _lightPanelUpdating = true;
         _paintR = r; _paintG = g; _paintB = b;
         SliderR.Value = r; SliderG.Value = g; SliderB.Value = b;
-        TxtColorR.Text = r.ToString();
-        TxtColorG.Text = g.ToString();
-        TxtColorB.Text = b.ToString();
+        TxtColorR.Text = r.ToString(CultureInfo.InvariantCulture);
+        TxtColorG.Text = g.ToString(CultureInfo.InvariantCulture);
+        TxtColorB.Text = b.ToString(CultureInfo.InvariantCulture);
         UpdateColorSwatch();
         _lightPanelUpdating = false;
     }

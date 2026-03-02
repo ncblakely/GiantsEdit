@@ -32,8 +32,7 @@ public class BinMissionRoundTripTests
         obj2.AddSingle("TiltForward", 0.2f);
         obj2.AddSingle("TiltLeft", 0.3f);
 
-        var writer = new BinMissionWriter();
-        byte[] data = writer.Save(root);
+        byte[] data = BinMissionWriter.Save(root);
 
         var reader = new BinMissionReader();
         var loaded = reader.Load(data);
@@ -65,8 +64,7 @@ public class BinMissionRoundTripTests
         obj.AddInt32("TeamID", 2);
         obj.AddSingle("Scale", 1.5f);
 
-        var writer = new BinMissionWriter();
-        byte[] data = writer.Save(root);
+        byte[] data = BinMissionWriter.Save(root);
 
         var reader = new BinMissionReader();
         var loaded = reader.Load(data);
@@ -104,8 +102,7 @@ public class BinMissionRoundTripTests
         var tree = reader.Load(original);
         Assert.IsNotNull(tree, $"Failed to load {fileName}");
 
-        var writer = new BinMissionWriter();
-        byte[] resaved = writer.Save(tree!);
+        byte[] resaved = BinMissionWriter.Save(tree!);
 
         Assert.HasCount(original.Length, resaved,
             $"Byte length mismatch in {fileName}: original={original.Length}, resaved={resaved.Length}");
@@ -137,8 +134,7 @@ public class BinMissionRoundTripTests
         var tree = reader.Load(original);
         Assert.IsNotNull(tree, $"Failed to load {fileName}");
 
-        var writer = new BinMissionWriter();
-        byte[] resaved = writer.Save(tree!);
+        byte[] resaved = BinMissionWriter.Save(tree!);
 
         var reloaded = reader.Load(resaved);
         Assert.IsNotNull(reloaded, $"Failed to reload {fileName}");

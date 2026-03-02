@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -41,13 +42,13 @@ public partial class MapNamesDialog : Window
         // Extract the map name from the bin filename
         string name = binName;
         string upper = name.ToUpperInvariant();
-        if (upper.StartsWith("W_M_REAPER_"))
+        if (upper.StartsWith("W_M_REAPER_", StringComparison.Ordinal))
             name = name[11..^4];
-        else if (upper.StartsWith("W_M_MECC_"))
+        else if (upper.StartsWith("W_M_MECC_", StringComparison.Ordinal))
             name = name[9..^4];
-        else if (upper.StartsWith("W_M_3WAY_"))
+        else if (upper.StartsWith("W_M_3WAY_", StringComparison.Ordinal))
             name = name[9..^4];
-        else if (upper.StartsWith("W_"))
+        else if (upper.StartsWith("W_", StringComparison.Ordinal))
             name = name[2..^4];
         else if (name.Length > 4)
             name = name[..^4];
@@ -67,7 +68,7 @@ public partial class MapNamesDialog : Window
             case 0x0B: RbReaper.IsChecked = true; break;
             default:
                 RbCustom.IsChecked = true;
-                TxtCustomType.Text = mapType.ToString();
+                TxtCustomType.Text = mapType.ToString(CultureInfo.InvariantCulture);
                 break;
         }
 

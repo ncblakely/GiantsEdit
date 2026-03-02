@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace GiantsEdit.Core.DataModel;
 
 /// <summary>
@@ -1144,11 +1146,11 @@ public static class ObjectNames
     }
 
     /// <summary>Returns the name for an object type ID, or the ID as a string if unknown.</summary>
-    public static string GetName(int id) => IdToName.TryGetValue(id, out var name) ? name : id.ToString();
+    public static string GetName(int id) => IdToName.TryGetValue(id, out var name) ? name : id.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>Returns the display string: "Name (ID)" or just "ID" if unknown.</summary>
     public static string GetDisplayName(int id) =>
-        IdToName.TryGetValue(id, out var name) ? $"{name} ({id})" : id.ToString();
+        IdToName.TryGetValue(id, out var name) ? $"{name} ({id})" : id.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Parses user input that may be a name, integer ID, or display format "Name (ID)".
@@ -1189,7 +1191,7 @@ public static class ObjectNames
         filter = filter.Trim();
         return IdToName
             .Where(kvp => kvp.Value.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                       || kvp.Key.ToString().Contains(filter, StringComparison.Ordinal))
+                       || kvp.Key.ToString(CultureInfo.InvariantCulture).Contains(filter, StringComparison.Ordinal))
             .OrderBy(kvp => kvp.Value, StringComparer.OrdinalIgnoreCase)
             .Select(kvp => $"{kvp.Value} ({kvp.Key})")
             .ToList();

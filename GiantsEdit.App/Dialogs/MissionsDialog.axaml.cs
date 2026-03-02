@@ -214,8 +214,7 @@ public partial class MissionsDialog : Window
 
         try
         {
-            var writer = new BinMissionWriter();
-            byte[] data = writer.Save(mission);
+            byte[] data = BinMissionWriter.Save(mission);
             await File.WriteAllBytesAsync(file.Path.LocalPath, data);
         }
         catch (Exception ex)

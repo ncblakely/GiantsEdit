@@ -165,7 +165,7 @@ public partial class MainWindow
     private static ObjectCatalog LoadEmbeddedCatalog()
     {
         var asm = Assembly.GetExecutingAssembly();
-        var resName = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("inclist.tsv"));
+        var resName = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("inclist.tsv", StringComparison.Ordinal));
         if (resName == null) return new ObjectCatalog();
 
         using var stream = asm.GetManifestResourceStream(resName)!;
@@ -200,7 +200,7 @@ public partial class MainWindow
             LoadDomeFromGameData();
     }
 
-    private void ApplyTheme(string theme)
+    private static void ApplyTheme(string theme)
     {
         if (Avalonia.Application.Current is { } app)
             app.RequestedThemeVariant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;

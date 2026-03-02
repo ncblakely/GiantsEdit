@@ -24,6 +24,8 @@ public class AppPreferences
 
     private static readonly string PrefsFile = Path.Combine(PrefsDir, "preferences.json");
 
+    private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
+
     public string GamePath { get; set; } = "";
     public string LastOpenFolder { get; set; } = "";
 
@@ -35,7 +37,7 @@ public class AppPreferences
     public void Save()
     {
         Directory.CreateDirectory(PrefsDir);
-        var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(this, SerializerOptions);
         File.WriteAllText(PrefsFile, json);
     }
 

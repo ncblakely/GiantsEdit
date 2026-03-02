@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Avalonia.Controls;
 
@@ -29,9 +30,9 @@ public partial class MarkerReportDialog : Window
             var (aiMode, teamId) = markers[i];
             var line = new StringBuilder();
             if (aiMode >= 0)
-                line.Append($"AIMode={aiMode}  ");
+                line.Append(CultureInfo.InvariantCulture, $"AIMode={aiMode}  ");
             if (teamId >= 0)
-                line.Append($"TeamID={teamId}  ");
+                line.Append(CultureInfo.InvariantCulture, $"TeamID={teamId}  ");
             if (line.Length == 0)
                 line.Append("(no properties)");
             sb.AppendLine(line.ToString().TrimEnd());

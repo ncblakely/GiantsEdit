@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using GiantsEdit.Core.DataModel;
 using GiantsEdit.Core.Formats;
@@ -75,7 +76,7 @@ public class WorldDocument
     public TriangleSubMode TriangleMode { get; set; } = TriangleSubMode.SetCorner;
     public float BrushRadius { get; set; } = 50f;
     public float BrushStrength { get; set; } = 0.5f;
-    public float TargetHeight { get; set; } = 0f;
+    public float TargetHeight { get; set; }
     public TreeNode? SelectedObject { get; set; }
     public bool IsModified { get; private set; }
     public string? FilePath { get; private set; }
@@ -377,11 +378,10 @@ public class WorldDocument
         }
 
         // Export mission files
-        var missionWriter = new BinMissionWriter();
         foreach (var mission in Missions)
         {
             string missionFile = $"{BinFormatConstants.MissionFilePrefix}{mission.Name}.bin";
-            byte[] data = missionWriter.Save(mission);
+            byte[] data = BinMissionWriter.Save(mission);
             File.WriteAllBytes(Path.Combine(folder, missionFile), data);
         }
     }
@@ -395,15 +395,15 @@ public class WorldDocument
 
         if (!string.IsNullOrEmpty(MapBinName))
         {
-            sb.AppendLine($"Modinfo_BinName={MapBinName}");
-            sb.AppendLine($"Modinfo_BinType={MapType}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"Modinfo_BinName={MapBinName}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"Modinfo_BinType={MapType}");
         }
 
         if (!string.IsNullOrEmpty(UserMessage))
-            sb.AppendLine($"Modinfo_UserMessage={UserMessage}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"Modinfo_UserMessage={UserMessage}");
 
         if (!string.IsNullOrEmpty(WorldName))
-            sb.AppendLine($"Modinfo_WorldName={WorldName}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"Modinfo_WorldName={WorldName}");
 
         return sb.ToString();
     }
@@ -593,7 +593,7 @@ public class WorldDocument
         return result;
     }
 
-    private void CollectObjects(TreeNode objNode, List<ObjectInstance> result)
+    private static void CollectObjects(TreeNode objNode, List<ObjectInstance> result)
     {        foreach (var obj in objNode.EnumerateNodes())
         {
             if (obj.Name != BinFormatConstants.NodeObject

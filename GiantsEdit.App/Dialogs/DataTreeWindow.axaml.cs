@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -333,9 +334,9 @@ public partial class LeafPropertyVm : ObservableObject
             ? ObjectNames.GetDisplayName(leaf.Int32Value)
             : leaf.PropertyType switch
             {
-                PropertyType.Byte => leaf.ByteValue.ToString(),
-                PropertyType.Int32 => leaf.Int32Value.ToString(),
-                PropertyType.Single => leaf.SingleValue.ToString("F4"),
+                PropertyType.Byte => leaf.ByteValue.ToString(CultureInfo.InvariantCulture),
+                PropertyType.Int32 => leaf.Int32Value.ToString(CultureInfo.InvariantCulture),
+                PropertyType.Single => leaf.SingleValue.ToString("F4", CultureInfo.InvariantCulture),
                 PropertyType.String => leaf.StringValue,
                 PropertyType.Void => "(void)",
                 _ => "?"
@@ -534,8 +535,8 @@ public partial class OptionalLeafVm : ObservableObject
             return ObjectNames.GetDisplayName(leaf.Int32Value);
         return leaf.PropertyType switch
         {
-            PropertyType.Int32 => leaf.Int32Value.ToString(),
-            PropertyType.Single => leaf.SingleValue.ToString("F4"),
+            PropertyType.Int32 => leaf.Int32Value.ToString(CultureInfo.InvariantCulture),
+            PropertyType.Single => leaf.SingleValue.ToString("F4", CultureInfo.InvariantCulture),
             PropertyType.String => leaf.StringValue,
             PropertyType.Void => "",
             _ => ""

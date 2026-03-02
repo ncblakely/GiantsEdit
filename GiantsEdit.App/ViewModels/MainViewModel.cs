@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GiantsEdit.Core.DataModel;
@@ -50,9 +51,9 @@ public partial class TreeLeafViewModel : ObservableObject
 
     public string DisplayValue => _leaf.PropertyType switch
     {
-        PropertyType.Byte => _leaf.ByteValue.ToString(),
-        PropertyType.Int32 => _leaf.Int32Value.ToString(),
-        PropertyType.Single => _leaf.SingleValue.ToString("F4"),
+        PropertyType.Byte => _leaf.ByteValue.ToString(CultureInfo.InvariantCulture),
+        PropertyType.Int32 => _leaf.Int32Value.ToString(CultureInfo.InvariantCulture),
+        PropertyType.Single => _leaf.SingleValue.ToString("F4", CultureInfo.InvariantCulture),
         PropertyType.String => _leaf.StringValue,
         PropertyType.Void => "(void)",
         _ => "?"

@@ -5,6 +5,11 @@ namespace GiantsEdit.Core.Tests;
 [TestClass]
 public class TreeNodeTests
 {
+    private static readonly string[] ExpectedABC = ["A", "B", "C"];
+    private static readonly string[] ExpectedXY = ["x", "y"];
+    private static readonly string[] ExpectedRootChild = ["Root", "Child"];
+    private static readonly string[] ExpectedLeaf1Leaf2 = ["leaf1", "leaf2"];
+
     [TestMethod]
     public void CreateNode_NoRule_HasSingleSlot()
     {
@@ -54,7 +59,7 @@ public class TreeNodeTests
         root.AddNode("C");
 
         var names = root.EnumerateNodes().Select(n => n.Name).ToList();
-        CollectionAssert.AreEqual(new[] { "A", "B", "C" }, names);
+        CollectionAssert.AreEqual(ExpectedABC, names);
     }
 
     [TestMethod]
@@ -65,7 +70,7 @@ public class TreeNodeTests
         root.AddInt32("y", 2);
 
         var names = root.EnumerateLeaves().Select(l => l.Name).ToList();
-        CollectionAssert.AreEqual(new[] { "x", "y" }, names);
+        CollectionAssert.AreEqual(ExpectedXY, names);
     }
 
     [TestMethod]
@@ -158,7 +163,7 @@ public class TreeNodeTests
         var leafNames = new List<string>();
         root.Walk(n => nodeNames.Add(n.Name), l => leafNames.Add(l.Name));
 
-        CollectionAssert.AreEqual(new[] { "Root", "Child" }, nodeNames);
-        CollectionAssert.AreEqual(new[] { "leaf1", "leaf2" }, leafNames);
+        CollectionAssert.AreEqual(ExpectedRootChild, nodeNames);
+        CollectionAssert.AreEqual(ExpectedLeaf1Leaf2, leafNames);
     }
 }

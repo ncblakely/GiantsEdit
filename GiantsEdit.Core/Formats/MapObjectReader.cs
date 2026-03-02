@@ -175,7 +175,7 @@ public class MapObjectReader
             float x = ParseFloat(parts[0]);
             float y = ParseFloat(parts[1]);
             float z = ParseFloat(parts[2]);
-            int ci = int.Parse(parts[3].Trim());
+            int ci = int.Parse(parts[3].Trim(), CultureInfo.InvariantCulture);
             var c = ci >= 0 && ci < colors.Count ? colors[ci] : ((byte)255, (byte)255, (byte)255);
             vertices.Add(new MapObjVertex { X = x, Y = y, Z = z, R = c.Item1, G = c.Item2, B = c.Item3 });
         }
@@ -186,9 +186,9 @@ public class MapObjectReader
         var parts = line.Split(',');
         if (parts.Length >= 3)
         {
-            int v0 = int.Parse(parts[0].Trim());
-            int v1 = int.Parse(parts[1].Trim());
-            int v2 = int.Parse(parts[2].Trim());
+            int v0 = int.Parse(parts[0].Trim(), CultureInfo.InvariantCulture);
+            int v1 = int.Parse(parts[1].Trim(), CultureInfo.InvariantCulture);
+            int v2 = int.Parse(parts[2].Trim(), CultureInfo.InvariantCulture);
             triangles.Add((v0, v1, v2));
         }
     }
