@@ -801,6 +801,18 @@ public class WorldDocument
         if (_activeMissionIndex is int mi && mi >= 0 && mi < _missions.Count)
             CollectFrom(_missions[mi]);
 
+        // Collect herd marker types referenced by HerdGen objects
+        var herdMarkerTypes = new HashSet<int>();
+        CollectHerdMarkerTypes(_worldRoot, herdMarkerTypes);
+        if (_activeMissionIndex is int mi2 && mi2 >= 0 && mi2 < _missions.Count)
+            CollectHerdMarkerTypes(_missions[mi2], herdMarkerTypes);
+
+        // Collect herd markers (type 679) with AIModes matching HerdGen markerTypes
+        var herdMarkers = new Dictionary<int, SortedDictionary<int, Vector3>>();
+        CollectHerdMarkers(_worldRoot, herdMarkers, herdMarkerTypes);
+        if (_activeMissionIndex is int mi3 && mi3 >= 0 && mi3 < _missions.Count)
+            CollectHerdMarkers(_missions[mi3], herdMarkers, herdMarkerTypes);
+
         var result = new List<SplineLine>();
 
         // Build line segments for each color group
@@ -808,7 +820,83 @@ public class WorldDocument
         BuildSplineGroup(splinePoints, SplineGroup2Start, SplineGroup2End, new Vector3(1f, 0.75f, 0.5f), result);
         BuildSplineGroup(splinePoints, SplineGroup3Start, SplineGroup3End, new Vector3(0.5f, 0.75f, 1f), result);
 
+        // Build herd marker loops (circular paths, green)
+        foreach (var (_, points) in herdMarkers)
+        {
+            if (points.Count < 2) continue;
+            var verts = new List<float>();
+            Vector3? first = null;
+            Vector3? prev = null;
+            foreach (var (_, pos) in points)
+            {
+                first ??= pos;
+                if (prev.HasValue)
+                {
+                    verts.Add(prev.Value.X); verts.Add(prev.Value.Y); verts.Add(prev.Value.Z);
+                    verts.Add(pos.X); verts.Add(pos.Y); verts.Add(pos.Z);
+                }
+                prev = pos;
+            }
+            // Close the loop
+            if (prev.HasValue && first.HasValue)
+            {
+                verts.Add(prev.Value.X); verts.Add(prev.Value.Y); verts.Add(prev.Value.Z);
+                verts.Add(first.Value.X); verts.Add(first.Value.Y); verts.Add(first.Value.Z);
+            }
+            if (verts.Count > 0)
+            {
+                result.Add(new SplineLine
+                {
+                    Vertices = verts.ToArray(),
+                    PointCount = verts.Count / 3,
+                    Color = new Vector3(0.5f, 1f, 0.5f)
+                });
+            }
+        }
+
         return result;
+    }
+
+    private static void CollectHerdMarkerTypes(TreeNode? root, HashSet<int> markerTypes)
+    {
+        var objContainer = root?.FindChildNode(BinFormatConstants.GroupObjects);
+        if (objContainer == null) return;
+
+        foreach (var obj in objContainer.EnumerateNodes())
+        {
+            if (obj.Name != BinFormatConstants.NodeObject) continue;
+            var markerType = obj.FindChildLeaf("MarkerType");
+            if (markerType != null)
+                markerTypes.Add(markerType.Int32Value);
+        }
+    }
+
+    private static void CollectHerdMarkers(TreeNode? root, Dictionary<int, SortedDictionary<int, Vector3>> herdMarkers, HashSet<int> validTypes)
+    {
+        var objContainer = root?.FindChildNode(BinFormatConstants.GroupObjects);
+        if (objContainer == null) return;
+
+        foreach (var obj in objContainer.EnumerateNodes())
+        {
+            if (obj.Name != BinFormatConstants.NodeObject) continue;
+            int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+            if (typeId != MarkerTypeId) continue;
+
+            int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+            if (!validTypes.Contains(aiMode)) continue;
+            int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
+
+            float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
+            float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
+            float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+
+            if (!herdMarkers.TryGetValue(aiMode, out var points))
+            {
+                points = new SortedDictionary<int, Vector3>();
+                herdMarkers[aiMode] = points;
+            }
+            points[teamId] = new Vector3(x, y, z);
+        }
     }
 
     private static void BuildSplineGroup(
