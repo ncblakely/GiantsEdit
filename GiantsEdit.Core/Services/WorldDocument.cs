@@ -37,8 +37,7 @@ public class WorldDocument
     private const int MarkerTypeId = 679;
     private const int LightTypeId = 1004;
 
-    private readonly List<int> SplineTypes1 = [679, 1052, 1162];
-    private readonly List<int> SplineTypes2 = [];
+    private readonly List<int> SplineTypes = [679, 1052, 1098, 1162];
 
     // Spline group ranges
     private const int SplineGroup1Start = 0;
@@ -766,12 +765,16 @@ public class WorldDocument
         // objsplines[objtype][aimode][teamid] = obj position
         var objsplines = new Dictionary<int, Dictionary<int, SortedDictionary<int, Vector3>>>();
 
+        Console.WriteLine("Coucou");
+
         foreach (var obj in nodes)
         {
             if (obj.Name != BinFormatConstants.NodeObject) continue;
 
             int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
-            if (!SplineTypes1.Contains(typeId) && !SplineTypes2.Contains(typeId)) continue;
+            if (!SplineTypes.Contains(typeId)) continue;
+
+            Console.WriteLine($"Adding {typeId}...");
 
             int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
             int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
@@ -780,85 +783,51 @@ public class WorldDocument
             float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
             float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
 
+            Console.WriteLine($"Really adding {typeId} {aiMode} {teamId} {x} {y} {z}...");
             objsplines[typeId][aiMode][teamId] = new Vector3(x, y, z);
+            Console.WriteLine("Done add");
         }
 
+        Console.WriteLine("Coucou2");
         // remove nodes with a single teamid
-        foreach(var objtypedict in objsplines)
+        foreach(var (objtype, aimodedict) in objsplines)
         {
-            foreach (var aimodedict in objtypedict.Value)
+            foreach (var (aimode, teamiddict) in aimodedict)
             {
-                if (aimodedict.Value.Count <= -1)
+                if (teamiddict.Count <= 1)
                 {
-                    objtypedict.Value.Remove(aimodedict.Key);
+                    aimodedict.Remove(aimode);
                     continue;
                 }
             }
         }
 
+        Console.WriteLine("Coucou3");
         // now build the spline lines
-        foreach(var aimodedict in objsplines.Values)
+        foreach(var (objtype, aimodedict) in objsplines)
         {
-            foreach(var teamiddict in aimodedict.Values)
+            foreach (var (aimode, teamiddict) in aimodedict)
             {
                 var verts = new List<float>();
+                Vector3? prev = null;
 
                 foreach(var vec in teamiddict.Values)
                 {
-                    verts.Add(vec.X);
+                    if (prev.HasValue)
+                    {
+                        verts.Add(prev.Value.X); verts.Add(prev.Value.Y); verts.Add(prev.Value.Z);
+                        verts.Add(vec.X); verts.Add(vec.Y); verts.Add(vec.Z);
+                    }
+                    prev = vec;
                 }
-                result.Add(new SplineLine({
+                result.Add(new SplineLine{
                         Vertices = verts.ToArray(),
                         PointCount = verts.Count / 3,
-                        Color = color
-                }));
+                        Color = new Vector3(1.0f, 1.0f, 1.0f)
+                });
             }
         }
-
-
-
-        // splineids[0..511]: each slot is a list of points indexed by TeamID
-        var splinePoints = new Dictionary<int, SortedDictionary<int, Vector3>>();
-
-        void CollectFrom(TreeNode? root)
-        {
-            var objContainer = root?.FindChildNode(BinFormatConstants.GroupObjects);
-            if (objContainer == null) return;
-
-            foreach (var obj in objContainer.EnumerateNodes())
-            {
-                if (obj.Name != BinFormatConstants.NodeObject) continue;
-                int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
-                if (!SplineTypes1.Contains(typeId) && !SplineTypes2.Contains(typeId)) continue;
-
-                int groupBase = SplineTypes1.Contains(typeId) ? SplineGroup1Start : SplineGroup2Start;
-                int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
-                int groupId = groupBase + aiMode;
-                int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
-
-                float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
-                float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
-                float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
-
-                if (!splinePoints.TryGetValue(groupId, out var points))
-                {
-                    points = new SortedDictionary<int, Vector3>();
-                    splinePoints[groupId] = points;
-                }
-                points[teamId] = new Vector3(x, y, z);
-            }
-        }
-
-        CollectFrom(_worldRoot);
-        if (_activeMissionIndex is int mi && mi >= 0 && mi < _missions.Count)
-            CollectFrom(_missions[mi]);
-
-
-        // Build line segments for each color group
-        BuildSplineGroup(splinePoints, SplineGroup1Start, SplineGroup1End, new Vector3(1f, 1f, 1f), result);
-        BuildSplineGroup(splinePoints, SplineGroup2Start, SplineGroup2End, new Vector3(1f, 0.75f, 0.5f), result);
-        BuildSplineGroup(splinePoints, SplineGroup3Start, SplineGroup3End, new Vector3(0.5f, 0.75f, 1f), result);
-
+        Console.WriteLine($"Result count: {result.Count}");
         return result;
     }
 
