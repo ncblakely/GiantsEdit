@@ -765,8 +765,6 @@ public class WorldDocument
         // objsplines[objtype][aimode][teamid] = obj position
         var objsplines = new Dictionary<int, Dictionary<int, SortedDictionary<int, Vector3>>>();
 
-        Console.WriteLine("Coucou");
-
         foreach (var obj in nodes)
         {
             if (obj.Name != BinFormatConstants.NodeObject) continue;
@@ -783,26 +781,39 @@ public class WorldDocument
             float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
             float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
 
-            Console.WriteLine($"Really adding {typeId} {aiMode} {teamId} {x} {y} {z}...");
-            objsplines[typeId][aiMode][teamId] = new Vector3(x, y, z);
-            Console.WriteLine("Done add");
+            if (!objsplines.TryGetValue(typeId, out var aidict))
+            {
+                Console.WriteLine($"Pouet1: {typeId}");
+                aidict = new Dictionary<int, SortedDictionary<int, Vector3>>();
+                objsplines[typeId] = aidict;
+            }
+            if (!aidict.TryGetValue(aiMode, out var teamdict))
+            {
+                Console.WriteLine($"Pouet2: {aiMode}");
+                teamdict = new SortedDictionary<int, Vector3>();
+                objsplines[typeId][aiMode] = teamdict;
+            }
+            teamdict[teamId] = new Vector3(x, y, z);
         }
 
-        Console.WriteLine("Coucou2");
+        Console.WriteLine($"{objsplines.Count} before");
+
         // remove nodes with a single teamid
         foreach(var (objtype, aimodedict) in objsplines)
         {
             foreach (var (aimode, teamiddict) in aimodedict)
             {
-                if (teamiddict.Count <= 1)
+                if (teamiddict.Count <= 0)
                 {
                     aimodedict.Remove(aimode);
-                    continue;
+                    Console.WriteLine($"Removed {objtype}:{aimode}");
                 }
             }
         }
 
-        Console.WriteLine("Coucou3");
+        Console.WriteLine($"{objsplines.Count} after");
+
+
         // now build the spline lines
         foreach(var (objtype, aimodedict) in objsplines)
         {
