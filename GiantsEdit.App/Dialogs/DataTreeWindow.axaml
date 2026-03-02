@@ -62,6 +62,30 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <!-- Optional-checkbox properties for <Options> nodes -->
+                            <ItemsControl x:Name="OptionalPropsList" Margin="4" IsVisible="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dlg:OptionalLeafVm">
+                                        <Grid ColumnDefinitions="Auto,110,*,Auto" Margin="0,1">
+                                            <CheckBox Grid.Column="0" IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                      MinWidth="0" Padding="0" Margin="0,0,4,0"
+                                                      VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                       VerticalAlignment="Center" Margin="4,0" />
+                                            <TextBox Grid.Column="2" Text="{Binding Value, Mode=TwoWay}"
+                                                     Padding="4,2"
+                                                     IsEnabled="{Binding IsEnabled}"
+                                                     IsVisible="{Binding HasValue}" />
+                                            <Button Grid.Column="3" Content="▼" Width="24" Padding="2,0"
+                                                    MinWidth="0" MinHeight="0"
+                                                    VerticalAlignment="Stretch"
+                                                    IsVisible="{Binding ShowBrowse}"
+                                                    Command="{Binding BrowseCommand}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                             <!-- Object type search popup (shared, positioned dynamically) -->
                             <Popup x:Name="ObjTypePopup" Placement="Bottom"
                                    MaxHeight="300" Width="280"

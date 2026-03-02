@@ -11,7 +11,7 @@ public partial class DataTreeWindow : Window
 {
     private TreeNode? _rootNode;
     private TreeNode? _selectedNode;
-    private LeafPropertyVm? _browsingLeaf;
+    private Action<string>? _browseCallback;
     private ObservableCollection<DataTreeNodeVm>? _items;
     private readonly IReadOnlyList<string> _allObjNames = ObjectNames.GetAllDisplayNames();
 
@@ -53,18 +53,28 @@ public partial class DataTreeWindow : Window
         };
         LstObjTypes.SelectionChanged += (_, _) =>
         {
-            if (_browsingLeaf != null && LstObjTypes.SelectedItem is string selected)
+            if (_browseCallback != null && LstObjTypes.SelectedItem is string selected)
             {
-                _browsingLeaf.Value = selected;
+                _browseCallback(selected);
                 ObjTypePopup.IsOpen = false;
-                _browsingLeaf = null;
+                _browseCallback = null;
             }
         };
     }
 
     private void OpenObjTypeBrowser(LeafPropertyVm leaf)
     {
-        _browsingLeaf = leaf;
+        OpenObjTypeBrowserCore(v => leaf.Value = v);
+    }
+
+    private void OpenObjTypeBrowser(OptionalLeafVm leaf)
+    {
+        OpenObjTypeBrowserCore(v => leaf.Value = v);
+    }
+
+    private void OpenObjTypeBrowserCore(Action<string> setValue)
+    {
+        _browseCallback = setValue;
         TxtObjTypeSearch.Text = "";
         LstObjTypes.ItemsSource = _allObjNames;
         LstObjTypes.SelectedItem = null;
@@ -184,10 +194,24 @@ public partial class DataTreeWindow : Window
             foreach (var p in props)
                 p.Apply();
         }
+        if (OptionalPropsList.ItemsSource is ObservableCollection<OptionalLeafVm> optProps)
+        {
+            foreach (var p in optProps)
+                p.Apply();
+        }
     }
 
     private void ShowProperties(TreeNode node)
     {
+        if (node.Name == "<Options>")
+        {
+            ShowOptionsProperties(node);
+            return;
+        }
+
+        PropertiesList.IsVisible = true;
+        OptionalPropsList.IsVisible = false;
+
         bool editable = EditableListNodes.Contains(node.Name);
         var props = new ObservableCollection<LeafPropertyVm>();
         foreach (var leaf in node.EnumerateLeaves())
@@ -208,6 +232,22 @@ public partial class DataTreeWindow : Window
             props.Add(vm);
         }
         PropertiesList.ItemsSource = props;
+    }
+
+    private void ShowOptionsProperties(TreeNode node)
+    {
+        PropertiesList.IsVisible = false;
+        OptionalPropsList.IsVisible = true;
+
+        var vms = new ObservableCollection<OptionalLeafVm>();
+        foreach (var def in OptionalLeafVm.AllOptionDefs)
+        {
+            var vm = new OptionalLeafVm(node, def);
+            if (def.IsObjectType)
+                vm.BrowseRequested += () => OpenObjTypeBrowser(vm);
+            vms.Add(vm);
+        }
+        OptionalPropsList.ItemsSource = vms;
     }
 
     private async void AddIncludeFile()
@@ -347,6 +387,186 @@ public partial class LeafPropertyVm : ObservableObject
                 _leaf.SingleValue = f; break;
             case PropertyType.String:
                 _leaf.StringValue = Value; break;
+        }
+    }
+}
+
+/// <summary>
+/// Defines a known mission option that can be toggled on/off.
+/// </summary>
+public record OptionDef(string LeafName, PropertyType Type, string DefaultValue, bool IsObjectType = false)
+{
+    /// <summary>
+    /// Grouped leaves that are added/removed together with the primary leaf.
+    /// </summary>
+    public string[]? GroupedLeaves { get; init; }
+    public string[]? GroupedDefaults { get; init; }
+}
+
+/// <summary>
+/// View model for an optional mission option displayed with a checkbox.
+/// </summary>
+public partial class OptionalLeafVm : ObservableObject
+{
+    private readonly TreeNode _node;
+    private readonly OptionDef _def;
+
+    public static readonly OptionDef[] AllOptionDefs =
+    [
+        new("Character", PropertyType.Int32, "0", IsObjectType: true)
+        {
+            GroupedLeaves = ["Teammembers", "MarkerID", "KabutoSize"],
+            GroupedDefaults = ["0", "0", "0"]
+        },
+        new("Teammembers", PropertyType.Int32, "0"),
+        new("MarkerID", PropertyType.Int32, "0"),
+        new("KabutoSize", PropertyType.Int32, "0"),
+        new("SmartieType", PropertyType.Int32, "0"),
+        new("SpecialText", PropertyType.Int32, "0"),
+        new("VimpMeat", PropertyType.Int32, "0"),
+        new("NoNitro", PropertyType.Int32, "0"),
+        new("NoJetpack", PropertyType.Int32, "0"),
+        new("FailTime", PropertyType.Int32, "0"),
+        new("FailFlick", PropertyType.String, ""),
+        new("StartFlick", PropertyType.String, ""),
+        new("EndFlick", PropertyType.String, ""),
+        new("SuccessDelay 0", PropertyType.Single, "0.0000")
+        {
+            GroupedLeaves = ["SuccessDelay 1"],
+            GroupedDefaults = ["0.0000"]
+        },
+        new("SuccessDelay 1", PropertyType.Single, "0.0000"),
+        new("BumpClampValue", PropertyType.Single, "0.0000"),
+        new("JetskiRace", PropertyType.Void, ""),
+        new("ZeroVimpMeat", PropertyType.Void, ""),
+        new("GrabSmartie", PropertyType.Void, ""),
+    ];
+
+    public OptionalLeafVm(TreeNode node, OptionDef def)
+    {
+        _node = node;
+        _def = def;
+        Name = def.LeafName;
+        HasValue = def.Type != PropertyType.Void;
+        ShowBrowse = def.IsObjectType;
+        BrowseCommand = new RelayCommand(() => BrowseRequested?.Invoke());
+
+        var leaf = node.FindChildLeaf(def.LeafName);
+        _isEnabled = leaf != null;
+        _value = leaf != null ? FormatLeafValue(leaf) : def.DefaultValue;
+    }
+
+    public string Name { get; }
+    public bool HasValue { get; }
+    public bool ShowBrowse { get; }
+    public IRelayCommand BrowseCommand { get; }
+    public event Action? BrowseRequested;
+
+    [ObservableProperty]
+    private bool _isEnabled;
+
+    [ObservableProperty]
+    private string _value = "";
+
+    partial void OnIsEnabledChanged(bool value)
+    {
+        if (value)
+        {
+            // Add leaf with default or current value
+            AddLeaf(_def.LeafName, _def.Type, Value ?? _def.DefaultValue);
+            if (_def.GroupedLeaves != null)
+            {
+                for (int i = 0; i < _def.GroupedLeaves.Length; i++)
+                {
+                    string gName = _def.GroupedLeaves[i];
+                    if (_node.FindChildLeaf(gName) == null)
+                    {
+                        string gDefault = _def.GroupedDefaults?[i] ?? "0";
+                        // Find the matching def for this grouped leaf
+                        var gDef = Array.Find(AllOptionDefs, d => d.LeafName == gName);
+                        AddLeaf(gName, gDef?.Type ?? PropertyType.Int32, gDefault);
+                    }
+                }
+            }
+        }
+        else
+        {
+            RemoveLeaf(_def.LeafName);
+            if (_def.GroupedLeaves != null)
+            {
+                foreach (string gName in _def.GroupedLeaves)
+                    RemoveLeaf(gName);
+            }
+        }
+    }
+
+    private void AddLeaf(string name, PropertyType type, string val)
+    {
+        if (_node.FindChildLeaf(name) != null) return;
+        switch (type)
+        {
+            case PropertyType.Int32:
+                int iv = int.TryParse(val, out int pi) ? pi : 0;
+                _node.AddInt32(name, iv);
+                break;
+            case PropertyType.Single:
+                float fv = float.TryParse(val, out float pf) ? pf : 0f;
+                _node.AddSingle(name, fv);
+                break;
+            case PropertyType.String:
+                _node.AddString(name, val);
+                break;
+            case PropertyType.Void:
+                _node.AddVoid(name);
+                break;
+        }
+    }
+
+    private void RemoveLeaf(string name)
+    {
+        var leaf = _node.FindChildLeaf(name);
+        if (leaf != null) _node.RemoveLeaf(leaf);
+    }
+
+    private string FormatLeafValue(TreeLeaf leaf)
+    {
+        if (_def.IsObjectType)
+            return ObjectNames.GetDisplayName(leaf.Int32Value);
+        return leaf.PropertyType switch
+        {
+            PropertyType.Int32 => leaf.Int32Value.ToString(),
+            PropertyType.Single => leaf.SingleValue.ToString("F4"),
+            PropertyType.String => leaf.StringValue,
+            PropertyType.Void => "",
+            _ => ""
+        };
+    }
+
+    public void Apply()
+    {
+        if (!IsEnabled) return;
+        var leaf = _node.FindChildLeaf(_def.LeafName);
+        if (leaf == null) return;
+
+        if (_def.IsObjectType)
+        {
+            var parsed = ObjectNames.ParseInput(Value);
+            if (parsed.HasValue)
+            {
+                leaf.Int32Value = parsed.Value;
+                Value = ObjectNames.GetDisplayName(parsed.Value);
+            }
+            return;
+        }
+
+        switch (leaf.PropertyType)
+        {
+            case PropertyType.Int32 when int.TryParse(Value, out int i):
+                leaf.Int32Value = i; break;
+            case PropertyType.Single when float.TryParse(Value, out float f):
+                leaf.SingleValue = f; break;
+            case PropertyType.String:
+                leaf.StringValue = Value; break;
         }
     }
 }
