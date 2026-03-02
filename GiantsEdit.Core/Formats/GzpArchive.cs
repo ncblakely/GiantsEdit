@@ -3,13 +3,14 @@ using System.Text;
 namespace GiantsEdit.Core.Formats;
 
 /// <summary>
-/// Reads the native GZP archive format used by Giants: Citizen Kabuto.
+/// Reads and writes the native GZP archive format used by Giants: Citizen Kabuto.
 /// This is NOT standard ZIP — it has a custom header (magic $6608F101)
 /// and uses LZ77 compression.
 /// </summary>
 public static class GzpArchive
 {
     private const uint GzpMagic = 0x6608F101;
+    private const int FileEntryHeaderSize = 16;
 
     /// <summary>
     /// Builds an index of all files in a GZP archive.
@@ -98,6 +99,82 @@ public static class GzpArchive
         }
 
         return combined;
+    }
+
+    /// <summary>
+    /// Rebuilds a GZP archive, replacing a single entry's data (stored uncompressed)
+    /// while copying all other entries byte-for-byte from the original.
+    /// </summary>
+    public static void ReplaceEntry(string gzpPath, string entryName, byte[] newData)
+    {
+        var entries = BuildIndex(gzpPath);
+        string tempPath = gzpPath + ".tmp";
+
+        using (var fs = File.Create(tempPath))
+        using (var bw = new BinaryWriter(fs))
+        {
+            // File header (placeholder diroffset, patched later)
+            bw.Write(GzpMagic);
+            bw.Write(0); // diroffset placeholder
+
+            // Track rebuilt entries: (name, offset, cmpSize, ucmpSize, cmpType)
+            var rebuilt = new List<(string Name, int Offset, int CmpSize, int UcmpSize, byte CmpType)>();
+
+            foreach (var (name, entry) in entries)
+            {
+                int offset = (int)fs.Position;
+
+                if (string.Equals(name, entryName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Write new data uncompressed
+                    int totalSize = FileEntryHeaderSize + newData.Length;
+                    bw.Write(totalSize);
+                    bw.Write(newData.Length);
+                    bw.Write(0);               // filetime
+                    bw.Write(2);
+                    bw.Write(newData);
+                    rebuilt.Add((name, offset, totalSize, newData.Length, 2));
+                }
+                else
+                {
+                    // Copy original entry data (header + payload) from source
+                    int rawOffset = (int)entry.DataOffset - FileEntryHeaderSize;
+                    int rawSize = entry.CompressedSize + FileEntryHeaderSize;
+
+                    using var src = File.OpenRead(entry.SourcePath);
+                    src.Seek(rawOffset, SeekOrigin.Begin);
+                    byte[] raw = new byte[rawSize];
+                    src.ReadExactly(raw);
+                    bw.Write(raw);
+                    rebuilt.Add((name, offset, rawSize, entry.UncompressedSize,
+                        entry.IsCompressed ? (byte)1 : (byte)2));
+                }
+            }
+
+            // Write directory
+            int dirOffset = (int)fs.Position;
+            bw.Write(0); // freeoffset (unused)
+            bw.Write(rebuilt.Count);
+
+            foreach (var (name, offset, compressedSize, uncompressedSize, compressionType) in rebuilt)
+            {
+                byte[] nameBytes = Encoding.ASCII.GetBytes(name + '\0');
+                bw.Write(compressedSize);
+                bw.Write(uncompressedSize);
+                bw.Write(0);           // filetime
+                bw.Write(offset);
+                bw.Write(compressionType);
+                bw.Write((byte)nameBytes.Length);
+                bw.Write(nameBytes);
+            }
+
+            // Patch diroffset in file header
+            fs.Seek(4, SeekOrigin.Begin);
+            bw.Write(dirOffset);
+        }
+
+        // Atomic replace
+        File.Move(tempPath, gzpPath, overwrite: true);
     }
 }
 

@@ -19,7 +19,8 @@
                 <MenuItem Header="Open map..." x:Name="MenuOpenWorld" InputGesture="Ctrl+O" />
                 <Separator/>
                 <MenuItem Header="Save map" x:Name="MenuSaveWorld" InputGesture="Ctrl+S" />
-                <MenuItem Header="Save map as..." x:Name="MenuSaveWorldAs" InputGesture="Ctrl+Shift+S" />
+                <MenuItem Header="Save GCK..." x:Name="MenuSaveGck" InputGesture="Ctrl+Shift+S" />
+                <MenuItem Header="Save GZP..." x:Name="MenuSaveGzp" />
                 <Separator/>
                 <MenuItem Header="Close map" x:Name="MenuCloseMap" InputGesture="Ctrl+W" />
                 <Separator/>

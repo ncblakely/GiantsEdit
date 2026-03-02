@@ -76,11 +76,44 @@ public partial class MainWindow
         }
     }
 
-    private async Task SaveWorldAsAsync()
+    private async Task SaveWorldAutoAsync()
+    {
+        var filePath = _vm.Document.FilePath;
+        if (filePath == null)
+        {
+            StatusText.Text = "No file to save — use Save GCK or Save GZP";
+            return;
+        }
+
+        try
+        {
+            if (filePath.EndsWith(".gck", StringComparison.OrdinalIgnoreCase))
+            {
+                _vm.Document.SaveWorld(filePath);
+                StatusText.Text = $"Saved: {Path.GetFileName(filePath)}";
+            }
+            else
+            {
+                // .gzp or .bin → save as GZP
+                string gzpPath = Path.ChangeExtension(filePath, ".gzp");
+                _vm.Document.SaveWorld(gzpPath);
+                StatusText.Text = $"Saved: {Path.GetFileName(gzpPath)}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SaveWorld] Error: {ex}");
+            StatusText.Text = $"Save failed: {ex.Message}";
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveGckAsync()
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Save Map As",
+            Title = "Save GCK",
             DefaultExtension = "gck",
             FileTypeChoices =
             [
@@ -100,10 +133,45 @@ public partial class MainWindow
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[SaveWorld] Error: {ex}");
+                    Debug.WriteLine($"[SaveGck] Error: {ex}");
                     StatusText.Text = $"Save failed: {ex.Message}";
                 }
             }
+        }
+    }
+
+    private async Task SaveGzpAsync()
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Save GZP — choose target folder",
+            AllowMultiple = false
+        });
+
+        if (folders.Count == 0) return;
+        var folder = folders[0].TryGetLocalPath();
+        if (folder == null) return;
+
+        // Derive file names from MapBinName (w_<MapName>.bin → w_<MapName>.gzp)
+        string binName = _vm.Document.MapBinName;
+        if (string.IsNullOrEmpty(binName))
+        {
+            StatusText.Text = "Cannot save — map has no name. Set one in New Map or rename the file.";
+            return;
+        }
+
+        string gzpName = Path.ChangeExtension(binName, ".gzp");
+        string gzpPath = Path.Combine(folder, gzpName);
+
+        try
+        {
+            _vm.Document.SaveWorld(gzpPath);
+            StatusText.Text = $"Saved: {binName} + {gzpName}";
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SaveGzp] Error: {ex}");
+            StatusText.Text = $"Save failed: {ex.Message}";
         }
     }
 

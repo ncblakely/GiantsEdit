@@ -62,8 +62,9 @@ public partial class MainWindow : Window
         // === File menu ===
         MenuNewWorld.Click += async (_, _) => await NewWorldAsync();
         MenuOpenWorld.Click += async (_, _) => await OpenWorldAsync();
-        MenuSaveWorld.Click += (_, _) => { _vm.Document.SaveWorld(); StatusText.Text = "Map saved"; };
-        MenuSaveWorldAs.Click += async (_, _) => await SaveWorldAsAsync();
+        MenuSaveWorld.Click += async (_, _) => await SaveWorldAutoAsync();
+        MenuSaveGck.Click += async (_, _) => await SaveGckAsync();
+        MenuSaveGzp.Click += async (_, _) => await SaveGzpAsync();
         MenuCloseMap.Click += (_, _) => CloseMap();
         MenuClearTerrain.Click += (_, _) => ClearTerrain();
         MenuClearObjects.Click += (_, _) => ClearObjects();
@@ -434,8 +435,8 @@ public partial class MainWindow : Window
             {
                 case Key.N: _ = NewWorldAsync(); e.Handled = true; return;
                 case Key.O: _ = OpenWorldAsync(); e.Handled = true; return;
-                case Key.S when shift: _ = SaveWorldAsAsync(); e.Handled = true; return;
-                case Key.S: _vm.Document.SaveWorld(); StatusText.Text = "Map saved"; e.Handled = true; return;
+                case Key.S when shift: _ = SaveGckAsync(); e.Handled = true; return;
+                case Key.S: _ = SaveWorldAutoAsync(); e.Handled = true; return;
                 case Key.W: CloseMap(); e.Handled = true; return;
             }
         }

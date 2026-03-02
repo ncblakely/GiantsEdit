@@ -284,7 +284,8 @@ public class WorldDocument
 
     /// <summary>
     /// Saves the current world. If the path is .gck, saves as a GCK archive
-    /// (ZIP containing w_*.bin + *.gti + *.gmm). Otherwise saves raw .bin.
+    /// (ZIP containing w_*.bin + *.gti + *.gmm). Otherwise saves as GZP
+    /// (.bin to folder + .gti replaced inside .gzp).
     /// </summary>
     public void SaveWorld(string? path = null)
     {
@@ -295,6 +296,10 @@ public class WorldDocument
         if (path.EndsWith(".gck", StringComparison.OrdinalIgnoreCase))
         {
             SaveGck(path);
+        }
+        else if (path.EndsWith(".gzp", StringComparison.OrdinalIgnoreCase))
+        {
+            SaveGzp(path);
         }
         else
         {
@@ -342,6 +347,43 @@ public class WorldDocument
             files.Add((name, data));
 
         GckArchive.Create(gckPath, files);
+    }
+
+    /// <summary>
+    /// Saves the world as a GZP-based map. Writes the .bin file to the folder,
+    /// replaces the .gti terrain entry inside the .gzp archive, and exports
+    /// all mission files referenced in the scenerios section.
+    /// </summary>
+    private void SaveGzp(string gzpPath)
+    {
+        string folder = Path.GetDirectoryName(gzpPath) ?? ".";
+        string binName = !string.IsNullOrEmpty(MapBinName)
+            ? MapBinName
+            : Path.ChangeExtension(Path.GetFileName(gzpPath), ".bin");
+
+        // Write .bin
+        if (_worldRoot != null)
+        {
+            var writer = new BinWorldWriter();
+            byte[] binData = writer.Save(_worldRoot);
+            File.WriteAllBytes(Path.Combine(folder, binName), binData);
+        }
+
+        // Replace .gti inside .gzp
+        if (_terrain != null && File.Exists(gzpPath))
+        {
+            byte[] gtiData = GtiFormat.Save(_terrain);
+            GzpArchive.ReplaceEntry(gzpPath, GckGtiEntryName, gtiData);
+        }
+
+        // Export mission files
+        var missionWriter = new BinMissionWriter();
+        foreach (var mission in Missions)
+        {
+            string missionFile = $"wm_{mission.Name}.bin";
+            byte[] data = missionWriter.Save(mission);
+            File.WriteAllBytes(Path.Combine(folder, missionFile), data);
+        }
     }
 
     /// <summary>
