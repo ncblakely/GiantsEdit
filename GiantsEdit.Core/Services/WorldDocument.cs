@@ -758,8 +758,15 @@ public class WorldDocument
     /// </summary>
     public List<SplineLine> GetSplineLines()
     {
+        var lines = GetSplineLinesFrom(_worldRoot);
+        if (_activeMissionIndex is int mi && mi >= 0 && mi < _missions.Count)
+            lines.AddRange(GetSplineLinesFrom(_missions[mi]));
+        return lines;
+    }
+    public List<SplineLine> GetSplineLinesFrom(TreeNode? root)
+    {
         var result = new List<SplineLine>();
-        var nodes = _worldRoot?.FindChildNode(BinFormatConstants.GroupObjects)?.EnumerateNodes();
+        var nodes = root?.FindChildNode(BinFormatConstants.GroupObjects)?.EnumerateNodes();
         if (nodes == null) return result;
 
         // objsplines[objtype][aimode][teamid] = obj position
