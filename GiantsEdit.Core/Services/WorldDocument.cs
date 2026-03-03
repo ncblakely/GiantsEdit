@@ -779,8 +779,6 @@ public class WorldDocument
             int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
             if (!SplineTypes.Contains(typeId)) continue;
 
-            Console.WriteLine($"Adding {typeId}...");
-
             int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
             int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
 
@@ -790,20 +788,16 @@ public class WorldDocument
 
             if (!objsplines.TryGetValue(typeId, out var aidict))
             {
-                Console.WriteLine($"Pouet1: {typeId}");
                 aidict = new Dictionary<int, SortedDictionary<int, Vector3>>();
                 objsplines[typeId] = aidict;
             }
             if (!aidict.TryGetValue(aiMode, out var teamdict))
             {
-                Console.WriteLine($"Pouet2: {aiMode}");
                 teamdict = new SortedDictionary<int, Vector3>();
                 objsplines[typeId][aiMode] = teamdict;
             }
             teamdict[teamId] = new Vector3(x, y, z);
         }
-
-        Console.WriteLine($"{objsplines.Count} before");
 
         // remove nodes with a single teamid
         foreach(var (objtype, aimodedict) in objsplines)
@@ -813,13 +807,9 @@ public class WorldDocument
                 if (teamiddict.Count <= 0)
                 {
                     aimodedict.Remove(aimode);
-                    Console.WriteLine($"Removed {objtype}:{aimode}");
                 }
             }
         }
-
-        Console.WriteLine($"{objsplines.Count} after");
-
 
         // now build the spline lines
         foreach(var (objtype, aimodedict) in objsplines)
@@ -845,7 +835,6 @@ public class WorldDocument
                 });
             }
         }
-        Console.WriteLine($"Result count: {result.Count}");
         return result;
     }
 
