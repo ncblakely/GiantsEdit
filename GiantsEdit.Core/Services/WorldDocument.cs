@@ -39,14 +39,6 @@ public class WorldDocument
 
     private readonly List<int> SplineTypes = [679, 1052, 1098, 1162];
 
-    // Spline group ranges
-    private const int SplineGroup1Start = 0;
-    private const int SplineGroup1End = 255;
-    private const int SplineGroup2Start = 256;
-    private const int SplineGroup2End = 511;
-    private const int SplineGroup3Start = 512;
-    private const int SplineGroup3End = 767;
-
     private TreeNode? _worldRoot;
     private TerrainData? _terrain;
     private readonly List<TreeNode> _missions = [];
@@ -836,39 +828,6 @@ public class WorldDocument
             }
         }
         return result;
-    }
-
-    private static void BuildSplineGroup(
-        Dictionary<int, SortedDictionary<int, Vector3>> splinePoints,
-        int startGroup, int endGroup, Vector3 color, List<SplineLine> result)
-    {
-        var verts = new List<float>();
-
-        for (int g = startGroup; g <= endGroup; g++)
-        {
-            if (!splinePoints.TryGetValue(g, out var points)) continue;
-
-            Vector3? prev = null;
-            foreach (var (_, pos) in points)
-            {
-                if (prev.HasValue)
-                {
-                    verts.Add(prev.Value.X); verts.Add(prev.Value.Y); verts.Add(prev.Value.Z);
-                    verts.Add(pos.X); verts.Add(pos.Y); verts.Add(pos.Z);
-                }
-                prev = pos;
-            }
-        }
-
-        if (verts.Count > 0)
-        {
-            result.Add(new SplineLine
-            {
-                Vertices = verts.ToArray(),
-                PointCount = verts.Count / 3,
-                Color = color
-            });
-        }
     }
     public TerrainRenderData? BuildTerrainRenderData()
     {
