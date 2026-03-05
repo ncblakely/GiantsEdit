@@ -25,6 +25,10 @@ public partial class MainWindow
             {
                 typeLeaf.Int32Value = parsedType.Value;
                 typeChanged = true;
+
+                var addedInc = _vm.Document.EnsureIncludeFile(_objectCatalog, parsedType.Value);
+                if (addedInc != null)
+                    StatusText.Text = $"Auto-added include file: {addedInc}";
             }
             PropObjType.Text = ObjectNames.GetDisplayName(parsedType.Value);
             PropHeader.Text = $"Object: {PropObjType.Text}";
