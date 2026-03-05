@@ -1125,6 +1125,36 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Ensures the required include file for an object type is present in the map.
+    /// Returns the include file name if one was added, or null if none was needed.
+    /// </summary>
+    public string? EnsureIncludeFile(ObjectCatalog catalog, int typeId)
+    {
+        if (_worldRoot == null) return null;
+
+        var requiredInclude = catalog.GetRequiredInclude(typeId);
+        if (requiredInclude == null) return null;
+
+        var includeSection = _worldRoot.FindChildNode(BinFormatConstants.SectionIncludeFiles);
+        if (includeSection == null) return null;
+
+        // Check if already present
+        foreach (var leaf in includeSection.EnumerateLeaves())
+        {
+            if (string.Equals(leaf.StringValue, requiredInclude, StringComparison.OrdinalIgnoreCase))
+                return null;
+        }
+
+        // Add missing include
+        if (includeSection.LeafCount >= 32)
+            return null;  // Max include files reached
+
+        includeSection.AddString("Name", requiredInclude);
+        IsModified = true;
+        return requiredInclude;
+    }
+
+    /// <summary>
     /// Removes the selected object from the world or active mission.
     /// </summary>
     public void RemoveSelectedObject()

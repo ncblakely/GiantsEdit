@@ -28,8 +28,8 @@ public class ObjectCatalogTests
     public void GetById_ReturnsCorrectEntries()
     {
         var catalog = new ObjectCatalog();
-        catalog.Add(new ObjectCatalogEntry(42, "TestObj", "model.gbs"));
-        catalog.Add(new ObjectCatalogEntry(42, "TestObj2", "model2.gbs"));
+        catalog.Add(new ObjectCatalogEntry(42, "TestObj", "model.gbs", ""));
+        catalog.Add(new ObjectCatalogEntry(42, "TestObj2", "model2.gbs", ""));
 
         var entries = catalog.GetById(42);
         Assert.HasCount(2, entries);
@@ -50,5 +50,20 @@ public class ObjectCatalogTests
 
         var catalog = ObjectCatalog.LoadFromTsv(lines);
         Assert.HasCount(1, catalog.Entries);
+    }
+
+    [TestMethod]
+    public void LoadFromTsv_ParsesIncludeFile()
+    {
+        var lines = new[]
+        {
+            "1\tKabuto\tkb_l0.gbs\tXX_KabutoLev1",
+            "5\tStation\t\t",
+        };
+
+        var catalog = ObjectCatalog.LoadFromTsv(lines);
+        Assert.AreEqual("XX_KabutoLev1", catalog.GetRequiredInclude(1));
+        Assert.IsNull(catalog.GetRequiredInclude(5));
+        Assert.IsNull(catalog.GetRequiredInclude(999));
     }
 }
