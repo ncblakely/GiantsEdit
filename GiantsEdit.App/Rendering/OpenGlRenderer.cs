@@ -136,14 +136,14 @@ public sealed class OpenGlRenderer : IRenderer
         if (state.ShowDome && _dome.HasData)
             _dome.Draw(vp);
 
-        if (state.ShowSea && _sea.HasData)
-            _sea.Draw(vp, state.SeaColor);
-
         if (state.ShowTerrain && _terrain.HasData)
             _terrain.Draw(vp, state.ShowTerrainMesh);
 
         if (state.ShowObjects)
             _models.Draw(state, vp);
+
+        if (state.ShowSea && _sea.HasData)
+            _sea.Draw(vp, state.SeaColor);
 
         if (state.ShowObjects && state.SplineLines.Count > 0)
             _splines.Draw(state, vp);

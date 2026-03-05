@@ -43,13 +43,13 @@ internal sealed class SeaRenderer
             float a2 = (i + 1) * MathF.PI * 2f / Segments;
 
             int off = i * 9;
-            verts[off + 0] = 0; verts[off + 1] = 0; verts[off + 2] = SeaGroundDepth;
+            verts[off + 0] = 0; verts[off + 1] = 0; verts[off + 2] = 0;
             verts[off + 3] = MathF.Cos(a1) * radius;
             verts[off + 4] = MathF.Sin(a1) * radius;
-            verts[off + 5] = SeaGroundDepth;
+            verts[off + 5] = 0;
             verts[off + 6] = MathF.Cos(a2) * radius;
             verts[off + 7] = MathF.Sin(a2) * radius;
-            verts[off + 8] = SeaGroundDepth;
+            verts[off + 8] = 0;
         }
 
         _vao = _gl.GenVertexArray();
@@ -77,12 +77,22 @@ internal sealed class SeaRenderer
         // Draw sea ground
         _gl.Uniform4(_colorLoc, 0.05f, 0.15f, 0.1f, 1.0f);
         _gl.BindVertexArray(_vao);
+
+        // z offset by SeaGroundDepth (sea ground)
+        var model = Matrix4x4.CreateTranslation(0f, 0f, SeaGroundDepth);
+        var mvp = model * vp;
+        SetUniformMatrix(_mvpLoc, mvp);
         _gl.DrawArrays(PrimitiveType.Triangles, 0, (uint)_vertexCount);
 
         // Draw sea surface with blending
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         _gl.Uniform4(_colorLoc, seaColor.X, seaColor.Y, seaColor.Z, 0.5f);
+
+        // reset z offset to 0 (real sea level)
+        model = Matrix4x4.CreateTranslation(0f, 0f, 0);
+        mvp = model * vp;
+        SetUniformMatrix(_mvpLoc, mvp);
         _gl.DrawArrays(PrimitiveType.Triangles, 0, (uint)_vertexCount);
         _gl.Disable(EnableCap.Blend);
         _gl.Enable(EnableCap.CullFace);
