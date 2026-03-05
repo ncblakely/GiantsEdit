@@ -772,6 +772,10 @@ public partial class MainWindow
             if (scaleSrc != null)
                 newObj.AddSingle("Scale", scaleSrc.SingleValue);
 
+            var addedInc = _vm.Document.EnsureIncludeFile(_objectCatalog, typeId);
+            if (addedInc != null)
+                StatusText.Text = $"Auto-added include file: {addedInc}";
+
             SelectObject(newObj);
         }
         RefreshViewport();
@@ -865,7 +869,13 @@ public partial class MainWindow
             var pos = _newObjPosition.Value;
             var newObj = _vm.Document.AddObject(typeId.Value, pos.X, pos.Y, pos.Z);
             if (newObj != null)
+            {
+                var addedInc = _vm.Document.EnsureIncludeFile(_objectCatalog, typeId.Value);
+                if (addedInc != null)
+                    StatusText.Text = $"Auto-added include file: {addedInc}";
+
                 SelectObject(newObj);
+            }
             RefreshViewport();
         }
     }

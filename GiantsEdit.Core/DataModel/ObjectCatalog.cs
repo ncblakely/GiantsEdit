@@ -2,10 +2,10 @@ namespace GiantsEdit.Core.DataModel;
 
 /// <summary>
 /// Entry in the object inclusion list: maps a numeric object ID to
-/// a friendly name and a 3D model file path.
+/// a friendly name, a 3D model file path, and the required include file.
 /// Ported from Delphi's inclist.pas tIncludelistEntry.
 /// </summary>
-public readonly record struct ObjectCatalogEntry(int Id, string Name, string ModelPath);
+public readonly record struct ObjectCatalogEntry(int Id, string Name, string ModelPath, string IncludeFile);
 
 /// <summary>
 /// Provides lookup of game object definitions by ID.
@@ -42,7 +42,18 @@ public class ObjectCatalog
     }
 
     /// <summary>
-    /// Loads the catalog from tab-separated lines (id\tname\tmodel).
+    /// Gets the required include file for an object ID, or null if none is needed.
+    /// </summary>
+    public string? GetRequiredInclude(int id)
+    {
+        if (!_byId.TryGetValue(id, out var list) || list.Count == 0)
+            return null;
+        var inc = list[0].IncludeFile;
+        return string.IsNullOrEmpty(inc) ? null : inc;
+    }
+
+    /// <summary>
+    /// Loads the catalog from tab-separated lines (id\tname\tmodel\tincludefile).
     /// </summary>
     public static ObjectCatalog LoadFromTsv(IEnumerable<string> lines)
     {
@@ -55,7 +66,8 @@ public class ObjectCatalog
             var parts = line.Split('\t');
             if (parts.Length >= 3 && int.TryParse(parts[0].Trim(), out int id))
             {
-                catalog.Add(new ObjectCatalogEntry(id, parts[1].Trim(), parts[2].Trim()));
+                string includeFile = parts.Length >= 4 ? parts[3].Trim() : "";
+                catalog.Add(new ObjectCatalogEntry(id, parts[1].Trim(), parts[2].Trim(), includeFile));
             }
         }
         return catalog;
