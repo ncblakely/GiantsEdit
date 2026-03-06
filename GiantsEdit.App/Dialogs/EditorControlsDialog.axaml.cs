@@ -48,6 +48,7 @@ public partial class EditorControlsDialog : Window
         Right click          Object context menu (create/delete)
         CTRL + c             Copy selected object
         CTRL + v             Paste object under cursor
+        DEL                  Delete selected object
         """;
 
     private static string GetClassicControls() => """
@@ -77,5 +78,6 @@ public partial class EditorControlsDialog : Window
         Right click          Object context menu (create/delete)
         CTRL + c             Copy selected object
         CTRL + v             Paste object under cursor
+        DEL                  Delete selected object
         """;
 }
