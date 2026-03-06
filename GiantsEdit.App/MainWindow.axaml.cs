@@ -457,6 +457,7 @@ public partial class MainWindow : Window
             case Key.F9: _viewTerrainMesh = !_viewTerrainMesh; InvalidateViewport(); e.Handled = true; break;
             case Key.F10: _ = ToggleDrawRealObjectsAsync(); e.Handled = true; break;
             case Key.F11: _viewObjThruTerrain = !_viewObjThruTerrain; InvalidateViewport(); e.Handled = true; break;
+            case Key.Delete: _vm.Document.RemoveSelectedObject(); DeselectObject(); RefreshViewport(); e.Handled = true; break;
         }
 
         // WASD fly key tracking (Default scheme only, requires RMB held, not when typing in text fields)
