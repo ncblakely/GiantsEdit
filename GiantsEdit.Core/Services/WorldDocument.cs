@@ -37,8 +37,12 @@ public class WorldDocument
     private const int MarkerTypeId = 679;
     private const int LightTypeId = 1004;
 
-    private readonly List<int> SplineTypes = [679, 1052, 1098, 1162];
+    private const int ObjTypeArmySpline = 1162;
+    private const int ObjTypeMarker = 679;
+    private const int ObjTypeBuoySpline = 1098;
+    private const int ObjTypeMarkerSpline = 1052;
 
+    private readonly List<int> SplineTypes = [ObjTypeMarker, ObjTypeMarkerSpline, ObjTypeArmySpline, ObjTypeBuoySpline];
     private TreeNode? _worldRoot;
     private TerrainData? _terrain;
     private readonly List<TreeNode> _missions = [];
@@ -763,11 +767,16 @@ public class WorldDocument
         if (nodes == null) return result;
 
         // objsplines[objtype][aimode][teamid] = obj position
-        var objsplines = new Dictionary<int, Dictionary<int, SortedDictionary<int, Vector3>>>();
+        var objsplines = new Dictionary<int, Dictionary<int, SortedDictionary<int, TreeNode>>>();
+
+        var herdAiModes = new List<int>();
 
         foreach (var obj in nodes)
         {
             if (obj.Name != BinFormatConstants.NodeObject) continue;
+            var herdAiModeNode = obj.FindChildLeaf("MarkerType");
+            if (herdAiModeNode != null)
+                herdAiModes.Add(herdAiModeNode.Int32Value);
 
             int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
             if (!SplineTypes.Contains(typeId)) continue;
@@ -775,25 +784,21 @@ public class WorldDocument
             int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
 
             // skip markers with aimode 1,2,3 because they refer to possible spawn points and they shouldn't have a line connected
-            if (typeId == 679 && aiMode is 1 or 2 or 3) continue;
+            if (typeId == ObjTypeMarker && aiMode is 1 or 2 or 3) continue;
 
             int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
 
-            float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
-            float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
-            float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
-
             if (!objsplines.TryGetValue(typeId, out var aidict))
             {
-                aidict = new Dictionary<int, SortedDictionary<int, Vector3>>();
+                aidict = new Dictionary<int, SortedDictionary<int, TreeNode>>();
                 objsplines[typeId] = aidict;
             }
             if (!aidict.TryGetValue(aiMode, out var teamdict))
             {
-                teamdict = new SortedDictionary<int, Vector3>();
+                teamdict = new SortedDictionary<int, TreeNode>();
                 objsplines[typeId][aiMode] = teamdict;
             }
-            teamdict[teamId] = new Vector3(x, y, z);
+            teamdict[teamId] = obj;
         }
 
         // remove nodes with a single teamid
@@ -817,8 +822,19 @@ public class WorldDocument
                 Vector3? prev = null;
                 Vector3? first = null;
 
-                foreach(var vec in teamiddict.Values)
+                // default marker color
+                var color = new Vector3(1.0f, 1.0f, 1.0f);
+
+                if (herdAiModes.Contains(aimode))
+                    // make herd marker lines green
+                    color = new Vector3(0.5f, 1f, 0.5f);
+
+                foreach(var obj in teamiddict.Values)
                 {
+                    float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
+                    float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
+                    float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+                    Vector3 vec = new Vector3(x, y, z);
                     first ??= vec;
                     if (prev.HasValue)
                     {
@@ -829,17 +845,24 @@ public class WorldDocument
                 }
 
                 // close the loop
-                if (prev.HasValue && first.HasValue)
+                if (objtype != ObjTypeArmySpline && prev.HasValue && first.HasValue)
                 {
                     verts.Add(prev.Value.X); verts.Add(prev.Value.Y); verts.Add(prev.Value.Z);
                     verts.Add(first.Value.X); verts.Add(first.Value.Y); verts.Add(first.Value.Z);
                 }
 
+                // army_spline
+                if (objtype == ObjTypeArmySpline)
+                    color = new Vector3(1f, 0.75f, 0.5f);
+
+                // buoys
+                else if (objtype == ObjTypeBuoySpline)
+                    color = new Vector3(0.5f, 0.75f, 1f);
 
                 result.Add(new SplineLine{
                         Vertices = verts.ToArray(),
                         PointCount = verts.Count / 3,
-                        Color = new Vector3(1.0f, 1.0f, 1.0f)
+                        Color = color
                 });
             }
         }
