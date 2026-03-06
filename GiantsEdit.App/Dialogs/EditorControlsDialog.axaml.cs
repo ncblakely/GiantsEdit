@@ -46,7 +46,7 @@ public partial class EditorControlsDialog : Window
         Left drag            Move selected object on terrain
         Shift + Left drag    Adjust object Z height
         Right click          Object context menu (create/delete)
-        CTRL + c             Copy object
+        CTRL + c             Copy selected object
         CTRL + v             Paste object under cursor
         """;
 
@@ -75,7 +75,7 @@ public partial class EditorControlsDialog : Window
         Left drag            Move selected object on terrain
         Shift + Left drag    Adjust object Z height
         Right click          Object context menu (create/delete)
-        CTRL + c             Copy object
+        CTRL + c             Copy selected object
         CTRL + v             Paste object under cursor
         """;
 }
