@@ -35,75 +35,60 @@ public partial class MainWindow
         }
 
         if (float.TryParse(PropObjX.Text, out float x))
-            obj.FindChildLeaf("X")?.SetSingle(x);
+            obj.SetOrAddSingle("X", x);
         if (float.TryParse(PropObjY.Text, out float y))
-            obj.FindChildLeaf("Y")?.SetSingle(y);
+            obj.SetOrAddSingle("Y", y);
         if (float.TryParse(PropObjZ.Text, out float z))
-            obj.FindChildLeaf("Z")?.SetSingle(z);
+            obj.SetOrAddSingle("Z", z);
         if (float.TryParse(PropObjAngle.Text, out float angle))
-            obj.FindChildLeaf("DirFacing")?.SetSingle(angle);
+            obj.SetOrAddSingle("DirFacing", angle);
         if (ChkObjTilt.IsChecked == true)
         {
             if (float.TryParse(PropObjTiltFwd.Text, out float tf))
-                obj.FindChildLeaf("TiltForward")?.SetSingle(tf);
+                obj.SetOrAddSingle("TiltForward", tf);
             if (float.TryParse(PropObjTiltLeft.Text, out float tl))
-                obj.FindChildLeaf("TiltLeft")?.SetSingle(tl);
+                obj.SetOrAddSingle("TiltLeft", tl);
         }
 
         // Apply optional fields only if their checkbox is checked
         if (ChkObjScale.IsChecked == true && float.TryParse(PropObjScale.Text, out float scale))
-            obj.FindChildLeaf("Scale")?.SetSingle(scale);
+            obj.SetOrAddSingle("Scale", scale);
         if (ChkObjAIMode.IsChecked == true && byte.TryParse(PropObjAIMode.Text, out byte aiMode))
-        {
-            var leaf = obj.FindChildLeaf("AIMode");
-            if (leaf != null) leaf.ByteValue = aiMode;
-        }
+            obj.SetOrAddByte("AIMode", aiMode);
         if (ChkObjTeamID.IsChecked == true && int.TryParse(PropObjTeamID.Text, out int teamId))
-        {
-            var leaf = obj.FindChildLeaf("TeamID");
-            if (leaf != null) leaf.Int32Value = teamId;
-        }
+            obj.SetOrAddInt32("TeamID", teamId);
 
         // Apply Light Color
         if (ChkObjLightColor.IsChecked == true)
         {
             if (float.TryParse(PropLightR.Text, out float lr))
-                obj.FindChildLeaf("LightColorR")?.SetSingle(lr);
+                obj.SetOrAddSingle("LightColorR", lr);
             if (float.TryParse(PropLightG.Text, out float lg))
-                obj.FindChildLeaf("LightColorG")?.SetSingle(lg);
+                obj.SetOrAddSingle("LightColorG", lg);
             if (float.TryParse(PropLightB.Text, out float lb))
-                obj.FindChildLeaf("LightColorB")?.SetSingle(lb);
+                obj.SetOrAddSingle("LightColorB", lb);
         }
 
         // Apply OData
         if (ChkObjOData.IsChecked == true)
         {
             if (float.TryParse(PropOData1.Text, out float o1))
-                obj.FindChildLeaf("OData1")?.SetSingle(o1);
+                obj.SetOrAddSingle("OData1", o1);
             if (float.TryParse(PropOData2.Text, out float o2))
-                obj.FindChildLeaf("OData2")?.SetSingle(o2);
+                obj.SetOrAddSingle("OData2", o2);
             if (float.TryParse(PropOData3.Text, out float o3))
-                obj.FindChildLeaf("OData3")?.SetSingle(o3);
+                obj.SetOrAddSingle("OData3", o3);
         }
 
         // Apply Herd markers
         if (ChkObjHerdMarkers.IsChecked == true)
         {
             if (int.TryParse(PropHerdNum.Text, out int nm))
-            {
-                var leaf = obj.FindChildLeaf("NumMarkers");
-                if (leaf != null) leaf.Int32Value = nm;
-            }
+                obj.SetOrAddInt32("NumMarkers", nm);
             if (int.TryParse(PropHerdMarkerType.Text, out int mt))
-            {
-                var leaf = obj.FindChildLeaf("MarkerType");
-                if (leaf != null) leaf.Int32Value = mt;
-            }
+                obj.SetOrAddInt32("MarkerType", mt);
             if (int.TryParse(PropHerdShowRadius.Text, out int sr))
-            {
-                var leaf = obj.FindChildLeaf("ShowRadius");
-                if (leaf != null) leaf.Int32Value = sr;
-            }
+                obj.SetOrAddInt32("ShowRadius", sr);
         }
 
         // Apply Herd type (object type ID)
@@ -112,8 +97,7 @@ public partial class MainWindow
             var parsedHerd = ObjectNames.ParseInput(PropHerdType.Text ?? "");
             if (parsedHerd.HasValue)
             {
-                var leaf = obj.FindChildLeaf("HerdType");
-                if (leaf != null) leaf.Int32Value = parsedHerd.Value;
+                obj.SetOrAddInt32("HerdType", parsedHerd.Value);
                 PropHerdType.Text = ObjectNames.GetDisplayName(parsedHerd.Value);
             }
         }
@@ -122,61 +106,46 @@ public partial class MainWindow
         if (ChkObjHerdCount.IsChecked == true)
         {
             if (byte.TryParse(PropTeamCount.Text, out byte tc))
-            {
-                var leaf = obj.FindChildLeaf("TeamCount");
-                if (leaf != null) leaf.ByteValue = tc;
-            }
+                obj.SetOrAddByte("TeamCount", tc);
         }
 
         // Apply Spline key time
         if (ChkObjSplineKeyTime.IsChecked == true && int.TryParse(PropSplineKeyTime.Text, out int kt))
-        {
-            var leaf = obj.FindChildLeaf("KeyTime");
-            if (leaf != null) leaf.Int32Value = kt;
-        }
+            obj.SetOrAddInt32("KeyTime", kt);
 
         // Apply Spline scale
         if (ChkObjSplineScale.IsChecked == true)
         {
             if (float.TryParse(PropSplineScaleIn.Text, out float si))
-                obj.FindChildLeaf("InScale")?.SetSingle(si);
+                obj.SetOrAddSingle("InScale", si);
             if (float.TryParse(PropSplineScaleOut.Text, out float so))
-                obj.FindChildLeaf("OutScale")?.SetSingle(so);
+                obj.SetOrAddSingle("OutScale", so);
         }
 
         // Apply Spline start ID
         if (ChkObjSplineStartId.IsChecked == true && byte.TryParse(PropSplineStartId.Text, out byte sid))
-        {
-            var leaf = obj.FindChildLeaf("StartId");
-            if (leaf != null) leaf.ByteValue = sid;
-        }
+            obj.SetOrAddByte("StartId", sid);
 
         // Apply Spline tangents
         if (ChkObjSplineTangents.IsChecked == true)
         {
             if (float.TryParse(PropSplineTanIn.Text, out float ti))
-                obj.FindChildLeaf("InTangent")?.SetSingle(ti);
+                obj.SetOrAddSingle("InTangent", ti);
             if (float.TryParse(PropSplineTanOut.Text, out float to2))
-                obj.FindChildLeaf("OutTangent")?.SetSingle(to2);
+                obj.SetOrAddSingle("OutTangent", to2);
         }
 
         // Apply AnimType
         if (ChkObjAnimType.IsChecked == true && byte.TryParse(PropAnimType.Text, out byte at))
-        {
-            var leaf = obj.FindChildLeaf("AnimType");
-            if (leaf != null) leaf.ByteValue = at;
-        }
+            obj.SetOrAddByte("AnimType", at);
 
         // Apply AnimTime
         if (ChkObjAnimTime.IsChecked == true && float.TryParse(PropAnimTime.Text, out float atm))
-            obj.FindChildLeaf("AnimTime")?.SetSingle(atm);
+            obj.SetOrAddSingle("AnimTime", atm);
 
         // Apply FlickUsed
         if (ChkObjFlickUsed.IsChecked == true)
-        {
-            var leaf = obj.FindChildLeaf("FlickUsed");
-            if (leaf != null) leaf.StringValue = PropFlickUsed.Text ?? "";
-        }
+            obj.SetOrAddString("FlickUsed", PropFlickUsed.Text ?? "");
 
         // Apply Path
         if (ChkObjPath.IsChecked == true)
@@ -194,10 +163,9 @@ public partial class MainWindow
                     pn.AddString("AnimName", PropPathName.Text ?? "");
                     pn.AddSingle("PathSpeed", 0);
                 }
-                var anLeaf = pn.FindChildLeaf("AnimName");
-                if (anLeaf != null) anLeaf.StringValue = PropPathName.Text ?? "";
+                pn.SetOrAddString("AnimName", PropPathName.Text ?? "");
                 if (float.TryParse(PropPathSpeed.Text, out float ps))
-                    pn.FindChildLeaf("PathSpeed")?.SetSingle(ps);
+                    pn.SetOrAddSingle("PathSpeed", ps);
             }
         }
 
@@ -207,14 +175,13 @@ public partial class MainWindow
             var wn = obj.FindChildNode("Wind");
             if (wn != null)
             {
-                var anLeaf = wn.FindChildLeaf("AnimName");
-                if (anLeaf != null) anLeaf.StringValue = PropWindName.Text ?? "";
+                wn.SetOrAddString("AnimName", PropWindName.Text ?? "");
                 if (float.TryParse(PropWindSpeed.Text, out float ws))
-                    wn.FindChildLeaf("PathSpeed")?.SetSingle(ws);
+                    wn.SetOrAddSingle("PathSpeed", ws);
                 if (float.TryParse(PropWindDist.Text, out float wd))
-                    wn.FindChildLeaf("Distance")?.SetSingle(wd);
+                    wn.SetOrAddSingle("Distance", wd);
                 if (float.TryParse(PropWindMag.Text, out float wm))
-                    wn.FindChildLeaf("Magnitude")?.SetSingle(wm);
+                    wn.SetOrAddSingle("Magnitude", wm);
             }
         }
 
@@ -241,15 +208,9 @@ public partial class MainWindow
             if (lockNode != null)
             {
                 if (byte.TryParse(PropLockRefSrc.Text, out byte lrs))
-                {
-                    var leaf = lockNode.FindChildLeaf("LockRefSrc");
-                    if (leaf != null) leaf.ByteValue = lrs;
-                }
+                    lockNode.SetOrAddByte("LockRefSrc", lrs);
                 if (byte.TryParse(PropLockRefDst.Text, out byte lrd))
-                {
-                    var leaf = lockNode.FindChildLeaf("LockRefDst");
-                    if (leaf != null) leaf.ByteValue = lrd;
-                }
+                    lockNode.SetOrAddByte("LockRefDst", lrd);
             }
         }
 
@@ -272,7 +233,7 @@ public partial class MainWindow
         }
 
         // Light objects affect terrain shading — rebuild render data
-        int currentType = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+        int currentType = obj.GetInt32("Type");
         if (currentType == ObjectTypeLightDirectional)
             UploadTerrainToGpu();
 
@@ -846,32 +807,20 @@ public partial class MainWindow
     private void ApplyAreaAlienFields(TreeNode obj)
     {
         if (byte.TryParse(PropAreaCount.Text, out byte cnt))
-        {
-            var leaf = obj.FindChildLeaf("Count");
-            if (leaf != null) leaf.ByteValue = cnt;
-        }
+            obj.SetOrAddByte("Count", cnt);
         ApplyFloat(obj, "MinRadius", PropAreaMinRadius.Text);
         ApplyFloat(obj, "MaxRadius", PropAreaMaxRadius.Text);
 
-        // MinScale/MaxScale — add if not present
         if (float.TryParse(PropAreaMinScale.Text, out float mins))
-        {
-            var leaf = obj.FindChildLeaf("MinScale");
-            if (leaf != null) leaf.SetSingle(mins);
-            else obj.AddSingle("MinScale", mins);
-        }
+            obj.SetOrAddSingle("MinScale", mins);
         if (float.TryParse(PropAreaMaxScale.Text, out float maxs))
-        {
-            var leaf = obj.FindChildLeaf("MaxScale");
-            if (leaf != null) leaf.SetSingle(maxs);
-            else obj.AddSingle("MaxScale", maxs);
-        }
+            obj.SetOrAddSingle("MaxScale", maxs);
     }
 
     private static void ApplyFloat(TreeNode obj, string name, string? text)
     {
         if (float.TryParse(text, out float v))
-            obj.FindChildLeaf(name)?.SetSingle(v);
+            obj.SetOrAddSingle(name, v);
     }
 
     #endregion

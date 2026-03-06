@@ -127,12 +127,12 @@ public partial class MainViewModel : ObservableObject
 
         if (obj != null)
         {
-            ObjX = obj.FindChildLeaf("X")?.SingleValue ?? 0;
-            ObjY = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
-            ObjZ = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
-            ObjAngle = obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
-            ObjScale = obj.FindChildLeaf("Scale")?.SingleValue ?? 1f;
-            ObjType = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+            ObjX = obj.GetSingle("X");
+            ObjY = obj.GetSingle("Y");
+            ObjZ = obj.GetSingle("Z");
+            ObjAngle = obj.GetSingle("DirFacing");
+            ObjScale = obj.GetSingle("Scale", 1f);
+            ObjType = obj.GetInt32("Type");
         }
     }
 
@@ -175,11 +175,9 @@ public partial class MainViewModel : ObservableObject
         var obj = _doc.SelectedObject;
         if (obj == null) return;
 
-        obj.FindChildLeaf("X")?.SetSingle(ObjX);
-        obj.FindChildLeaf("Y")?.SetSingle(ObjY);
-        obj.FindChildLeaf("Z")?.SetSingle(ObjZ);
-
-        var angleLeaf = obj.FindChildLeaf("DirFacing");
-        angleLeaf?.SetSingle(ObjAngle);
+        obj.SetOrAddSingle("X", ObjX);
+        obj.SetOrAddSingle("Y", ObjY);
+        obj.SetOrAddSingle("Z", ObjZ);
+        obj.SetOrAddSingle("DirFacing", ObjAngle);
     }
 }

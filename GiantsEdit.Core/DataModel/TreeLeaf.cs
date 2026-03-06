@@ -26,21 +26,8 @@ public class TreeLeaf
         this.PropertyType = src.PropertyType;
         this.Parent = null;
         this.MaxLength = src.MaxLength;
-        switch(src.PropertyType)
-        {
-            case PropertyType.Byte:
-                this.ByteValue = src.ByteValue;
-                break;
-            case PropertyType.Int32:
-                this.Int32Value = src.Int32Value;
-                break;
-            case PropertyType.String:
-                this.StringValue = src.StringValue;
-                break;
-            case PropertyType.Single:
-                this.SingleValue = src.SingleValue;
-                break;
-        }
+        this._intValue = src._intValue;
+        this._strValue = src._strValue;
     }
 
     public byte ByteValue
@@ -122,13 +109,14 @@ public class TreeLeaf
         set => _intValue = value;
     }
 
-    /// <summary>
-    /// Sets the value regardless of type, for convenience.
-    /// </summary>
-    public void SetSingle(float value)
-    {
-        SingleValue = value;
-    }
+    /// <summary>Sets the Single value. Equivalent to <c>SingleValue = value</c>.</summary>
+    public void SetSingle(float value) => SingleValue = value;
+    /// <summary>Sets the Int32 value. Equivalent to <c>Int32Value = value</c>.</summary>
+    public void SetInt32(int value) => Int32Value = value;
+    /// <summary>Sets the Byte value. Equivalent to <c>ByteValue = value</c>.</summary>
+    public void SetByte(byte value) => ByteValue = value;
+    /// <summary>Sets the String value. Equivalent to <c>StringValue = value</c>.</summary>
+    public void SetString(string value) => StringValue = value;
 
     private void AssertType(PropertyType expected)
     {

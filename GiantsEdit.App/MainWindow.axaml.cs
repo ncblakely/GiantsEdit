@@ -386,13 +386,13 @@ public partial class MainWindow : Window
             ObjPropsPanel.IsVisible = obj != null;
             if (obj != null)
             {
-                PropHeader.Text = $"Object: {ObjectNames.GetDisplayName(obj.FindChildLeaf("Type")?.Int32Value ?? 0)}";
-                PropObjType.Text = ObjectNames.GetDisplayName(obj.FindChildLeaf("Type")?.Int32Value ?? 0);
-                PropObjX.Text = (obj.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-                PropObjY.Text = (obj.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-                PropObjZ.Text = (obj.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-                PropObjAngle.Text = (obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-                PropObjScale.Text = (obj.FindChildLeaf("Scale")?.SingleValue ?? 1f).ToString("F4", CultureInfo.InvariantCulture);
+                PropHeader.Text = $"Object: {ObjectNames.GetDisplayName(obj.GetInt32("Type"))}";
+                PropObjType.Text = ObjectNames.GetDisplayName(obj.GetInt32("Type"));
+                PropObjX.Text = obj.GetSingle("X").ToString("F2", CultureInfo.InvariantCulture);
+                PropObjY.Text = obj.GetSingle("Y").ToString("F2", CultureInfo.InvariantCulture);
+                PropObjZ.Text = obj.GetSingle("Z").ToString("F2", CultureInfo.InvariantCulture);
+                PropObjAngle.Text = obj.GetSingle("DirFacing").ToString("F4", CultureInfo.InvariantCulture);
+                PropObjScale.Text = obj.GetSingle("Scale", 1f).ToString("F4", CultureInfo.InvariantCulture);
             }
             else
             {

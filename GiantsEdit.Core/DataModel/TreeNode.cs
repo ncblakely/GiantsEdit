@@ -97,6 +97,110 @@ public class TreeNode
         return AddLeaf(name, PropertyType.Void);
     }
 
+    #region SetOrAdd helpers
+
+    /// <summary>
+    /// Finds an existing leaf by name and sets its value,
+    /// or adds a new one if not found. Returns the leaf.
+    /// </summary>
+    public TreeLeaf SetOrAddSingle(string name, float value)
+    {
+        var leaf = FindChildLeaf(name);
+        if (leaf != null)
+        {
+            leaf.SingleValue = value;
+            return leaf;
+        }
+        return AddSingle(name, value);
+    }
+
+    /// <inheritdoc cref="SetOrAddSingle"/>
+    public TreeLeaf SetOrAddInt32(string name, int value)
+    {
+        var leaf = FindChildLeaf(name);
+        if (leaf != null)
+        {
+            leaf.Int32Value = value;
+            return leaf;
+        }
+        return AddInt32(name, value);
+    }
+
+    /// <inheritdoc cref="SetOrAddSingle"/>
+    public TreeLeaf SetOrAddByte(string name, byte value)
+    {
+        var leaf = FindChildLeaf(name);
+        if (leaf != null)
+        {
+            leaf.ByteValue = value;
+            return leaf;
+        }
+        return AddByte(name, value);
+    }
+
+    /// <inheritdoc cref="SetOrAddSingle"/>
+    public TreeLeaf SetOrAddString(string name, string value)
+    {
+        var leaf = FindChildLeaf(name);
+        if (leaf != null)
+        {
+            leaf.StringValue = value;
+            return leaf;
+        }
+        return AddString(name, value);
+    }
+
+    /// <summary>
+    /// Finds an existing String leaf by name and sets its value (with max length),
+    /// or adds a new one if not found. Returns the leaf.
+    /// </summary>
+    public TreeLeaf SetOrAddStringL(string name, string value, int maxLength)
+    {
+        var leaf = FindChildLeaf(name);
+        if (leaf != null)
+        {
+            leaf.StringValue = value;
+            return leaf;
+        }
+        return AddStringL(name, value, maxLength);
+    }
+
+    #endregion
+
+    #region Typed getters with defaults
+
+    /// <summary>
+    /// Gets the Single value of a child leaf, or <paramref name="defaultValue"/> if not found.
+    /// </summary>
+    public float GetSingle(string name, float defaultValue = 0f)
+    {
+        var leaf = FindChildLeaf(name);
+        return leaf != null ? leaf.SingleValue : defaultValue;
+    }
+
+    /// <inheritdoc cref="GetSingle"/>
+    public int GetInt32(string name, int defaultValue = 0)
+    {
+        var leaf = FindChildLeaf(name);
+        return leaf != null ? leaf.Int32Value : defaultValue;
+    }
+
+    /// <inheritdoc cref="GetSingle"/>
+    public byte GetByte(string name, byte defaultValue = 0)
+    {
+        var leaf = FindChildLeaf(name);
+        return leaf != null ? leaf.ByteValue : defaultValue;
+    }
+
+    /// <inheritdoc cref="GetSingle"/>
+    public string GetString(string name, string defaultValue = "")
+    {
+        var leaf = FindChildLeaf(name);
+        return leaf != null ? leaf.StringValue : defaultValue;
+    }
+
+    #endregion
+
     /// <summary>
     /// Enumerates all child nodes.
     /// </summary>
