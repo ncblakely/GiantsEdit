@@ -628,21 +628,21 @@ public class WorldDocument
             var typeLeaf = obj.FindChildLeaf("Type");
             if (typeLeaf == null) continue;
 
-            float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
-            float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
-            float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
-            float scale = obj.FindChildLeaf("Scale")?.SingleValue ?? 1f;
+            float x = obj.GetSingle("X");
+            float y = obj.GetSingle("Y");
+            float z = obj.GetSingle("Z");
+            float scale = obj.GetSingle("Scale", 1f);
 
-            float dirFacing = obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
-            float tiltFwd = obj.FindChildLeaf("TiltForward")?.SingleValue ?? 0;
-            float tiltLeft = obj.FindChildLeaf("TiltLeft")?.SingleValue ?? 0;
+            float dirFacing = obj.GetSingle("DirFacing");
+            float tiltFwd = obj.GetSingle("TiltForward");
+            float tiltLeft = obj.GetSingle("TiltLeft");
 
             int modelId = typeLeaf.Int32Value;
 
             // Remap type 679 markers by AIMode to special shapes (matches Delphi Draww)
             if (modelId == MarkerTypeId)
             {
-                int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+                int aiMode = obj.GetByte("AIMode");
                 modelId = aiMode switch
                 {
                     1 => -1,
@@ -684,14 +684,14 @@ public class WorldDocument
         {
             if (obj.Name != BinFormatConstants.NodeObject) continue;
 
-            int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+            int typeId = obj.GetInt32("Type");
             if (typeId != LightTypeId) continue;
 
-            int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+            int aiMode = obj.GetByte("AIMode");
 
-            float dirFacing = obj.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
-            float tiltFwd = obj.FindChildLeaf("TiltForward")?.SingleValue ?? 0;
-            float tiltLeft = obj.FindChildLeaf("TiltLeft")?.SingleValue ?? 0;
+            float dirFacing = obj.GetSingle("DirFacing");
+            float tiltFwd = obj.GetSingle("TiltForward");
+            float tiltLeft = obj.GetSingle("TiltLeft");
 
             // Build rotation matrix same as BuildObjectMatrix to extract Y-axis
             // Angles are in degrees, convert to radians; negate TiltForward to match game convention
@@ -711,9 +711,9 @@ public class WorldDocument
             if (float.IsNaN(dir.X)) dir = new Vector3(0, 0, -1);
 
             // Light color from LightColor RGB properties
-            float r = obj.FindChildLeaf("LightColorR")?.SingleValue ?? 1f;
-            float g = obj.FindChildLeaf("LightColorG")?.SingleValue ?? 1f;
-            float b = obj.FindChildLeaf("LightColorB")?.SingleValue ?? 1f;
+            float r = obj.GetSingle("LightColorR", 1f);
+            float g = obj.GetSingle("LightColorG", 1f);
+            float b = obj.GetSingle("LightColorB", 1f);
 
             result.Add(new DirectionalLight
             {
@@ -738,9 +738,9 @@ public class WorldDocument
         var node = _worldRoot?.FindChildNode(BinFormatConstants.NodeAmbientColor);
         if (node == null) return Vector3.Zero;
 
-        float r = node.FindChildLeaf("R")?.SingleValue ?? 0f;
-        float g = node.FindChildLeaf("G")?.SingleValue ?? 0f;
-        float b = node.FindChildLeaf("B")?.SingleValue ?? 0f;
+        float r = node.GetSingle("R");
+        float g = node.GetSingle("G");
+        float b = node.GetSingle("B");
         return new Vector3(
             MathF.Min(r, 1f),
             MathF.Min(g, 1f),
@@ -778,15 +778,15 @@ public class WorldDocument
             if (herdAiModeNode != null)
                 herdAiModes.Add(herdAiModeNode.Int32Value);
 
-            int typeId = obj.FindChildLeaf("Type")?.Int32Value ?? 0;
+            int typeId = obj.GetInt32("Type");
             if (!SplineTypes.Contains(typeId)) continue;
 
-            int aiMode = obj.FindChildLeaf("AIMode")?.ByteValue ?? 0;
+            int aiMode = obj.GetByte("AIMode");
 
             // skip markers with aimode 1,2,3 because they refer to possible spawn points and they shouldn't have a line connected
             if (typeId == ObjTypeMarker && aiMode is 1 or 2 or 3) continue;
 
-            int teamId = obj.FindChildLeaf("TeamID")?.Int32Value ?? 0;
+            int teamId = obj.GetInt32("TeamID");
 
             if (!objsplines.TryGetValue(typeId, out var aidict))
             {
@@ -831,9 +831,9 @@ public class WorldDocument
 
                 foreach(var obj in teamiddict.Values)
                 {
-                    float x = obj.FindChildLeaf("X")?.SingleValue ?? 0;
-                    float y = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
-                    float z = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+                    float x = obj.GetSingle("X");
+                    float y = obj.GetSingle("Y");
+                    float z = obj.GetSingle("Z");
                     Vector3 vec = new Vector3(x, y, z);
                     first ??= vec;
                     if (prev.HasValue)
@@ -892,7 +892,7 @@ public class WorldDocument
 
         // Read bump clamp value — ensures bump detail is visible even on shaded surfaces
         float bumpClampValue = _worldRoot?.FindChildNode(BinFormatConstants.NodeBumpClampValue)
-            ?.FindChildLeaf("Value")?.SingleValue ?? 0f;
+            ?.GetSingle("Value") ?? 0f;
 
         var data = TerrainMeshBuilder.Build(_terrain, toLight, bumpClampValue);
         return data;
@@ -909,7 +909,7 @@ public class WorldDocument
         if (texNode == null) return (null, 100f);
 
         string? name = texNode.FindChildLeaf("Name")?.StringValue;
-        float wrap = texNode.FindChildLeaf("Wrap")?.SingleValue ?? 100f;
+        float wrap = texNode.GetSingle("Wrap", 100f);
         return (name, wrap);
     }
 
@@ -930,9 +930,9 @@ public class WorldDocument
         var node = _worldRoot?.FindChildNode(BinFormatConstants.NodeLandTexFade);
         if (node == null) return (1.0f, -0.1f, -0.05f);
 
-        float c0 = node.FindChildLeaf("Falloff0")?.SingleValue ?? 1.0f;
-        float c1 = node.FindChildLeaf("Falloff1")?.SingleValue ?? -0.1f;
-        float c2 = node.FindChildLeaf("Falloff2")?.SingleValue ?? -0.05f;
+        float c0 = node.GetSingle("Falloff0", 1.0f);
+        float c1 = node.GetSingle("Falloff1", -0.1f);
+        float c2 = node.GetSingle("Falloff2", -0.05f);
         return (c0, c1, c2);
     }
 
@@ -942,8 +942,8 @@ public class WorldDocument
     public (float SlopeAngle, float WallAngle) GetLandAngles()
     {
         var node = _worldRoot?.FindChildNode(BinFormatConstants.NodeLandAngles);
-        float slope = node?.FindChildLeaf("SlopeAngle")?.SingleValue ?? 45f;
-        float wall = node?.FindChildLeaf("WallAngle")?.SingleValue ?? 70f;
+        float slope = node?.GetSingle("SlopeAngle", 45f) ?? 45f;
+        float wall = node?.GetSingle("WallAngle", 70f) ?? 70f;
         return (slope, wall);
     }
 
@@ -1178,11 +1178,11 @@ public class WorldDocument
         foreach (var node in _worldRoot.EnumerateNodes())
         {
             if (node.Name != BinFormatConstants.NodeObject) continue;
-            int type = node.FindChildLeaf("Type")?.Int32Value ?? 0;
+            int type = node.GetInt32("Type");
             if (type != MarkerTypeId) continue;
 
-            int aiMode = node.FindChildLeaf("AIMode")?.ByteValue ?? -1;
-            int teamId = node.FindChildLeaf("TeamID")?.Int32Value ?? -1;
+            int aiMode = node.GetByte("AIMode");
+            int teamId = node.GetInt32("TeamID");
             markers.Add((aiMode, teamId));
         }
 

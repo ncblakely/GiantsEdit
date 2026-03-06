@@ -376,12 +376,12 @@ public partial class MainWindow
         bool isSmokeGen = objNode.Name == "SmokeGen";
         bool isAreaAlien = objNode.Name == "AreaAlien";
 
-        int typeId = objNode.FindChildLeaf("Type")?.Int32Value ?? 0;
+        int typeId = objNode.GetInt32("Type");
         PropObjType.Text = ObjectNames.GetDisplayName(typeId);
-        PropObjX.Text = (objNode.FindChildLeaf("X")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-        PropObjY.Text = (objNode.FindChildLeaf("Y")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-        PropObjZ.Text = (objNode.FindChildLeaf("Z")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-        PropObjAngle.Text = (objNode.FindChildLeaf("DirFacing")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
+        PropObjX.Text = objNode.GetSingle("X").ToString("F2", CultureInfo.InvariantCulture);
+        PropObjY.Text = objNode.GetSingle("Y").ToString("F2", CultureInfo.InvariantCulture);
+        PropObjZ.Text = objNode.GetSingle("Z").ToString("F2", CultureInfo.InvariantCulture);
+        PropObjAngle.Text = objNode.GetSingle("DirFacing").ToString("F2", CultureInfo.InvariantCulture);
 
         // Tilt (optional: TiltForward / TiltLeft from ObjectRef6)
         var tiltFwdLeaf = objNode.FindChildLeaf("TiltForward");
@@ -392,27 +392,27 @@ public partial class MainWindow
         PropObjTiltLeft.IsEnabled = hasTilt;
         if (hasTilt)
         {
-            PropObjTiltFwd.Text = (tiltFwdLeaf?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-            PropObjTiltLeft.Text = (objNode.FindChildLeaf("TiltLeft")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
+            PropObjTiltFwd.Text = objNode.GetSingle("TiltForward").ToString("F2", CultureInfo.InvariantCulture);
+            PropObjTiltLeft.Text = objNode.GetSingle("TiltLeft").ToString("F2", CultureInfo.InvariantCulture);
         }
 
         // Scale (optional)
         var scaleLeaf = objNode.FindChildLeaf("Scale");
         ChkObjScale.IsChecked = scaleLeaf != null;
         PropObjScale.IsEnabled = scaleLeaf != null;
-        PropObjScale.Text = (scaleLeaf?.SingleValue ?? 1f).ToString("F2", CultureInfo.InvariantCulture);
+        PropObjScale.Text = objNode.GetSingle("Scale", 1f).ToString("F2", CultureInfo.InvariantCulture);
 
         // AIMode (optional)
         var aiLeaf = objNode.FindChildLeaf("AIMode");
         ChkObjAIMode.IsChecked = aiLeaf != null;
         PropObjAIMode.IsEnabled = aiLeaf != null;
-        PropObjAIMode.Text = (aiLeaf?.ByteValue ?? 0).ToString(CultureInfo.InvariantCulture);
+        PropObjAIMode.Text = objNode.GetByte("AIMode").ToString(CultureInfo.InvariantCulture);
 
         // TeamID (optional)
         var teamLeaf = objNode.FindChildLeaf("TeamID");
         ChkObjTeamID.IsChecked = teamLeaf != null;
         PropObjTeamID.IsEnabled = teamLeaf != null;
-        PropObjTeamID.Text = (teamLeaf?.Int32Value ?? 0).ToString(CultureInfo.InvariantCulture);
+        PropObjTeamID.Text = objNode.GetInt32("TeamID").ToString(CultureInfo.InvariantCulture);
 
         // Light Color (optional)
         var lightR = objNode.FindChildLeaf("LightColorR");
@@ -420,9 +420,9 @@ public partial class MainWindow
         PanelLightColor.IsVisible = lightR != null;
         if (lightR != null)
         {
-            PropLightR.Text = (lightR.SingleValue).ToString("F4", CultureInfo.InvariantCulture);
-            PropLightG.Text = (objNode.FindChildLeaf("LightColorG")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropLightB.Text = (objNode.FindChildLeaf("LightColorB")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropLightR.Text = objNode.GetSingle("LightColorR").ToString("F4", CultureInfo.InvariantCulture);
+            PropLightG.Text = objNode.GetSingle("LightColorG").ToString("F4", CultureInfo.InvariantCulture);
+            PropLightB.Text = objNode.GetSingle("LightColorB").ToString("F4", CultureInfo.InvariantCulture);
         }
 
         // OData (optional)
@@ -431,9 +431,9 @@ public partial class MainWindow
         PanelOData.IsVisible = odata1 != null;
         if (odata1 != null)
         {
-            PropOData1.Text = (odata1.SingleValue).ToString("F4", CultureInfo.InvariantCulture);
-            PropOData2.Text = (objNode.FindChildLeaf("OData2")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropOData3.Text = (objNode.FindChildLeaf("OData3")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropOData1.Text = objNode.GetSingle("OData1").ToString("F4", CultureInfo.InvariantCulture);
+            PropOData2.Text = objNode.GetSingle("OData2").ToString("F4", CultureInfo.InvariantCulture);
+            PropOData3.Text = objNode.GetSingle("OData3").ToString("F4", CultureInfo.InvariantCulture);
         }
 
         // Herd markers (optional)
@@ -442,9 +442,9 @@ public partial class MainWindow
         PanelHerdMarkers.IsVisible = numMarkers != null;
         if (numMarkers != null)
         {
-            PropHerdNum.Text = numMarkers.Int32Value.ToString(CultureInfo.InvariantCulture);
-            PropHerdMarkerType.Text = (objNode.FindChildLeaf("MarkerType")?.Int32Value ?? 0).ToString(CultureInfo.InvariantCulture);
-            PropHerdShowRadius.Text = (objNode.FindChildLeaf("ShowRadius")?.Int32Value ?? 0).ToString(CultureInfo.InvariantCulture);
+            PropHerdNum.Text = objNode.GetInt32("NumMarkers").ToString(CultureInfo.InvariantCulture);
+            PropHerdMarkerType.Text = objNode.GetInt32("MarkerType").ToString(CultureInfo.InvariantCulture);
+            PropHerdShowRadius.Text = objNode.GetInt32("ShowRadius").ToString(CultureInfo.InvariantCulture);
         }
 
         // Herd type (optional — object type ID)
@@ -459,14 +459,14 @@ public partial class MainWindow
         PanelHerdCount.IsVisible = teamCount != null;
         if (teamCount != null)
         {
-            PropTeamCount.Text = teamCount.ByteValue.ToString(CultureInfo.InvariantCulture);
+            PropTeamCount.Text = objNode.GetByte("TeamCount").ToString(CultureInfo.InvariantCulture);
         }
 
         // Spline key time (optional)
         var keyTime = objNode.FindChildLeaf("KeyTime");
         ChkObjSplineKeyTime.IsChecked = keyTime != null;
         PropSplineKeyTime.IsEnabled = keyTime != null;
-        PropSplineKeyTime.Text = (keyTime?.Int32Value ?? 0).ToString(CultureInfo.InvariantCulture);
+        PropSplineKeyTime.Text = objNode.GetInt32("KeyTime").ToString(CultureInfo.InvariantCulture);
 
         // Spline path 3D (optional, marker node)
         var path3D = objNode.FindChildNode("SplinePath3D");
@@ -478,15 +478,15 @@ public partial class MainWindow
         PanelSplineScale.IsVisible = inScale != null;
         if (inScale != null)
         {
-            PropSplineScaleIn.Text = inScale.SingleValue.ToString("F4", CultureInfo.InvariantCulture);
-            PropSplineScaleOut.Text = (objNode.FindChildLeaf("OutScale")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropSplineScaleIn.Text = objNode.GetSingle("InScale").ToString("F4", CultureInfo.InvariantCulture);
+            PropSplineScaleOut.Text = objNode.GetSingle("OutScale").ToString("F4", CultureInfo.InvariantCulture);
         }
 
         // Spline start ID (optional)
         var startId = objNode.FindChildLeaf("StartId");
         ChkObjSplineStartId.IsChecked = startId != null;
         PropSplineStartId.IsEnabled = startId != null;
-        PropSplineStartId.Text = (startId?.ByteValue ?? 0).ToString(CultureInfo.InvariantCulture);
+        PropSplineStartId.Text = objNode.GetByte("StartId").ToString(CultureInfo.InvariantCulture);
 
         // Spline tangents (optional)
         var inTan = objNode.FindChildLeaf("InTangent");
@@ -494,8 +494,8 @@ public partial class MainWindow
         PanelSplineTangents.IsVisible = inTan != null;
         if (inTan != null)
         {
-            PropSplineTanIn.Text = inTan.SingleValue.ToString("F4", CultureInfo.InvariantCulture);
-            PropSplineTanOut.Text = (objNode.FindChildLeaf("OutTangent")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropSplineTanIn.Text = objNode.GetSingle("InTangent").ToString("F4", CultureInfo.InvariantCulture);
+            PropSplineTanOut.Text = objNode.GetSingle("OutTangent").ToString("F4", CultureInfo.InvariantCulture);
         }
 
         // Spline jet (optional, marker node)
@@ -506,13 +506,13 @@ public partial class MainWindow
         var animType = objNode.FindChildLeaf("AnimType");
         ChkObjAnimType.IsChecked = animType != null;
         PropAnimType.IsEnabled = animType != null;
-        PropAnimType.Text = (animType?.ByteValue ?? 0).ToString(CultureInfo.InvariantCulture);
+        PropAnimType.Text = objNode.GetByte("AnimType").ToString(CultureInfo.InvariantCulture);
 
         // AnimTime (optional)
         var animTime = objNode.FindChildLeaf("AnimTime");
         ChkObjAnimTime.IsChecked = animTime != null;
         PropAnimTime.IsEnabled = animTime != null;
-        PropAnimTime.Text = (animTime?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+        PropAnimTime.Text = objNode.GetSingle("AnimTime").ToString("F4", CultureInfo.InvariantCulture);
 
         // Path (optional child node)
         var pathNode = objNode.FindChildNode("Path") ?? objNode.FindChildNode("GroundPath");
@@ -520,8 +520,8 @@ public partial class MainWindow
         PanelPath.IsVisible = pathNode != null;
         if (pathNode != null)
         {
-            PropPathName.Text = pathNode.FindChildLeaf("AnimName")?.StringValue ?? "";
-            PropPathSpeed.Text = (pathNode.FindChildLeaf("PathSpeed")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropPathName.Text = pathNode.GetString("AnimName");
+            PropPathSpeed.Text = pathNode.GetSingle("PathSpeed").ToString("F4", CultureInfo.InvariantCulture);
             ChkPathGround.IsChecked = pathNode.Name == "GroundPath";
         }
         else
@@ -535,17 +535,17 @@ public partial class MainWindow
         PanelWind.IsVisible = windNode != null;
         if (windNode != null)
         {
-            PropWindName.Text = windNode.FindChildLeaf("AnimName")?.StringValue ?? "";
-            PropWindSpeed.Text = (windNode.FindChildLeaf("PathSpeed")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropWindDist.Text = (windNode.FindChildLeaf("Distance")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropWindMag.Text = (windNode.FindChildLeaf("Magnitude")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropWindName.Text = windNode.GetString("AnimName");
+            PropWindSpeed.Text = windNode.GetSingle("PathSpeed").ToString("F4", CultureInfo.InvariantCulture);
+            PropWindDist.Text = windNode.GetSingle("Distance").ToString("F4", CultureInfo.InvariantCulture);
+            PropWindMag.Text = windNode.GetSingle("Magnitude").ToString("F4", CultureInfo.InvariantCulture);
         }
 
         // FlickUsed (optional)
         var flickUsed = objNode.FindChildLeaf("FlickUsed");
         ChkObjFlickUsed.IsChecked = flickUsed != null;
         PropFlickUsed.IsEnabled = flickUsed != null;
-        PropFlickUsed.Text = flickUsed?.StringValue ?? "";
+        PropFlickUsed.Text = objNode.GetString("FlickUsed");
 
         // AIData (optional, indexed leaves)
         var aiData0 = objNode.FindChildLeaf("AIData0");
@@ -604,9 +604,9 @@ public partial class MainWindow
         {
             var lines = herdPoints.Select(hp =>
             {
-                float hx = hp.FindChildLeaf("X")?.SingleValue ?? 0;
-                float hy = hp.FindChildLeaf("Y")?.SingleValue ?? 0;
-                float hz = hp.FindChildLeaf("Z")?.SingleValue ?? 0;
+                float hx = hp.GetSingle("X");
+                float hy = hp.GetSingle("Y");
+                float hz = hp.GetSingle("Z");
                 return $"{hx:F2}, {hy:F2}, {hz:F2}";
             });
             PropHerdPoints.Text = string.Join("\n", lines);
@@ -617,44 +617,44 @@ public partial class MainWindow
         PanelLock.IsVisible = lockNode != null;
         if (lockNode != null)
         {
-            PropLockRefSrc.Text = (lockNode.FindChildLeaf("LockRefSrc")?.ByteValue ?? 0).ToString(CultureInfo.InvariantCulture);
-            PropLockRefDst.Text = (lockNode.FindChildLeaf("LockRefDst")?.ByteValue ?? 0).ToString(CultureInfo.InvariantCulture);
+            PropLockRefSrc.Text = lockNode.GetByte("LockRefSrc").ToString(CultureInfo.InvariantCulture);
+            PropLockRefDst.Text = lockNode.GetByte("LockRefDst").ToString(CultureInfo.InvariantCulture);
         }
 
         // SmokeGen-specific fields
         PanelSmokeGen.IsVisible = isSmokeGen;
         if (isSmokeGen)
         {
-            PropSmkStopMin.Text = (objNode.FindChildLeaf("StopTimeMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkStopMax.Text = (objNode.FindChildLeaf("StopTimeMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkGoMin.Text = (objNode.FindChildLeaf("GoTimeMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkGoMax.Text = (objNode.FindChildLeaf("GoTimeMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkRateMin.Text = (objNode.FindChildLeaf("GenRateMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkRateMax.Text = (objNode.FindChildLeaf("GenRateMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkScaleStart.Text = (objNode.FindChildLeaf("ScaleStart")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkScaleEnd.Text = (objNode.FindChildLeaf("ScaleEnd")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkSpeedMin.Text = (objNode.FindChildLeaf("SpeedMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkSpeedMax.Text = (objNode.FindChildLeaf("SpeedMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkFadeMin.Text = (objNode.FindChildLeaf("FadeTimeMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkFadeMax.Text = (objNode.FindChildLeaf("FadeTimeMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWAngMin.Text = (objNode.FindChildLeaf("WindAngMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWAngMax.Text = (objNode.FindChildLeaf("WindAngMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWAngRate.Text = (objNode.FindChildLeaf("WindAngRate")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWSpdMin.Text = (objNode.FindChildLeaf("WindSpeedMin")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWSpdMax.Text = (objNode.FindChildLeaf("WindSpeedMax")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWSpdRate.Text = (objNode.FindChildLeaf("WindSpeedRate")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
-            PropSmkWhite.Text = (objNode.FindChildLeaf("White")?.SingleValue ?? 0).ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkStopMin.Text = objNode.GetSingle("StopTimeMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkStopMax.Text = objNode.GetSingle("StopTimeMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkGoMin.Text = objNode.GetSingle("GoTimeMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkGoMax.Text = objNode.GetSingle("GoTimeMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkRateMin.Text = objNode.GetSingle("GenRateMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkRateMax.Text = objNode.GetSingle("GenRateMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkScaleStart.Text = objNode.GetSingle("ScaleStart").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkScaleEnd.Text = objNode.GetSingle("ScaleEnd").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkSpeedMin.Text = objNode.GetSingle("SpeedMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkSpeedMax.Text = objNode.GetSingle("SpeedMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkFadeMin.Text = objNode.GetSingle("FadeTimeMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkFadeMax.Text = objNode.GetSingle("FadeTimeMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWAngMin.Text = objNode.GetSingle("WindAngMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWAngMax.Text = objNode.GetSingle("WindAngMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWAngRate.Text = objNode.GetSingle("WindAngRate").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWSpdMin.Text = objNode.GetSingle("WindSpeedMin").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWSpdMax.Text = objNode.GetSingle("WindSpeedMax").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWSpdRate.Text = objNode.GetSingle("WindSpeedRate").ToString("F4", CultureInfo.InvariantCulture);
+            PropSmkWhite.Text = objNode.GetSingle("White").ToString("F4", CultureInfo.InvariantCulture);
         }
 
         // AreaAlien-specific fields
         PanelAreaAlien.IsVisible = isAreaAlien;
         if (isAreaAlien)
         {
-            PropAreaCount.Text = (objNode.FindChildLeaf("Count")?.ByteValue ?? 0).ToString(CultureInfo.InvariantCulture);
-            PropAreaMinRadius.Text = (objNode.FindChildLeaf("MinRadius")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-            PropAreaMaxRadius.Text = (objNode.FindChildLeaf("MaxRadius")?.SingleValue ?? 0).ToString("F2", CultureInfo.InvariantCulture);
-            PropAreaMinScale.Text = (objNode.FindChildLeaf("MinScale")?.SingleValue ?? 0.75f).ToString("F4", CultureInfo.InvariantCulture);
-            PropAreaMaxScale.Text = (objNode.FindChildLeaf("MaxScale")?.SingleValue ?? 1f).ToString("F4", CultureInfo.InvariantCulture);
+            PropAreaCount.Text = objNode.GetByte("Count").ToString(CultureInfo.InvariantCulture);
+            PropAreaMinRadius.Text = objNode.GetSingle("MinRadius").ToString("F2", CultureInfo.InvariantCulture);
+            PropAreaMaxRadius.Text = objNode.GetSingle("MaxRadius").ToString("F2", CultureInfo.InvariantCulture);
+            PropAreaMinScale.Text = objNode.GetSingle("MinScale", 0.75f).ToString("F4", CultureInfo.InvariantCulture);
+            PropAreaMaxScale.Text = objNode.GetSingle("MaxScale", 1f).ToString("F4", CultureInfo.InvariantCulture);
         }
 
         string label = isSmokeGen ? "SmokeGen" : isAreaAlien ? "AreaAlien" : PropObjType.Text;
@@ -674,9 +674,9 @@ public partial class MainWindow
         var obj = _vm.Document.SelectedObject;
         if (obj == null) return;
 
-        obj.FindChildLeaf("X")?.SetSingle(x);
-        obj.FindChildLeaf("Y")?.SetSingle(y);
-        obj.FindChildLeaf("Z")?.SetSingle(z);
+        obj.SetOrAddSingle("X", x);
+        obj.SetOrAddSingle("Y", y);
+        obj.SetOrAddSingle("Z", z);
 
         PropObjX.Text = x.ToString("F2", CultureInfo.InvariantCulture);
         PropObjY.Text = y.ToString("F2", CultureInfo.InvariantCulture);
@@ -699,9 +699,9 @@ public partial class MainWindow
         var ray = Viewport.Camera.Forward + x2 * Viewport.Camera.Right + y2 * Viewport.Camera.Up;
         var eye = Viewport.Camera.Position;
 
-        float objX = obj.FindChildLeaf("X")?.SingleValue ?? 0;
-        float objY = obj.FindChildLeaf("Y")?.SingleValue ?? 0;
-        float objZ = obj.FindChildLeaf("Z")?.SingleValue ?? 0;
+        float objX = obj.GetSingle("X");
+        float objY = obj.GetSingle("Y");
+        float objZ = obj.GetSingle("Z");
 
         // Project ray to find where it's closest to the object's vertical line
         float denom = ray.X * ray.X + ray.Y * ray.Y;
@@ -713,7 +713,7 @@ public partial class MainWindow
                  / denom;
 
         float newZ = s + objZ;
-        obj.FindChildLeaf("Z")?.SetSingle(newZ);
+        obj.SetOrAddSingle("Z", newZ);
         PropObjZ.Text = newZ.ToString("F2", CultureInfo.InvariantCulture);
 
         _vm.Document.NotifyWorldChanged();
@@ -771,13 +771,13 @@ public partial class MainWindow
     private void CopySelectedObject()
     {
         CopiedObject = _vm.Document.SelectedObject;
-        var objtype = CopiedObject?.FindChildLeaf("Type")?.Int32Value;
+        var objtype = CopiedObject?.GetInt32("Type");
         StatusText.Text = $"Copied object {objtype}";
     }
     private void PasteObjectAtCursor(TreeNode? src)
     {
         var worldLoc = GetWorldLocationAtCursor();
-        var objtype = src?.FindChildLeaf("Type")?.Int32Value;
+        var objtype = src?.GetInt32("Type");
 
         CreateObjectCopy(src, worldLoc);
         StatusText.Text = $"Pasted object {objtype} at {worldLoc?.X},{worldLoc?.Y},{worldLoc?.Z}";
@@ -803,11 +803,11 @@ public partial class MainWindow
             newObj.SetLeaves(propsCopy);
 
             // fix position
-            (newObj.FindChildLeaf("X") ?? newObj.AddSingle("X", loc.X)).SingleValue = loc.X;
-            (newObj.FindChildLeaf("Y") ?? newObj.AddSingle("Y", loc.Y)).SingleValue = loc.Y;
-            (newObj.FindChildLeaf("Z") ?? newObj.AddSingle("Z", loc.Z)).SingleValue = loc.Z;
+            newObj.SetOrAddSingle("X", loc.X);
+            newObj.SetOrAddSingle("Y", loc.Y);
+            newObj.SetOrAddSingle("Z", loc.Z);
 
-            int typeId = src.FindChildLeaf("Type")?.Int32Value ?? 0;
+            int typeId = src.GetInt32("Type");
             var addedInc = _vm.Document.EnsureIncludeFile(_objectCatalog, typeId);
             if (addedInc != null)
                 StatusText.Text = $"Auto-added include file: {addedInc}";

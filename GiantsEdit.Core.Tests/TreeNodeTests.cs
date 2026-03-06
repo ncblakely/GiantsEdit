@@ -166,4 +166,170 @@ public class TreeNodeTests
         CollectionAssert.AreEqual(ExpectedRootChild, nodeNames);
         CollectionAssert.AreEqual(ExpectedLeaf1Leaf2, leafNames);
     }
+
+    #region SetOrAdd tests
+
+    [TestMethod]
+    public void SetOrAddSingle_NewLeaf_CreatesIt()
+    {
+        var root = new TreeNode("Root");
+        var leaf = root.SetOrAddSingle("X", 1.5f);
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual(1.5f, leaf.SingleValue);
+        Assert.AreEqual(PropertyType.Single, leaf.PropertyType);
+    }
+
+    [TestMethod]
+    public void SetOrAddSingle_ExistingLeaf_UpdatesValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddSingle("X", 1.0f);
+        var leaf = root.SetOrAddSingle("X", 2.0f);
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual(2.0f, leaf.SingleValue);
+    }
+
+    [TestMethod]
+    public void SetOrAddInt32_NewLeaf_CreatesIt()
+    {
+        var root = new TreeNode("Root");
+        var leaf = root.SetOrAddInt32("Count", 42);
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual(42, leaf.Int32Value);
+    }
+
+    [TestMethod]
+    public void SetOrAddInt32_ExistingLeaf_UpdatesValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddInt32("Count", 10);
+        var leaf = root.SetOrAddInt32("Count", 20);
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual(20, leaf.Int32Value);
+    }
+
+    [TestMethod]
+    public void SetOrAddByte_NewLeaf_CreatesIt()
+    {
+        var root = new TreeNode("Root");
+        var leaf = root.SetOrAddByte("Mode", 5);
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual((byte)5, leaf.ByteValue);
+    }
+
+    [TestMethod]
+    public void SetOrAddByte_ExistingLeaf_UpdatesValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddByte("Mode", 1);
+        var leaf = root.SetOrAddByte("Mode", 2);
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual((byte)2, leaf.ByteValue);
+    }
+
+    [TestMethod]
+    public void SetOrAddString_NewLeaf_CreatesIt()
+    {
+        var root = new TreeNode("Root");
+        var leaf = root.SetOrAddString("Name", "hello");
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual("hello", leaf.StringValue);
+    }
+
+    [TestMethod]
+    public void SetOrAddString_ExistingLeaf_UpdatesValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddString("Name", "old");
+        var leaf = root.SetOrAddString("Name", "new");
+
+        Assert.AreEqual(1, root.LeafCount);
+        Assert.AreEqual("new", leaf.StringValue);
+    }
+
+    [TestMethod]
+    public void SetOrAddStringL_RespectsMaxLength()
+    {
+        var root = new TreeNode("Root");
+        var leaf = root.SetOrAddStringL("Tag", "abc", 16);
+
+        Assert.AreEqual(16, leaf.MaxLength);
+        Assert.AreEqual("abc", leaf.StringValue);
+    }
+
+    #endregion
+
+    #region Typed getter tests
+
+    [TestMethod]
+    public void GetSingle_Found_ReturnsValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddSingle("X", 3.14f);
+        Assert.AreEqual(3.14f, root.GetSingle("X"));
+    }
+
+    [TestMethod]
+    public void GetSingle_NotFound_ReturnsDefault()
+    {
+        var root = new TreeNode("Root");
+        Assert.AreEqual(0f, root.GetSingle("X"));
+        Assert.AreEqual(1f, root.GetSingle("X", 1f));
+    }
+
+    [TestMethod]
+    public void GetInt32_Found_ReturnsValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddInt32("Count", 99);
+        Assert.AreEqual(99, root.GetInt32("Count"));
+    }
+
+    [TestMethod]
+    public void GetInt32_NotFound_ReturnsDefault()
+    {
+        var root = new TreeNode("Root");
+        Assert.AreEqual(0, root.GetInt32("Count"));
+        Assert.AreEqual(-1, root.GetInt32("Count", -1));
+    }
+
+    [TestMethod]
+    public void GetByte_Found_ReturnsValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddByte("Mode", 7);
+        Assert.AreEqual((byte)7, root.GetByte("Mode"));
+    }
+
+    [TestMethod]
+    public void GetByte_NotFound_ReturnsDefault()
+    {
+        var root = new TreeNode("Root");
+        Assert.AreEqual((byte)0, root.GetByte("Mode"));
+    }
+
+    [TestMethod]
+    public void GetString_Found_ReturnsValue()
+    {
+        var root = new TreeNode("Root");
+        root.AddString("Name", "test");
+        Assert.AreEqual("test", root.GetString("Name"));
+    }
+
+    [TestMethod]
+    public void GetString_NotFound_ReturnsDefault()
+    {
+        var root = new TreeNode("Root");
+        Assert.AreEqual("", root.GetString("Name"));
+        Assert.AreEqual("fallback", root.GetString("Name", "fallback"));
+    }
+
+    #endregion
 }
