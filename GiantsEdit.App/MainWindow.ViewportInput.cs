@@ -803,23 +803,9 @@ public partial class MainWindow
             newObj.SetLeaves(propsCopy);
 
             // fix position
-            var leafX = newObj.FindChildLeaf("X");
-            if (leafX == null)
-                newObj.AddSingle("X", loc.X);
-            else
-                leafX.SingleValue = loc.X;
-
-            var leafY = newObj.FindChildLeaf("Y");
-            if (leafY == null)
-                newObj.AddSingle("Y", loc.Y);
-            else
-                leafY.SingleValue = loc.Y;
-
-            var leafZ = newObj.FindChildLeaf("Z");
-            if (leafZ == null)
-                newObj.AddSingle("Z", loc.Z);
-            else
-                leafZ.SingleValue = loc.Z;
+            (newObj.FindChildLeaf("X") ?? newObj.AddSingle("X", loc.X)).SingleValue = loc.X;
+            (newObj.FindChildLeaf("Y") ?? newObj.AddSingle("Y", loc.Y)).SingleValue = loc.Y;
+            (newObj.FindChildLeaf("Z") ?? newObj.AddSingle("Z", loc.Z)).SingleValue = loc.Z;
 
             int typeId = src.FindChildLeaf("Type")?.Int32Value ?? 0;
             var addedInc = _vm.Document.EnsureIncludeFile(_objectCatalog, typeId);
