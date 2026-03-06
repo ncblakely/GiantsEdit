@@ -736,7 +736,7 @@ public partial class MainWindow
             menu.Items.Add(deleteItem);
 
             var copyItem = new Avalonia.Controls.MenuItem { Header = "Copy Object Here" };
-            copyItem.Click += (_, _) => CreateObjectCopy();
+            copyItem.Click += (_, _) => CreateObjectCopy(_vm.Document.SelectedObject, _newObjPosition);
             menu.Items.Add(copyItem);
         }
 
@@ -755,23 +755,73 @@ public partial class MainWindow
         }
     }
 
-    private void CreateObjectCopy()
+    private Vector3? GetWorldLocationAtCursor()
     {
-        var src = _vm.Document.SelectedObject;
-        if (src == null || !_newObjPosition.HasValue) return;
+        var bounds = Viewport.Bounds;
+        int vpW = (int)bounds.Width, vpH = (int)bounds.Height;
+        if (vpW > 0 && vpH > 0)
+        {
+            var terrain = _vm.Document.Terrain;
+            if (terrain != null)
+                return TerrainEditor.GetWorldHitPosition((int)_lastMousePos.X, (int)_lastMousePos.Y, vpW, vpH,
+                    Viewport.Camera, terrain);
+        }
+        return null;
+    }
+    private void CopySelectedObject()
+    {
+        CopiedObject = _vm.Document.SelectedObject;
+        var objtype = CopiedObject?.FindChildLeaf("Type")?.Int32Value;
+        StatusText.Text = $"Copied object {objtype}";
+    }
+    private void PasteObjectAtCursor(TreeNode? src)
+    {
+        var worldLoc = GetWorldLocationAtCursor();
+        var objtype = src?.FindChildLeaf("Type")?.Int32Value;
 
-        int typeId = src.FindChildLeaf("Type")?.Int32Value ?? 0;
-        float angle = src.FindChildLeaf("DirFacing")?.SingleValue ?? 0;
-        var pos = _newObjPosition.Value;
+        CreateObjectCopy(src, worldLoc);
+        StatusText.Text = $"Pasted object {objtype} at {worldLoc?.X},{worldLoc?.Y},{worldLoc?.Z}";
+    }
+    private void CreateObjectCopy(TreeNode? src, Vector3? pos)
+    {
+        if (src == null) return;
+        if (pos == null || !pos.HasValue) return;
 
-        var newObj = _vm.Document.AddObject(typeId, pos.X, pos.Y, pos.Z, angle);
+        var loc = pos.Value;
+
+        var newObj = _vm.Document.CreateEmptyObject();
         if (newObj != null)
         {
-            // Copy scale if present
-            var scaleSrc = src.FindChildLeaf("Scale");
-            if (scaleSrc != null)
-                newObj.AddSingle("Scale", scaleSrc.SingleValue);
+            // Copy all properties from src object
+            var propsCopy = new List<TreeLeaf>();
+            foreach (var leaf in src.EnumerateLeaves())
+            {
+                var newLeaf = new TreeLeaf();
+                newLeaf.CopyFrom(leaf);
+                propsCopy.Add(newLeaf);
+            }
+            newObj.SetLeaves(propsCopy);
 
+            // fix position
+            var leafX = newObj.FindChildLeaf("X");
+            if (leafX == null)
+                newObj.AddSingle("X", loc.X);
+            else
+                leafX.SingleValue = loc.X;
+
+            var leafY = newObj.FindChildLeaf("Y");
+            if (leafY == null)
+                newObj.AddSingle("Y", loc.Y);
+            else
+                leafY.SingleValue = loc.Y;
+
+            var leafZ = newObj.FindChildLeaf("Z");
+            if (leafZ == null)
+                newObj.AddSingle("Z", loc.Z);
+            else
+                leafZ.SingleValue = loc.Z;
+
+            int typeId = src.FindChildLeaf("Type")?.Int32Value ?? 0;
             var addedInc = _vm.Document.EnsureIncludeFile(_objectCatalog, typeId);
             if (addedInc != null)
                 StatusText.Text = $"Auto-added include file: {addedInc}";

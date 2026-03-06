@@ -20,6 +20,29 @@ public class TreeLeaf
     private string _strValue = string.Empty;
     private int _maxLength = -1; // -1 = unlimited
 
+    public void CopyFrom(TreeLeaf src)
+    {
+        this.Name = src.Name;
+        this.PropertyType = src.PropertyType;
+        this.Parent = null;
+        this.MaxLength = src.MaxLength;
+        switch(src.PropertyType)
+        {
+            case PropertyType.Byte:
+                this.ByteValue = src.ByteValue;
+                break;
+            case PropertyType.Int32:
+                this.Int32Value = src.Int32Value;
+                break;
+            case PropertyType.String:
+                this.StringValue = src.StringValue;
+                break;
+            case PropertyType.Single:
+                this.SingleValue = src.SingleValue;
+                break;
+        }
+    }
+
     public byte ByteValue
     {
         get

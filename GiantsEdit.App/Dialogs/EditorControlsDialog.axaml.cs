@@ -46,6 +46,8 @@ public partial class EditorControlsDialog : Window
         Left drag            Move selected object on terrain
         Shift + Left drag    Adjust object Z height
         Right click          Object context menu (create/delete)
+        CTRL + c             Copy object
+        CTRL + v             Paste object under cursor
         """;
 
     private static string GetClassicControls() => """
@@ -73,5 +75,7 @@ public partial class EditorControlsDialog : Window
         Left drag            Move selected object on terrain
         Shift + Left drag    Adjust object Z height
         Right click          Object context menu (create/delete)
+        CTRL + c             Copy object
+        CTRL + v             Paste object under cursor
         """;
 }

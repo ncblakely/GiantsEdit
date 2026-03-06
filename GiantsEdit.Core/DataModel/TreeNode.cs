@@ -176,6 +176,25 @@ public class TreeNode
         return false;
     }
 
+    public void RemoveAllLeaves()
+    {
+        foreach(var child in _childLeaves)
+        {
+            child.Parent = null;
+        }
+        _childLeaves.Clear();
+    }
+
+    public void SetLeaves(List<TreeLeaf> children)
+    {
+        RemoveAllLeaves();
+        foreach(var child in children)
+        {
+            child.Parent = this;
+        }
+        _childLeaves.AddRange(children);
+    }
+
     /// <summary>
     /// Removes all child nodes matching the given name.
     /// </summary>

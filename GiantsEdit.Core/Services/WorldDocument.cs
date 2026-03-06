@@ -1035,10 +1035,7 @@ public class WorldDocument
         }
     }
 
-    /// <summary>
-    /// Adds a new object to the world or the active mission.
-    /// </summary>
-    public TreeNode? AddObject(int typeId, float x, float y, float z, float angle = 0f)
+    public TreeNode? CreateEmptyObject()
     {
         TreeNode? objContainer;
 
@@ -1050,14 +1047,25 @@ public class WorldDocument
         if (objContainer == null) return null;
 
         var obj = objContainer.AddNode(BinFormatConstants.NodeObject);
+        IsModified = true;
+        WorldChanged?.Invoke();
+
+        return obj;
+    }
+
+    /// <summary>
+    /// Adds a new object to the world or the active mission.
+    /// </summary>
+    public TreeNode? AddObject(int typeId, float x, float y, float z, float angle = 0f)
+    {
+        var obj = CreateEmptyObject();
+        if (obj == null) return null;
+
         obj.AddInt32("Type", typeId);
         obj.AddSingle("X", x);
         obj.AddSingle("Y", y);
         obj.AddSingle("Z", z);
         obj.AddSingle("DirFacing", angle);
-
-        IsModified = true;
-        WorldChanged?.Invoke();
         return obj;
     }
 
