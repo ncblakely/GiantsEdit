@@ -42,6 +42,15 @@ public class WorldDocument
     private const int ObjTypeBuoySpline = 1098;
     private const int ObjTypeMarkerSpline = 1052;
 
+    private const int MarkerTypeMecc1 = 1;
+    private const int MarkerTypeMecc2 = 2;
+    private const int MarkerTypeReaper1 = 3;
+    private const int MarkerTypeReaper2 = 4;
+    private const int MarkerTypeKabuto = 27;
+    private const int MarkerTypeVimp1 = 22;
+    private const int MarkerTypeVimp2 = 23;
+
+
     private readonly List<int> SplineTypes = [ObjTypeMarker, ObjTypeMarkerSpline, ObjTypeArmySpline, ObjTypeBuoySpline];
     private TreeNode? _worldRoot;
     private TerrainData? _terrain;
@@ -645,13 +654,13 @@ public class WorldDocument
                 int aiMode = obj.GetByte("AIMode");
                 modelId = aiMode switch
                 {
-                    1 => -1,
-                    2 => -2,
-                    3 => -3,
-                    4 => -4,
-                    27 => -5,
-                    22 => -6,
-                    23 => -7,
+                    MarkerTypeMecc1 => -1,
+                    MarkerTypeMecc2 => -2,
+                    MarkerTypeReaper1 => -3,
+                    MarkerTypeReaper2 => -4,
+                    MarkerTypeKabuto => -5,
+                    MarkerTypeVimp1 => -6,
+                    MarkerTypeVimp2 => -7,
                     _ => MarkerTypeId
                 };
             }
@@ -783,8 +792,8 @@ public class WorldDocument
 
             int aiMode = obj.GetByte("AIMode");
 
-            // skip markers with aimode 1,2,3 because they refer to possible spawn points and they shouldn't have a line connected
-            if (typeId == ObjTypeMarker && aiMode is 1 or 2 or 3) continue;
+            // skip markers with some aimode because they refer to possible spawn points and they shouldn't have a line connected
+            if (typeId == ObjTypeMarker && aiMode is MarkerTypeMecc1 or MarkerTypeMecc2 or MarkerTypeReaper1 or MarkerTypeReaper2 or MarkerTypeKabuto) continue;
 
             int teamId = obj.GetInt32("TeamID");
 
