@@ -46,6 +46,8 @@ public partial class MainWindow : Window
     private Avalonia.Threading.DispatcherTimer? _flyTimer;
     private bool _rmbDown; // tracks RMB for Default scheme fly mode
 
+    private TreeNode? CopiedObject;
+
     public MainWindow()
     {
         // Load object catalog from embedded resource
@@ -439,6 +441,9 @@ public partial class MainWindow : Window
                 case Key.S when shift: _ = SaveGckAsync(); e.Handled = true; return;
                 case Key.S: _ = SaveWorldAutoAsync(); e.Handled = true; return;
                 case Key.W: CloseMap(); e.Handled = true; return;
+                case Key.C: CopySelectedObject(); e.Handled = true; return;
+                case Key.V: PasteObjectAtCursor(CopiedObject); e.Handled = true; return;
+
             }
         }
 
