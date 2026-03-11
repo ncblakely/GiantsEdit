@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Avalonia.Platform.Storage;
 using GiantsEdit.App.Dialogs;
 using GiantsEdit.Core.Formats;
+using GiantsEdit.Core.Rendering;
 
 namespace GiantsEdit.App;
 
@@ -518,6 +519,46 @@ public partial class MainWindow
         _vm.Document.ReplaceTerrain(subdivided);
 
         StatusText.Text = $"Terrain subdivided {factor}x → {subdivided.Width}×{subdivided.Height}";
+    }
+
+    private async Task ComputeAmbientOcclusionAsync()
+    {
+        var terrain = _vm.Document.Terrain;
+        if (terrain == null)
+        {
+            StatusText.Text = "No terrain loaded";
+            return;
+        }
+
+        var toLight = _vm.Document.GetSunDirection();
+        if (toLight == null)
+        {
+            StatusText.Text = "No sun light found in world data";
+            return;
+        }
+
+        var dialog = new ComputeAODialog(terrain.AmbientOcclusion != null);
+        var result = await dialog.ShowDialog<AmbientOcclusionSettings?>(this);
+        if (result == null)
+            return;
+
+        var sunDir = toLight.Value;
+        StatusText.Text = $"Computing AO ({result.Directions} directions, radius {result.Radius})...";
+
+        var sw = Stopwatch.StartNew();
+        var ao = await Task.Run(() =>
+            AmbientOcclusionComputer.Compute(terrain, sunDir, result.Directions, result.Radius));
+        sw.Stop();
+
+        terrain.AmbientOcclusion = ao;
+        terrain.AODirections = result.Directions;
+        terrain.AORadius = result.Radius;
+        terrain.AOSunDirection = sunDir;
+
+        // Trigger terrain mesh rebuild to visualize AO
+        _vm.Document.ReplaceTerrain(terrain);
+
+        StatusText.Text = $"AO computed in {sw.Elapsed.TotalSeconds:F1}s ({result.Directions} dirs, radius {result.Radius})";
     }
 
     #endregion

@@ -75,6 +75,7 @@
                 <MenuItem Header="Subdivide..." x:Name="MenuSubdivide" />
                 <Separator/>
                 <MenuItem Header="Automatic lighting..." x:Name="MenuAutoLighting" />
+                <MenuItem Header="Compute ambient occlusion..." x:Name="MenuComputeAO" />
             </MenuItem>
             <!-- Map -->
             <MenuItem Header="_Map">

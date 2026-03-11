@@ -199,8 +199,8 @@ public class BinMissionReader
             case BinFormatConstants.MsnJetskiRace:
                 root.GetOrAddNode(BinFormatConstants.GroupOptions).AddVoid("JetskiRace");
                 break;
-            case BinFormatConstants.MsnBumpClampValue:
-                root.GetOrAddNode(BinFormatConstants.GroupOptions).AddSingle("BumpClampValue", _r.ReadSingle());
+            case BinFormatConstants.MsnLightClampValue:
+                root.GetOrAddNode(BinFormatConstants.GroupOptions).AddSingle("LightClampValue", _r.ReadSingle());
                 break;
             case BinFormatConstants.MsnZeroVimpMeat:
                 root.GetOrAddNode(BinFormatConstants.GroupOptions).AddVoid("ZeroVimpMeat");
@@ -322,8 +322,8 @@ public class BinMissionWriter
                 case "JetskiRace":
                     w.WriteByte(BinFormatConstants.MsnJetskiRace);
                     break;
-                case "BumpClampValue":
-                    w.WriteByte(BinFormatConstants.MsnBumpClampValue);
+                case "LightClampValue":
+                    w.WriteByte(BinFormatConstants.MsnLightClampValue);
                     w.WriteSingle(leaf.SingleValue);
                     break;
                 case "ZeroVimpMeat":

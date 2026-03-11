@@ -217,7 +217,10 @@ public static class WorldPropertyCatalog
                 n.AddSingle("SlopeAngle", 45f);
                 n.AddSingle("WallAngle", 70f);
             }),
-            Prop("BumpClampValue", null, n => n.AddSingle("Value", 1f)),
+            Prop("LightClampValue", null, n => n.AddSingle("Value", 1f)),
+            Prop("NormalMapInfluence", null, n => n.AddSingle("Value", 0.5f)),
+            Prop("NormalMapStrength", null, n => n.AddSingle("Value", 3f)),
+            Prop("AOStrength", null, n => n.AddSingle("Value", 0f)),
             Prop("Scenario", null, n => n.AddInt32("Value", 0)),
             Prop("NoScenerios", null, n => n.AddInt32("Value", 1)),
             Prop("WorldNoLighting", null, _ => { }),

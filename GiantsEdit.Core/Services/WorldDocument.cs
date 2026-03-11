@@ -670,7 +670,24 @@ public class WorldDocument
     }
 
     /// <summary>
-    /// Extracts directional lights from type 1004 (Light) objects.
+    /// Returns the sun's toward-light direction vector, or null if no sun is found.
+    /// Falls back to the first directional light if no explicit sun (AIMode 1) exists.
+    /// The returned direction is negated from the stored value (toward light, not toward surface).
+    /// </summary>
+    public Vector3? GetSunDirection()
+    {
+        var lights = GetDirectionalLights();
+        Vector3? dir = null;
+        foreach (var light in lights)
+        {
+            if (light.IsSun) { dir = light.Direction; break; }
+        }
+        dir ??= lights.Count > 0 ? lights[0].Direction : null;
+        return dir.HasValue ? -dir.Value : null;
+    }
+
+    /// <summary>
+    /// Returns directional lights from world objects.
     /// Light direction is derived from the object's rotation (Y-axis of transform, negated).
     /// AIMode 1 = sun, others = world lights.
     /// </summary>
@@ -873,25 +890,10 @@ public class WorldDocument
         if (_terrain == null)
             return null;
 
-        // Get sun direction for dot3 bump mapping
-        Vector3? sunDir = null;
-        var lights = GetDirectionalLights();
-        foreach (var light in lights)
-        {
-            if (light.IsSun)
-            {
-                sunDir = light.Direction;
-                break;
-            }
-        }
-        // Fall back to first light if no sun found
-        sunDir ??= lights.Count > 0 ? lights[0].Direction : null;
+        var toLight = GetSunDirection();
 
-        // Negate: stored direction points toward surface, but bump mapping needs toward-light
-        var toLight = sunDir.HasValue ? -sunDir.Value : (Vector3?)null;
-
-        // Read bump clamp value — ensures bump detail is visible even on shaded surfaces
-        float bumpClampValue = _worldRoot?.FindChildNode(BinFormatConstants.NodeBumpClampValue)
+        // Read light clamp value — ensures bump detail is visible even on shaded surfaces
+        float bumpClampValue = _worldRoot?.FindChildNode(BinFormatConstants.NodeLightClampValue)
             ?.GetSingle("Value") ?? 0f;
 
         var data = TerrainMeshBuilder.Build(_terrain, toLight, bumpClampValue);

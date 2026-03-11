@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace GiantsEdit.Core.Formats;
@@ -9,7 +10,8 @@ namespace GiantsEdit.Core.Formats;
 [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
 public struct GtiHeader
 {
-    public const int Signature = -1802088445;
+    public const int Signature = -1802088445;   // 0x94965003
+    public const int SignatureV4 = -1802088444; // 0x94965004
     public const int Size = 96;
 
     public int SignatureField;
@@ -44,6 +46,14 @@ public class TerrainData
     public byte[] Triangles = [];
     /// <summary>RGB lightmap, 3 bytes per cell (R, G, B).</summary>
     public byte[] LightMap = [];
+    /// <summary>Per-vertex ambient occlusion (0=fully occluded, 255=fully open). Null if not baked.</summary>
+    public byte[]? AmbientOcclusion;
+    /// <summary>Number of directions used to compute baked AO.</summary>
+    public int AODirections;
+    /// <summary>Max radius (in grid cells) used to compute baked AO.</summary>
+    public int AORadius;
+    /// <summary>Sun direction used when baking AO (toward light).</summary>
+    public Vector3 AOSunDirection;
 
     public int Width => Header.Width;
     public int Height => Header.Height;
@@ -103,8 +113,10 @@ public static class GtiFormat
         int h = terrain.Header.Height;
         if (w < 2 || w > 4096 || h < 2 || h > 4096)
             throw new FormatException($"GTI dimensions out of range: {w}x{h}");
-        if (terrain.Header.SignatureField != GtiHeader.Signature)
+        if (terrain.Header.SignatureField != GtiHeader.Signature && terrain.Header.SignatureField != GtiHeader.SignatureV4)
             throw new FormatException($"GTI signature mismatch: {terrain.Header.SignatureField}");
+
+        bool isV4 = terrain.Header.SignatureField == GtiHeader.SignatureV4;
 
         int cellCount = w * h;
         terrain.Heights = new float[cellCount];
@@ -160,6 +172,23 @@ public static class GtiFormat
         if (terrain.Header.Version == 7)
             terrain.Header.Version = 3;
 
+        // Read baked AO data from v4 files
+        if (isV4 && pos + 16 <= gti.Length)
+        {
+            terrain.AODirections = BitConverter.ToUInt16(gti, pos); pos += 2;
+            terrain.AORadius = BitConverter.ToUInt16(gti, pos); pos += 2;
+            float sunX = BitConverter.ToSingle(gti, pos); pos += 4;
+            float sunY = BitConverter.ToSingle(gti, pos); pos += 4;
+            float sunZ = BitConverter.ToSingle(gti, pos); pos += 4;
+            terrain.AOSunDirection = new Vector3(sunX, sunY, sunZ);
+
+            if (pos + cellCount <= gti.Length)
+            {
+                terrain.AmbientOcclusion = new byte[cellCount];
+                Array.Copy(gti, pos, terrain.AmbientOcclusion, 0, cellCount);
+            }
+        }
+
         return terrain;
     }
 
@@ -188,11 +217,15 @@ public static class GtiFormat
         if (terrain.Header.Version == 7)
             terrain.Header.Version = 3;
 
-        // Max possible size: header + 1 byte per cell + 8 bytes per cell
-        var writer = new BinaryDataWriter(HeaderTotalSize + cellCount * 9 + 256);
+        bool hasAO = terrain.AmbientOcclusion is { Length: > 0 };
 
-        // Write header
-        writer.WriteInt32(terrain.Header.SignatureField);
+        // Max possible size: header + 1 byte per cell + 8 bytes per cell + AO section
+        int aoSize = hasAO ? 4 + cellCount : 0;
+        var writer = new BinaryDataWriter(HeaderTotalSize + cellCount * 9 + 256 + aoSize);
+
+        // Write header — use v4 signature if AO data is present
+        int signature = hasAO ? GtiHeader.SignatureV4 : GtiHeader.Signature;
+        writer.WriteInt32(signature);
         writer.WriteInt32(terrain.Header.U0);
         writer.WriteSingle(terrain.Header.XOffset);
         writer.WriteSingle(terrain.Header.YOffset);
@@ -274,6 +307,17 @@ public static class GtiFormat
                 if (i < cellCount)
                     runActive = currentActive;
             }
+        }
+
+        // Write baked AO data for v4 files
+        if (hasAO)
+        {
+            writer.WriteWord((ushort)terrain.AODirections);
+            writer.WriteWord((ushort)terrain.AORadius);
+            writer.WriteSingle(terrain.AOSunDirection.X);
+            writer.WriteSingle(terrain.AOSunDirection.Y);
+            writer.WriteSingle(terrain.AOSunDirection.Z);
+            writer.WriteBytes(terrain.AmbientOcclusion!);
         }
 
         return writer.ToArray();
