@@ -69,8 +69,20 @@ public class BinWorldWriter
                 case BinFormatConstants.NodeFog: SaveFog(child); break;
                 case BinFormatConstants.NodeWaterFog: SaveWaterFog(child); break;
 
-                case BinFormatConstants.NodeBumpClampValue:
-                    _w.WriteByte(BinFormatConstants.OpBumpClampValue);
+                case BinFormatConstants.NodeLightClampValue:
+                    _w.WriteByte(BinFormatConstants.OpLightClampValue);
+                    WriteLeaf(child.GetChildLeaf("Value"));
+                    break;
+                case BinFormatConstants.NodeNormalMapInfluence:
+                    _w.WriteByte(BinFormatConstants.OpNormalMapInfluence);
+                    WriteLeaf(child.GetChildLeaf("Value"));
+                    break;
+                case BinFormatConstants.NodeNormalMapStrength:
+                    _w.WriteByte(BinFormatConstants.OpNormalMapStrength);
+                    WriteLeaf(child.GetChildLeaf("Value"));
+                    break;
+                case BinFormatConstants.NodeAOStrength:
+                    _w.WriteByte(BinFormatConstants.OpAOStrength);
                     WriteLeaf(child.GetChildLeaf("Value"));
                     break;
                 case BinFormatConstants.NodeNoScenerios:

@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.ComputeAODialog"
+        Title="Compute Ambient Occlusion" Width="400"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="16" Spacing="12">
+        <TextBlock Text="Computes per-vertex ambient occlusion by ray marching the heightfield. Higher direction counts produce smoother results but take longer."
+                   TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Directions:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                           x:Name="DirectionsInput"
+                           Minimum="8" Maximum="256" Value="64"
+                           Increment="8" FormatString="0"
+                           HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Max radius:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                           x:Name="RadiusInput"
+                           Minimum="10" Maximum="500" Value="100"
+                           Increment="10" FormatString="0"
+                           HorizontalAlignment="Stretch" />
+        </Grid>
+        <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Value="0"
+                     IsVisible="False" Height="16" />
+        <TextBlock x:Name="StatusText" Foreground="Gray" IsVisible="False" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button x:Name="BtnCompute" Content="Compute" Width="90" IsDefault="True" />
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" IsCancel="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

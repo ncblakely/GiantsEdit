@@ -44,7 +44,10 @@ public static class BinFormatConstants
     public const string NodeStartWeather = "StartWeather";
     public const string NodeObjEditStart = "ObjEditStart";
     public const string NodeObjEditEnd = "ObjEditEnd";
-    public const string NodeBumpClampValue = "BumpClampValue";
+    public const string NodeLightClampValue = "LightClampValue";
+    public const string NodeNormalMapInfluence = "NormalMapInfluence";
+    public const string NodeNormalMapStrength = "NormalMapStrength";
+    public const string NodeAOStrength = "AOStrength";
     public const string NodeNoScenerios = "NoScenerios";
     public const string NodeLandAngles = "LandAngles";
     public const string NodeLandTexFade = "LandTexFade";
@@ -189,7 +192,7 @@ public static class BinFormatConstants
     public const byte OpNoScenerios = 0x60;
     public const byte OpLandTexFade = 0x65;
     public const byte OpLandAngles = 0x66;
-    public const byte OpBumpClampValue = 0x75;
+    public const byte OpLightClampValue = 0x75;
     public const byte OpSunFxName = 0x76;
     public const byte OpSunflare1 = 0x77;
     public const byte OpSunflare2 = 0x78;
@@ -200,6 +203,9 @@ public static class BinFormatConstants
     public const byte OpAmbientColor = 0x8B;
     public const byte OpBlendWater = 0x8F;
     public const byte OpWaterMaterial = 0x90;
+    public const byte OpNormalMapInfluence = 0x94;
+    public const byte OpNormalMapStrength = 0x95;
+    public const byte OpAOStrength = 0x96;
 
     // Opcodes — music
     public const byte OpMusicSuspense = 0x6C;
@@ -291,7 +297,7 @@ public static class BinFormatConstants
     public const byte MsnSplineStartID = 0x20;
     public const byte MsnKeyTime = 0x21;
     public const byte MsnJetskiRace = 0x22;
-    public const byte MsnBumpClampValue = 0x23;
+    public const byte MsnLightClampValue = 0x23;
     public const byte MsnZeroVimpMeat = 0x24;
     public const byte MsnGrabSmartie = 0x25;
     public const byte MsnSuccessDelay = 0x26;

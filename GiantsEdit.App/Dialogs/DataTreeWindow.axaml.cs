@@ -478,7 +478,7 @@ public partial class OptionalLeafVm : ObservableObject
             GroupedDefaults = ["0.0000"]
         },
         new("SuccessDelay 1", PropertyType.Single, "0.0000"),
-        new("BumpClampValue", PropertyType.Single, "0.0000"),
+        new("LightClampValue", PropertyType.Single, "0.0000"),
         new("JetskiRace", PropertyType.Void, ""),
         new("ZeroVimpMeat", PropertyType.Void, ""),
         new("GrabSmartie", PropertyType.Void, ""),

@@ -647,8 +647,23 @@ public class BinWorldReader
                 ReadTexture();
                 break;
 
-            case BinFormatConstants.OpBumpClampValue:
-                Hint(BinFormatConstants.NodeBumpClampValue);
+            case BinFormatConstants.OpLightClampValue:
+                Hint(BinFormatConstants.NodeLightClampValue);
+                _entry.AddSingle("Value", _r.ReadSingle());
+                break;
+
+            case BinFormatConstants.OpNormalMapInfluence:
+                Hint(BinFormatConstants.NodeNormalMapInfluence);
+                _entry.AddSingle("Value", _r.ReadSingle());
+                break;
+
+            case BinFormatConstants.OpNormalMapStrength:
+                Hint(BinFormatConstants.NodeNormalMapStrength);
+                _entry.AddSingle("Value", _r.ReadSingle());
+                break;
+
+            case BinFormatConstants.OpAOStrength:
+                Hint(BinFormatConstants.NodeAOStrength);
                 _entry.AddSingle("Value", _r.ReadSingle());
                 break;
 
