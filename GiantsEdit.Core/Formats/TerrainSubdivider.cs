@@ -79,9 +79,9 @@ public static class TerrainSubdivider
                 isTerrain[idx] = true;
 
                 // Interpolate lightmap RGB.
-                result.LightMap[idx * 3 + 0] = BicubicSampleChannel(source, srcX, srcY, 0);
-                result.LightMap[idx * 3 + 1] = BicubicSampleChannel(source, srcX, srcY, 1);
-                result.LightMap[idx * 3 + 2] = BicubicSampleChannel(source, srcX, srcY, 2);
+                result.LightMap[idx * 3 + 0] = SampleChannel(source, srcX, srcY, 0);
+                result.LightMap[idx * 3 + 1] = SampleChannel(source, srcX, srcY, 1);
+                result.LightMap[idx * 3 + 2] = SampleChannel(source, srcX, srcY, 2);
             }
         }
 
@@ -247,6 +247,39 @@ public static class TerrainSubdivider
     }
 
     /// <summary>
+    /// Bilinear interpolation of a single lightmap color channel,
+    /// excluding empty/sea corners to avoid blending in default colors.
+    /// </summary>
+    private static byte BilinearSampleChannel(TerrainData src, float fx, float fy, int channel)
+    {
+        int ix = (int)MathF.Floor(fx);
+        int iy = (int)MathF.Floor(fy);
+        float tx = fx - ix;
+        float ty = fy - iy;
+
+        ReadOnlySpan<float> weights =
+        [
+            (1 - tx) * (1 - ty),
+            tx * (1 - ty),
+            (1 - tx) * ty,
+            tx * ty,
+        ];
+        int[,] coords = { { ix, iy }, { ix + 1, iy }, { ix, iy + 1 }, { ix + 1, iy + 1 } };
+
+        float sum = 0.0f, wsum = 0.0f;
+        for (int i = 0; i < 4; i++)
+        {
+            int cx = coords[i, 0], cy = coords[i, 1];
+            if (!IsEmptyCell(src, cx, cy))
+            {
+                sum += ClampedSampleColor(src, cx, cy, channel) * weights[i];
+                wsum += weights[i];
+            }
+        }
+        return wsum > 0.0f ? (byte)Math.Clamp(sum / wsum, 0.0f, 255.0f) : (byte)0;
+    }
+
+    /// <summary>
     /// Bicubic interpolation of a single lightmap color channel.
     /// </summary>
     private static byte BicubicSampleChannel(TerrainData src, float fx, float fy, int channel)
@@ -267,6 +300,21 @@ public static class TerrainSubdivider
         }
         float result = CatmullRom(cols[0], cols[1], cols[2], cols[3], ty);
         return (byte)Math.Clamp(result, 0.0f, 255.0f);
+    }
+
+    /// <summary>
+    /// Samples a lightmap color channel at fractional source coordinates,
+    /// choosing interpolation method based on proximity to empty edges.
+    /// </summary>
+    private static byte SampleChannel(TerrainData src, float fx, float fy, int channel)
+    {
+        int ix = (int)MathF.Floor(fx);
+        int iy = (int)MathF.Floor(fy);
+
+        if (!IsFullyTerrain4x4(src, ix, iy))
+            return BilinearSampleChannel(src, fx, fy, channel);
+
+        return BicubicSampleChannel(src, fx, fy, channel);
     }
 
     #endregion
