@@ -105,7 +105,7 @@ public partial class MainWindow : Window
         MenuSoftenNoEdges.Click += (_, _) => { SoftenTerrain(false); StatusText.Text = "Terrain softened (no edges)"; };
         MenuSoftenWithEdges.Click += (_, _) => { SoftenTerrain(true); StatusText.Text = "Terrain softened (with edges)"; };
         MenuSubdivide.Click += async (_, _) => await SubdivideTerrainAsync();
-        MenuAutoLighting.Click += (_, _) => StatusText.Text = "Auto lighting: not yet implemented";
+        MenuAutoLighting.Click += async (_, _) => await ShowAutomaticLightingAsync();
         MenuComputeAO.Click += async (_, _) => await ComputeAmbientOcclusionAsync();
 
         // === Map menu ===

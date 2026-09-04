@@ -1,0 +1,107 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.HeightBasedLightingDialog"
+        Title="Height-based light"
+        Width="560"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <ScrollViewer MaxHeight="820">
+        <StackPanel Margin="16" Spacing="10">
+            <TextBlock Text="Enter height values and colors for them. All colors between them are interpolated."
+                       TextWrapping="Wrap" />
+
+            <Grid ColumnDefinitions="28,110,130,70"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  RowSpacing="5" ColumnSpacing="8">
+                <TextBlock Grid.Column="1" Text="Height value" />
+                <TextBlock Grid.Column="2" Text="Color" />
+                <TextBlock Grid.Column="3" Text="Preview" />
+
+                <RadioButton Grid.Row="1" Grid.Column="0" x:Name="LevelRadio0" GroupName="HeightLevels" />
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="HeightInput0" />
+                <TextBox Grid.Row="1" Grid.Column="2" x:Name="ColorInput0" Watermark="#RRGGBB" />
+                <Border Grid.Row="1" Grid.Column="3" x:Name="ColorPreview0" Height="28" CornerRadius="3" />
+
+                <RadioButton Grid.Row="2" Grid.Column="0" x:Name="LevelRadio1" GroupName="HeightLevels" />
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="HeightInput1" />
+                <TextBox Grid.Row="2" Grid.Column="2" x:Name="ColorInput1" Watermark="#RRGGBB" />
+                <Border Grid.Row="2" Grid.Column="3" x:Name="ColorPreview1" Height="28" CornerRadius="3" />
+
+                <RadioButton Grid.Row="3" Grid.Column="0" x:Name="LevelRadio2" GroupName="HeightLevels" />
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="HeightInput2" />
+                <TextBox Grid.Row="3" Grid.Column="2" x:Name="ColorInput2" Watermark="#RRGGBB" />
+                <Border Grid.Row="3" Grid.Column="3" x:Name="ColorPreview2" Height="28" CornerRadius="3" />
+
+                <RadioButton Grid.Row="4" Grid.Column="0" x:Name="LevelRadio3" GroupName="HeightLevels" />
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="HeightInput3" />
+                <TextBox Grid.Row="4" Grid.Column="2" x:Name="ColorInput3" Watermark="#RRGGBB" />
+                <Border Grid.Row="4" Grid.Column="3" x:Name="ColorPreview3" Height="28" CornerRadius="3" />
+
+                <RadioButton Grid.Row="5" Grid.Column="0" x:Name="LevelRadio4" GroupName="HeightLevels" />
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="HeightInput4" />
+                <TextBox Grid.Row="5" Grid.Column="2" x:Name="ColorInput4" Watermark="#RRGGBB" />
+                <Border Grid.Row="5" Grid.Column="3" x:Name="ColorPreview4" Height="28" CornerRadius="3" />
+
+                <RadioButton Grid.Row="6" Grid.Column="0" x:Name="LevelRadio5" GroupName="HeightLevels" />
+                <TextBox Grid.Row="6" Grid.Column="1" x:Name="HeightInput5" />
+                <TextBox Grid.Row="6" Grid.Column="2" x:Name="ColorInput5" Watermark="#RRGGBB" />
+                <Border Grid.Row="6" Grid.Column="3" x:Name="ColorPreview5" Height="28" CornerRadius="3" />
+
+                <RadioButton Grid.Row="7" Grid.Column="0" x:Name="LevelRadio6" GroupName="HeightLevels" />
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="HeightInput6" />
+                <TextBox Grid.Row="7" Grid.Column="2" x:Name="ColorInput6" Watermark="#RRGGBB" />
+                <Border Grid.Row="7" Grid.Column="3" x:Name="ColorPreview6" Height="28" CornerRadius="3" />
+            </Grid>
+
+            <TextBlock x:Name="ValidationText" Foreground="Orange" TextWrapping="Wrap"
+                       IsVisible="False" />
+
+            <CheckBox x:Name="ApplyAutomaticallyCheckBox"
+                      Content="Apply automatically while editing" />
+            <CheckBox x:Name="EnableSunSkyCheckBox"
+                      Content="Enable sun &amp; sky light" />
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Sun direction" />
+                    <Border Background="#202020" BorderBrush="Gray" BorderThickness="1"
+                            Width="112" Height="112" HorizontalAlignment="Left">
+                        <Canvas x:Name="SunTopCanvas" Width="110" Height="110">
+                            <Ellipse Width="104" Height="104" Canvas.Left="3" Canvas.Top="3"
+                                     Stroke="Gray" StrokeThickness="1" />
+                            <Ellipse x:Name="SunTopMarker" Width="10" Height="10"
+                                     Fill="Yellow" />
+                        </Canvas>
+                    </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Text="Sun height" />
+                    <Border Background="#202020" BorderBrush="Gray" BorderThickness="1"
+                            Width="112" Height="112" HorizontalAlignment="Left">
+                        <Canvas x:Name="SunSideCanvas" Width="110" Height="110">
+                            <Ellipse Width="104" Height="104" Canvas.Left="3" Canvas.Top="3"
+                                     Stroke="Gray" StrokeThickness="1" />
+                            <Ellipse x:Name="SunSideMarker" Width="10" Height="10"
+                                     Fill="Yellow" />
+                        </Canvas>
+                    </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="6">
+                    <TextBlock Text="Lighting colors" />
+                    <TextBlock Text="Sun" />
+                    <TextBox x:Name="SunColorInput" Watermark="#RRGGBB" />
+                    <TextBlock Text="Sky (ambient)" />
+                    <TextBox x:Name="SkyColorInput" Watermark="#RRGGBB" />
+                    <TextBlock Text="From top" />
+                    <TextBox x:Name="TopColorInput" Watermark="#RRGGBB" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                <Button x:Name="BtnApply" Content="Apply now" Width="90" />
+                <Button x:Name="BtnClose" Content="Close" Width="80" IsDefault="True" IsCancel="True" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

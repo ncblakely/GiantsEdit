@@ -252,6 +252,7 @@ public partial class MainWindow
                         _currentHeight,
                         _vm.Document.BrushRadius / terrain.Header.Stretch,
                         _vm.Document.BrushStrength);
+                    ApplyAutomaticLightingAround(terrain, hit.GridX, hit.GridY);
                     _vm.Document.NotifyTerrainChanged();
                 }
                 break;
