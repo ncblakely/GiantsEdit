@@ -3,7 +3,7 @@ namespace GiantsEdit.Core.Formats;
 /// <summary>
 /// Subdivides a terrain grid using Catmull-Rom bicubic interpolation,
 /// increasing resolution by a given factor. Near sea/empty edges,
-/// falls back to bilinear interpolation to avoid artifacts.
+/// interpolates on the covering source triangle to preserve topology.
 /// </summary>
 public static class TerrainSubdivider
 {
@@ -37,9 +37,6 @@ public static class TerrainSubdivider
 
         float invFactor = 1.0f / factor;
 
-        // Track which output points are active terrain.
-        var isTerrain = new bool[newW * newH];
-
         // Default lightmap to magenta (same as GtiFormat.Load defaults).
         for (int i = 0; i < newW * newH; i++)
         {
@@ -59,24 +56,17 @@ public static class TerrainSubdivider
             {
                 float srcX = nx * invFactor;
 
-                // Only produce terrain where the source cell has geometry.
-                int srcCellX = (int)MathF.Floor(srcX);
-                int srcCellY = (int)MathF.Floor(srcY);
-
-                if (srcCellX < 0 || srcCellX >= srcW - 1 ||
-                    srcCellY < 0 || srcCellY >= srcH - 1 ||
-                    !IsActive(source.Triangles[srcCellY * srcW + srcCellX]))
+                // A source point can lie on the edge of an active cell while
+                // floor() selects an adjacent empty cell.
+                if (!IsTerrainPoint(source, srcX, srcY))
                 {
                     continue;
                 }
 
                 float z = SampleZ(source, srcX, srcY);
-                if (z <= source.Header.MinHeight)
-                    continue;
 
                 int idx = ny * newW + nx;
                 result.Heights[idx] = z;
-                isTerrain[idx] = true;
 
                 // Interpolate lightmap RGB.
                 result.LightMap[idx * 3 + 0] = SampleChannel(source, srcX, srcY, 0);
@@ -90,8 +80,24 @@ public static class TerrainSubdivider
         {
             for (int nx = 0; nx < newW; nx++)
             {
-                if (nx < newW - 1 && ny < newH - 1)
-                    result.Triangles[ny * newW + nx] = DetermineConnType(isTerrain, newW, nx, ny);
+                float centerX = (nx + 0.5f) * invFactor;
+                float centerY = (ny + 0.5f) * invFactor;
+                if (nx < newW - 1 && ny < newH - 1 &&
+                    IsTerrainPoint(source, centerX, centerY))
+                {
+                    int sourceCellX = nx / factor;
+                    int sourceCellY = ny / factor;
+                    float localX = nx * invFactor - sourceCellX;
+                    float localY = ny * invFactor - sourceCellY;
+                    float step = invFactor;
+                    byte sourceType = (byte)(source.Triangles[sourceCellY * srcW + sourceCellX] & 7);
+
+                    result.Triangles[ny * newW + nx] = DetermineConnType(
+                        IsPointInsideCell(sourceType, localX, localY),
+                        IsPointInsideCell(sourceType, localX + step, localY),
+                        IsPointInsideCell(sourceType, localX, localY + step),
+                        IsPointInsideCell(sourceType, localX + step, localY + step));
+                }
                 // else stays 0 (no triangles at grid edge)
             }
         }
@@ -110,6 +116,61 @@ public static class TerrainSubdivider
     }
 
     private static bool IsActive(byte triType) => (triType & 7) is >= 1 and <= 7;
+
+    /// <summary>
+    /// Checks whether a fractional source-grid point is covered by any source
+    /// triangle, including triangles in cells sharing an integer grid edge.
+    /// </summary>
+    private static bool IsTerrainPoint(TerrainData src, float fx, float fy)
+    {
+        int ix = (int)MathF.Floor(fx);
+        int iy = (int)MathF.Floor(fy);
+        bool onGridX = MathF.Abs(fx - MathF.Round(fx)) <= 1e-5f;
+        bool onGridY = MathF.Abs(fy - MathF.Round(fy)) <= 1e-5f;
+        int firstX = onGridX ? ix - 1 : ix;
+        int firstY = onGridY ? iy - 1 : iy;
+
+        for (int cellY = firstY; cellY <= iy; cellY++)
+        {
+            for (int cellX = firstX; cellX <= ix; cellX++)
+            {
+                if (cellX < 0 || cellX >= src.Width - 1 ||
+                    cellY < 0 || cellY >= src.Height - 1)
+                    continue;
+
+                byte triType = (byte)(src.Triangles[cellY * src.Width + cellX] & 7);
+                float localX = fx - cellX;
+                float localY = fy - cellY;
+                if (IsPointInsideCell(triType, localX, localY))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks whether a local cell coordinate lies inside the source cell's
+    /// triangle geometry. Boundary points are included so adjacent cells share
+    /// their terrain vertices.
+    /// </summary>
+    private static bool IsPointInsideCell(byte triType, float localX, float localY)
+    {
+        const float epsilon = 1e-5f;
+        if (localX < -epsilon || localX > 1.0f + epsilon ||
+            localY < -epsilon || localY > 1.0f + epsilon)
+            return false;
+
+        return triType switch
+        {
+            1 => localX + localY <= 1.0f + epsilon,
+            2 => localX + localY >= 1.0f - epsilon,
+            3 => localX >= localY - epsilon,
+            4 or 7 => localX <= localY + epsilon,
+            5 or 6 => true,
+            _ => false,
+        };
+    }
 
     #region Height Interpolation
 
@@ -156,36 +217,99 @@ public static class TerrainSubdivider
     }
 
     /// <summary>
-    /// Bilinear interpolation of Z, excluding empty corners.
+    /// Interpolates Z on the source triangle covering a fractional point.
+    /// This preserves coastline triangle planes instead of blending inactive
+    /// corners into valid underwater geometry.
     /// </summary>
-    private static float BilinearSampleZ(TerrainData src, float fx, float fy)
+    private static float TriangleSampleZ(TerrainData src, float fx, float fy)
     {
         int ix = (int)MathF.Floor(fx);
         int iy = (int)MathF.Floor(fy);
-        float tx = fx - ix;
-        float ty = fy - iy;
+        bool onGridX = MathF.Abs(fx - MathF.Round(fx)) <= 1e-5f;
+        bool onGridY = MathF.Abs(fy - MathF.Round(fy)) <= 1e-5f;
+        int firstX = onGridX ? ix - 1 : ix;
+        int firstY = onGridY ? iy - 1 : iy;
 
-        ReadOnlySpan<float> weights =
-        [
-            (1 - tx) * (1 - ty),
-            tx * (1 - ty),
-            (1 - tx) * ty,
-            tx * ty,
-        ];
-        int[,] coords = { { ix, iy }, { ix + 1, iy }, { ix, iy + 1 }, { ix + 1, iy + 1 } };
-
-        float sum = 0.0f, wsum = 0.0f;
-        for (int i = 0; i < 4; i++)
+        for (int cellY = firstY; cellY <= iy; cellY++)
         {
-            int cx = coords[i, 0], cy = coords[i, 1];
-            if (!IsEmptyCell(src, cx, cy))
+            for (int cellX = firstX; cellX <= ix; cellX++)
             {
-                float z = ClampedSampleZ(src, cx, cy);
-                sum += z * weights[i];
-                wsum += weights[i];
+                if (cellX < 0 || cellX >= src.Width - 1 ||
+                    cellY < 0 || cellY >= src.Height - 1)
+                    continue;
+
+                byte triType = (byte)(src.Triangles[cellY * src.Width + cellX] & 7);
+                float localX = fx - cellX;
+                float localY = fy - cellY;
+                if (!IsPointInsideCell(triType, localX, localY))
+                    continue;
+
+                float tl = src.GetHeight(cellX, cellY);
+                float tr = src.GetHeight(cellX + 1, cellY);
+                float bl = src.GetHeight(cellX, cellY + 1);
+                float br = src.GetHeight(cellX + 1, cellY + 1);
+
+                return triType switch
+                {
+                    1 => InterpolateTriangleZ(
+                        localX, localY,
+                        0.0f, 1.0f, bl,
+                        0.0f, 0.0f, tl,
+                        1.0f, 0.0f, tr),
+                    2 => InterpolateTriangleZ(
+                        localX, localY,
+                        1.0f, 0.0f, tr,
+                        0.0f, 1.0f, bl,
+                        1.0f, 1.0f, br),
+                    3 => InterpolateTriangleZ(
+                        localX, localY,
+                        1.0f, 0.0f, tr,
+                        0.0f, 0.0f, tl,
+                        1.0f, 1.0f, br),
+                    4 or 7 => InterpolateTriangleZ(
+                        localX, localY,
+                        0.0f, 1.0f, bl,
+                        0.0f, 0.0f, tl,
+                        1.0f, 1.0f, br),
+                    5 when localX <= localY => InterpolateTriangleZ(
+                        localX, localY,
+                        0.0f, 1.0f, bl,
+                        0.0f, 0.0f, tl,
+                        1.0f, 1.0f, br),
+                    5 => InterpolateTriangleZ(
+                        localX, localY,
+                        1.0f, 0.0f, tr,
+                        0.0f, 0.0f, tl,
+                        1.0f, 1.0f, br),
+                    6 when localX + localY <= 1.0f => InterpolateTriangleZ(
+                        localX, localY,
+                        0.0f, 1.0f, bl,
+                        0.0f, 0.0f, tl,
+                        1.0f, 0.0f, tr),
+                    6 => InterpolateTriangleZ(
+                        localX, localY,
+                        1.0f, 0.0f, tr,
+                        0.0f, 1.0f, bl,
+                        1.0f, 1.0f, br),
+                    _ => src.Header.MinHeight,
+                };
             }
         }
-        return wsum > 0.0f ? sum / wsum : src.Header.MinHeight;
+
+        return src.Header.MinHeight;
+    }
+
+    private static float InterpolateTriangleZ(
+        float x, float y,
+        float ax, float ay, float az,
+        float bx, float by, float bz,
+        float cx, float cy, float cz)
+    {
+        float denominator = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+        float weightA = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / denominator;
+        float weightB = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / denominator;
+        float weightC = 1.0f - weightA - weightB;
+        return weightA * az + weightB * bz + weightC * cz;
     }
 
     /// <summary>
@@ -220,7 +344,7 @@ public static class TerrainSubdivider
         int iy = (int)MathF.Floor(fy);
 
         if (!IsFullyTerrain4x4(src, ix, iy))
-            return BilinearSampleZ(src, fx, fy);
+            return TriangleSampleZ(src, fx, fy);
 
         float result = BicubicSampleZ(src, fx, fy);
 
@@ -270,7 +394,7 @@ public static class TerrainSubdivider
         for (int i = 0; i < 4; i++)
         {
             int cx = coords[i, 0], cy = coords[i, 1];
-            if (!IsEmptyCell(src, cx, cy))
+            if (IsTerrainPoint(src, cx, cy))
             {
                 sum += ClampedSampleColor(src, cx, cy, channel) * weights[i];
                 wsum += weights[i];
@@ -339,21 +463,18 @@ public static class TerrainSubdivider
     /// Determines triangle connectivity for a subdivided cell based on
     /// which of its 4 corners are terrain.
     /// </summary>
-    private static byte DetermineConnType(bool[] isTerrain, int numX, int nx, int ny)
+    private static byte DetermineConnType(
+        bool topLeft, bool topRight, bool bottomLeft, bool bottomRight)
     {
-        bool bl = isTerrain[ny * numX + nx];
-        bool br = isTerrain[ny * numX + (nx + 1)];
-        bool tl = isTerrain[(ny + 1) * numX + nx];
-        bool tr = isTerrain[(ny + 1) * numX + (nx + 1)];
-
-        int count = (bl ? 1 : 0) + (br ? 1 : 0) + (tl ? 1 : 0) + (tr ? 1 : 0);
+        int count = (topLeft ? 1 : 0) + (topRight ? 1 : 0) +
+                    (bottomLeft ? 1 : 0) + (bottomRight ? 1 : 0);
         if (count == 4) return (byte)CellType.BottomLeftTopRight;
 
         if (count == 3)
         {
-            if (!tr) return (byte)CellType.TopLeft;
-            if (!bl) return (byte)CellType.BottomRight;
-            if (!tl) return (byte)CellType.TopRight;
+            if (!bottomRight) return (byte)CellType.TopLeft;
+            if (!topLeft) return (byte)CellType.BottomRight;
+            if (!bottomLeft) return (byte)CellType.TopRight;
             return (byte)CellType.BottomLeft;
         }
 
