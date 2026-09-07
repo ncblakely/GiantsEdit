@@ -73,4 +73,62 @@ public class GtiFormatTests
         for (int i = 0; i < terrain.LightMap.Length; i++)
             Assert.AreEqual((byte)255, terrain.LightMap[i]);
     }
+
+    [TestMethod]
+    public void Subdivide_PreservesFullCellWithMinimumHeightCorner()
+    {
+        var source = GtiFormat.CreateNew(3, 3, MapFillType.Empty);
+        source.Header.MinHeight = -100.0f;
+        source.Header.MaxHeight = 10.0f;
+
+        for (int y = 0; y < source.Height; y++)
+            for (int x = 0; x < source.Width; x++)
+                source.SetHeight(x, y, 10.0f);
+
+        source.SetHeight(1, 1, source.Header.MinHeight);
+        source.Triangles[0] = 5;
+
+        var result = TerrainSubdivider.Subdivide(source, 2);
+
+        Assert.AreEqual(source.Header.MinHeight, result.GetHeight(2, 2));
+        Assert.AreEqual((byte)5, result.Triangles[0]);
+        Assert.AreEqual((byte)5, result.Triangles[1]);
+        Assert.AreEqual((byte)5, result.Triangles[5]);
+        Assert.AreEqual((byte)5, result.Triangles[6]);
+    }
+
+    [TestMethod]
+    public void Subdivide_PreservesPartialCellTriangleGeometry()
+    {
+        var source = GtiFormat.CreateNew(3, 3, MapFillType.Empty);
+        for (int y = 0; y < source.Height; y++)
+            for (int x = 0; x < source.Width; x++)
+                source.SetHeight(x, y, 10.0f);
+
+        source.Triangles[0] = 7;
+
+        var result = TerrainSubdivider.Subdivide(source, 2);
+
+        Assert.AreEqual((byte)4, result.Triangles[0]);
+        Assert.AreEqual((byte)0, result.Triangles[1]);
+        Assert.AreEqual((byte)5, result.Triangles[5]);
+        Assert.AreEqual((byte)4, result.Triangles[6]);
+        Assert.AreEqual((byte)0, result.Triangles[2]);
+        Assert.AreEqual((byte)0, result.Triangles[10]);
+    }
+
+    [TestMethod]
+    public void Subdivide_PreservesPartialTrianglePlane()
+    {
+        var source = GtiFormat.CreateNew(3, 3, MapFillType.Empty);
+        source.Header.MinHeight = -100.0f;
+        source.SetHeight(0, 0, 10.0f);
+        source.SetHeight(1, 0, 100.0f);
+        source.SetHeight(1, 1, 30.0f);
+        source.Triangles[0] = 3;
+
+        var result = TerrainSubdivider.Subdivide(source, 2);
+
+        Assert.AreEqual(20.0f, result.GetHeight(1, 1), 0.001f);
+    }
 }
