@@ -198,7 +198,7 @@ public partial class MainWindow
         var root = _vm.Document.WorldRoot;
         if (root == null) return;
 
-        root.RemoveNodesByName(BinFormatConstants.NodeObject);
+        root.RemoveNodesByName(BinFormatConstants.GroupObjects);
         InvalidateViewport();
         StatusText.Text = "Objects cleared";
     }
