@@ -360,8 +360,9 @@ public static class GtiFormat
         // Default lightmap to white
         Array.Fill(terrain.LightMap, (byte)255);
 
-        // Default all cells to filled (both triangles, TL-BR diagonal)
-        Array.Fill(terrain.Triangles, (byte)1);
+        // Default all cells to filled (both triangles, TL-BR diagonal = type 5).
+        // NOTE: type 1 renders only a single triangle per cell (see TerrainMeshBuilder).
+        Array.Fill(terrain.Triangles, (byte)5);
 
         // Apply fill type
         switch (fillType)

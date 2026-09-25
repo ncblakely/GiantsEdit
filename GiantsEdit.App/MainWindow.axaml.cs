@@ -73,6 +73,7 @@ public partial class MainWindow : Window
         MenuClearObjects.Click += (_, _) => ClearObjects();
         MenuImportTerrain.Click += async (_, _) => await ImportTerrainAsync();
         MenuImportObjects.Click += async (_, _) => await ImportObjectsAsync();
+        MenuImportHeightmap.Click += async (_, _) => await ImportHeightmapAsync();
         MenuExportLightmap.Click += async (_, _) => await ExportBitmapAsync("lightmap");
         MenuExportHeightmap.Click += async (_, _) => await ExportBitmapAsync("heightmap");
         MenuExportTrimap.Click += async (_, _) => await ExportBitmapAsync("trianglemap");

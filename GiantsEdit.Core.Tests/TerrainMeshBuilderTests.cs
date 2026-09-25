@@ -10,7 +10,7 @@ public class TerrainMeshBuilderTests
     public void Build_FlatTerrain_GeneratesCorrectVertexCount()
     {
         var terrain = GtiFormat.CreateNew(4, 4);
-        // Set all triangles to type 1 (both triangles per cell)
+        // Set all triangles to type 1 (single triangle per cell)
         for (int i = 0; i < terrain.Triangles.Length; i++)
             terrain.Triangles[i] = 1;
 
