@@ -197,6 +197,26 @@ public class WorldDocument
     }
 
     /// <summary>
+    /// Replaces the current terrain with heights imported from a BMP file.
+    /// Each pixel maps to one vertex, interpolating between <paramref name="blackHeight"/>
+    /// (black) and <paramref name="whiteHeight"/> (white), and the terrain always
+    /// resizes to exactly match the image dimensions.
+    /// Lightmap, triangles and baked AO are reset to new-map defaults (full quads).
+    /// </summary>
+    public void ImportHeightmap(byte[] bmpData, float blackHeight = BmpHeightmap.DefaultBlackHeight, float whiteHeight = BmpHeightmap.DefaultWhiteHeight)
+    {
+        var image = BmpHeightmap.Load(bmpData);
+
+        if (_worldRoot == null)
+            NewWorld(image.Width, image.Height);
+
+        var template = _terrain?.Header;
+        string textureName = _terrain?.TextureName ?? "useless";
+        var terrain = BmpHeightmap.ToTerrainData(image, blackHeight, whiteHeight, template, textureName);
+        ReplaceTerrain(terrain);
+    }
+
+    /// <summary>
     /// Opens a .gck archive (ZIP containing w_*.bin + *.gti + optional *.gmm).
     /// </summary>
     public void LoadGck(string gckPath)

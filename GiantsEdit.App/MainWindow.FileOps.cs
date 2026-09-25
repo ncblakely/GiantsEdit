@@ -262,6 +262,48 @@ public partial class MainWindow
         }
     }
 
+    private async Task ImportHeightmapAsync()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import Heightmap (BMP)",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Bitmap") { Patterns = ["*.bmp"] }]
+        });
+
+        if (files.Count > 0)
+        {
+            var path = files[0].TryGetLocalPath();
+            if (path != null)
+            {
+                var rangeDialog = new HeightmapImportDialog();
+                await rangeDialog.ShowDialog(this);
+                if (!rangeDialog.Confirmed)
+                {
+                    StatusText.Text = "Heightmap import cancelled";
+                    return;
+                }
+
+                try
+                {
+                    byte[] bmpData = await Task.Run(() => File.ReadAllBytes(path));
+                    float black = rangeDialog.BlackHeight;
+                    float white = rangeDialog.WhiteHeight;
+                    await Task.Run(() => _vm.Document.ImportHeightmap(bmpData, black, white));
+                    UploadTerrainToGpu();
+                    InvalidateViewport();
+                    var t = _vm.Document.Terrain;
+                    StatusText.Text = $"Imported heightmap: {Path.GetFileName(path)} ({t?.Width}x{t?.Height}, {black}…{white})";
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ImportHeightmap] Error: {ex}");
+                    StatusText.Text = $"Import failed: {ex.Message}";
+                }
+            }
+        }
+    }
+
     private async Task ExportTerrainAsync()
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions

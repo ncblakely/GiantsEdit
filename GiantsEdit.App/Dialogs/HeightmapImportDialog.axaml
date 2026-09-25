@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GiantsEdit.App.Dialogs.HeightmapImportDialog"
+        Title="Import Heightmap" Width="300" Height="250"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16" Spacing="8">
+        <TextBlock Text="Height range for import" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <TextBlock Text="Black pixel height:" />
+        <TextBox x:Name="TxtBlackHeight" Text="-40" />
+
+        <TextBlock Text="White pixel height:" />
+        <TextBox x:Name="TxtWhiteHeight" Text="700" />
+
+        <TextBlock x:Name="ErrorText" Foreground="OrangeRed" IsVisible="False"
+                   TextWrapping="Wrap" Text="Enter two finite numbers." />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" />
+            <Button x:Name="BtnOk" Content="Import" Width="80" />
+        </StackPanel>
+    </StackPanel>
+</Window>

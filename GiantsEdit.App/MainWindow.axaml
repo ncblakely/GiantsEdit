@@ -29,6 +29,7 @@
                 <MenuItem Header="Import">
                     <MenuItem Header="Terrain (GTI)..." x:Name="MenuImportTerrain" />
                     <MenuItem Header="Objects (W_*.BIN)..." x:Name="MenuImportObjects" />
+                    <MenuItem Header="Heightmap (BMP)..." x:Name="MenuImportHeightmap" />
                 </MenuItem>
                 <MenuItem Header="Export">
                     <MenuItem Header="Export light map..." x:Name="MenuExportLightmap" />
